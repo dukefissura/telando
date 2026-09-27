@@ -1,0 +1,6 @@
+# Complementa o modo --dev (chave devkey, segredo "secret").
+# O endpoint do webhook nasce na Fase 1; antes disso o LiveKit só registra a falha de entrega.
+webhook:
+  api_key: devkey
+  urls:
+    - http://localhost:8787/api/livekit/webhook
