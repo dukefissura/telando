@@ -1,8 +1,16 @@
 import { type ConfigTransmissao, formatarMbps, uploadNecessarioKbps } from '@telando/core'
-import { codecsDoHost, type Estatisticas, type useTransmissao } from '@telando/core/cliente'
-import { useEffect, useState } from 'react'
-import { Botao, Secao } from '../controles.tsx'
+import {
+  codecsDoHost,
+  type Estatisticas,
+  useChatSala,
+  type useTransmissao,
+} from '@telando/core/cliente'
+import { useState } from 'react'
+import { useAtalhosDaJanela } from '../atalhos.ts'
+import { Alternador, Botao, Secao } from '../controles.tsx'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
+import { PainelChat } from '../sala/painel-chat.tsx'
+import { BotoesDeReacao, ColunaDeReacoes } from '../sala/reacoes.tsx'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
 import { useMicrofones } from './use-microfones.ts'
@@ -39,19 +47,6 @@ function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | nul
   )
 }
 
-function useAtalhosDaJanela(atalhos: Record<string, () => void>) {
-  useEffect(() => {
-    const aoTeclar = (evento: KeyboardEvent) => {
-      const alvo = evento.target as HTMLElement
-      if (evento.ctrlKey || evento.metaKey || evento.altKey) return
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(alvo.tagName)) return
-      atalhos[evento.key.toLowerCase()]?.()
-    }
-    window.addEventListener('keydown', aoTeclar)
-    return () => window.removeEventListener('keydown', aoTeclar)
-  }, [atalhos])
-}
-
 export function TelaCompartilhando({
   plataforma,
   controle,
@@ -70,6 +65,7 @@ export function TelaCompartilhando({
   const fontes = useFontes(painel === 'fonte' ? plataforma.fontes : undefined)
   const configAtual = rascunho ?? (estado.fase === 'ao-vivo' ? estado.config : null)
   const microfones = useMicrofones(configAtual?.microfone.ativo ?? false)
+  const chat = useChatSala(controle.sala)
 
   useAtalhosDaJanela({
     p: controle.alternarPausa,
@@ -103,15 +99,15 @@ export function TelaCompartilhando({
   }
 
   return (
-    <main className="mx-auto grid max-w-xl gap-5 p-6">
+    <main className="relative mx-auto grid max-w-xl gap-5 p-6">
       <div className="flex items-center gap-2 text-sm">
         <span className="size-2 rounded-full bg-ao-vivo" aria-hidden />
         <span className="font-medium text-ao-vivo tracking-wide">AO VIVO</span>
         <span className="text-texto-suave" data-testid="espectadores">
           ·{' '}
-          {estado.espectadores === 1
+          {estado.espectadores.length === 1
             ? '1 pessoa assistindo'
-            : `${estado.espectadores} pessoas assistindo`}
+            : `${estado.espectadores.length} pessoas assistindo`}
         </span>
         {estado.pausado && <span className="ml-auto text-aviso">Vídeo pausado</span>}
       </div>
@@ -221,9 +217,48 @@ export function TelaCompartilhando({
         </aside>
       )}
 
+      <div>
+        <Secao titulo={`Quem está assistindo (${estado.espectadores.length})`} aberta>
+          <Alternador
+            rotulo="Trancar sessão"
+            descricao="Ninguém novo entra, nem quem você removeu; quem já está continua assistindo."
+            ligado={estado.trancada}
+            aoMudar={(trancada) => void controle.trancar(trancada)}
+          />
+          {estado.espectadores.length === 0 ? (
+            <p className="text-sm text-texto-suave">Ninguém entrou ainda. É só mandar o link.</p>
+          ) : (
+            <ul className="grid gap-1" data-testid="lista-espectadores">
+              {estado.espectadores.map((espectador) => (
+                <li key={espectador.identity} className="flex items-center justify-between text-sm">
+                  {espectador.nome}
+                  <Botao
+                    variante="fantasma"
+                    className="px-2 py-1 text-xs"
+                    onClick={() => void controle.remover(espectador.identity)}
+                    aria-label={`Remover ${espectador.nome}`}
+                  >
+                    Remover
+                  </Botao>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Secao>
+        <Secao titulo="Chat">
+          <PainelChat
+            mensagens={chat.mensagens}
+            aoEnviar={chat.enviarChat}
+            className="h-64 rounded-lg border border-borda"
+          />
+          <BotoesDeReacao aoReagir={(emoji) => void chat.reagir(emoji)} />
+        </Secao>
+      </div>
+
       <Botao variante="perigo" className="justify-self-start" onClick={controle.parar}>
         Parar
       </Botao>
+      <ColunaDeReacoes reacoes={chat.reacoes} />
     </main>
   )
 }

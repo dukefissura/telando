@@ -88,5 +88,16 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
         keepalive: true,
       })
     },
+    async trancarSessao(id: string, hostToken: string, trancada: boolean): Promise<void> {
+      await chamar(`/sessions/${encodeURIComponent(id)}/trancada`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${hostToken}` },
+        body: JSON.stringify({ trancada }),
+      })
+    },
+    async removerParticipante(id: string, hostToken: string, identity: string): Promise<void> {
+      const caminho = `/sessions/${encodeURIComponent(id)}/participantes/${encodeURIComponent(identity)}`
+      await chamar(caminho, { method: 'DELETE', headers: { authorization: `Bearer ${hostToken}` } })
+    },
   }
 }

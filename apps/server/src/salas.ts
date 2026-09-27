@@ -4,8 +4,16 @@ import type { Env } from './env.ts'
 
 export interface SalaGateway {
   criar(id: string, metadata: SessaoMetadata): Promise<void>
+  atualizarMetadata(id: string, metadata: SessaoMetadata): Promise<void>
+  remover(id: string, identity: string): Promise<void>
   apagar(id: string): Promise<void>
   apagarTodas(): Promise<void>
+}
+
+// A sala ou a pessoa podem já ter saído sem o webhook ter chegado; o objetivo foi atingido.
+function ignorarSeNaoExiste(erro: unknown) {
+  if (erro instanceof ServerError && erro.code === 'not_found') return
+  throw erro
 }
 
 export function criarSalaGateway(env: Env): SalaGateway {
@@ -26,12 +34,14 @@ export function criarSalaGateway(env: Env): SalaGateway {
         metadata: JSON.stringify(metadata),
       })
     },
+    async atualizarMetadata(id, metadata) {
+      await cliente.updateRoomMetadata(id, JSON.stringify(metadata))
+    },
+    async remover(id, identity) {
+      await cliente.removeParticipant(id, identity).catch(ignorarSeNaoExiste)
+    },
     async apagar(id) {
-      await cliente.deleteRoom(id).catch((erro: unknown) => {
-        // A sala já pode ter acabado pelo emptyTimeout sem o webhook ter chegado; o objetivo foi atingido.
-        if (erro instanceof ServerError && erro.code === 'not_found') return
-        throw erro
-      })
+      await cliente.deleteRoom(id).catch(ignorarSeNaoExiste)
     },
     async apagarTodas() {
       const salas = await cliente.listRooms()

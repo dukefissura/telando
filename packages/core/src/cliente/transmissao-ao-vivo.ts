@@ -22,7 +22,7 @@ import { opcoesDePublicacao } from './opcoes-livekit.ts'
 type ClienteApi = ReturnType<typeof criarClienteApi>
 
 export type EventosTransmissao = {
-  aoMudarEspectadores: (quantidade: number) => void
+  aoMudarEspectadores: (espectadores: Espectador[]) => void
   /** A reconexão automática do LiveKit desistiu. */
   aoCair: () => void
   /** O "Parar compartilhamento" do navegador (ou a janela capturada fechou). */
@@ -32,6 +32,8 @@ export type EventosTransmissao = {
 type Captura = { video: MediaStreamTrack; audio: MediaStreamTrack | null; fonte: Dimensoes }
 
 export class CapturaCancelada extends Error {}
+
+export type Espectador = { identity: string; nome: string }
 
 export function codecsDoHost(): string[] {
   const codecs = RTCRtpSender.getCapabilities('video')?.codecs ?? []
@@ -107,8 +109,24 @@ export class TransmissaoAoVivo {
     return this.audioSistema !== null
   }
 
-  get espectadores() {
-    return this.room.remoteParticipants.size
+  get espectadores(): Espectador[] {
+    return [...this.room.remoteParticipants.values()].map((participante) => ({
+      identity: participante.identity,
+      nome: participante.name || 'Sem apelido',
+    }))
+  }
+
+  /** A sala do LiveKit, para o chat e as reações. */
+  get sala() {
+    return this.room
+  }
+
+  trancar(trancada: boolean) {
+    return this.api.trancarSessao(this.sessao.id, this.sessao.hostToken, trancada)
+  }
+
+  remover(identity: string) {
+    return this.api.removerParticipante(this.sessao.id, this.sessao.hostToken, identity)
   }
 
   static async iniciar(

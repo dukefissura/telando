@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { type criarClienteApi, mensagemDoErro } from '../api.ts'
 import type { EstatisticasEnvio } from '../estatisticas.ts'
 import type { ConfigTransmissao, TransmissaoResolvida } from '../transmissao.ts'
-import { CapturaCancelada, TransmissaoAoVivo } from './transmissao-ao-vivo.ts'
+import { CapturaCancelada, type Espectador, TransmissaoAoVivo } from './transmissao-ao-vivo.ts'
 
 export type EstadoTransmissao =
   | { fase: 'parada' }
@@ -12,7 +12,8 @@ export type EstadoTransmissao =
       fase: 'ao-vivo'
       link: string
       copiado: boolean
-      espectadores: number
+      espectadores: Espectador[]
+      trancada: boolean
       config: ConfigTransmissao
       resolvida: TransmissaoResolvida
       comAudio: boolean
@@ -89,6 +90,7 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
           link: transmissao.sessao.url,
           copiado: await copiar(transmissao.sessao.url),
           espectadores: transmissao.espectadores,
+          trancada: false,
           config: transmissao.config,
           resolvida: transmissao.resolvida,
           comAudio: transmissao.comAudio,
@@ -148,6 +150,31 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     [mudarTransmissao],
   )
 
+  const trancar = useCallback(
+    async (trancada: boolean) => {
+      const transmissao = ativa.current
+      if (!transmissao) return
+      try {
+        await transmissao.trancar(trancada)
+        atualizarAoVivo({ trancada, aviso: null })
+      } catch (erro) {
+        atualizarAoVivo({ aviso: mensagemDoErro(erro, 'Não consegui trancar a sessão.') })
+      }
+    },
+    [atualizarAoVivo],
+  )
+
+  const remover = useCallback(
+    async (identity: string) => {
+      try {
+        await ativa.current?.remover(identity)
+      } catch (erro) {
+        atualizarAoVivo({ aviso: mensagemDoErro(erro, 'Não consegui remover essa pessoa.') })
+      }
+    },
+    [atualizarAoVivo],
+  )
+
   const copiarLink = useCallback(async () => {
     const link = ativa.current?.sessao.url
     if (link) atualizarAoVivo({ copiado: await copiar(link) })
@@ -198,6 +225,9 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     ajustar,
     trocarFonte,
     copiarLink,
+    trancar,
+    remover,
+    sala: estado.fase === 'ao-vivo' ? (ativa.current?.sala ?? null) : null,
     alternarPausa: alternar('pausado'),
     alternarAudio: alternar('audioMudo'),
     alternarMicrofone: alternar('microfoneMudo'),

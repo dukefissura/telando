@@ -50,6 +50,25 @@ describe('criarClienteApi', () => {
     expect(chamadas[0]?.init?.keepalive).toBe(true)
   })
 
+  it('tranca e destranca a sessão como host', async () => {
+    const { chamadas, fetcher } = fetcherFalso(204, undefined)
+
+    await criarClienteApi('', fetcher).trancarSessao('abc', 'segredo', true)
+    expect(chamadas[0]?.url).toBe('/api/sessions/abc/trancada')
+    expect(chamadas[0]?.init?.method).toBe('PUT')
+    expect(chamadas[0]?.init?.body).toBe(JSON.stringify({ trancada: true }))
+    expect(new Headers(chamadas[0]?.init?.headers).get('authorization')).toBe('Bearer segredo')
+  })
+
+  it('remove um espectador como host', async () => {
+    const { chamadas, fetcher } = fetcherFalso(204, undefined)
+
+    await criarClienteApi('', fetcher).removerParticipante('abc', 'segredo', 'v_1')
+    expect(chamadas[0]?.url).toBe('/api/sessions/abc/participantes/v_1')
+    expect(chamadas[0]?.init?.method).toBe('DELETE')
+    expect(new Headers(chamadas[0]?.init?.headers).get('authorization')).toBe('Bearer segredo')
+  })
+
   it('transforma a resposta de erro do server em ErroApi', async () => {
     const { fetcher } = fetcherFalso(404, {
       erro: 'sessao_nao_encontrada',
