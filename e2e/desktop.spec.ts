@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
-import { _electron as electron, expect, type Page, test } from '@playwright/test'
+import { _electron as electron, expect, test } from '@playwright/test'
+import { recebeVideoEAudio } from './apoio.ts'
 
 // Roda o build de verdade (apps/desktop/out), capturando a tela real do Windows.
 const pastaDesktop = fileURLToPath(new URL('../apps/desktop', import.meta.url))
@@ -11,22 +12,6 @@ test.skip(process.platform !== 'win32', 'O app desktop só existe para Windows')
 
 // Processos filhos do VS Code herdam ELECTRON_RUN_AS_NODE=1, que faz o Electron rodar como Node puro.
 const { ELECTRON_RUN_AS_NODE: _, ...ambiente } = process.env
-
-async function recebeVideoEAudio(espectador: Page) {
-  await expect
-    .poll(() => espectador.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth))
-    .toBeGreaterThan(0)
-  await expect
-    .poll(() =>
-      espectador.locator('audio').evaluateAll((audios) =>
-        audios.some((a) => {
-          const fluxo = (a as HTMLAudioElement).srcObject
-          return fluxo instanceof MediaStream && fluxo.getAudioTracks()[0]?.readyState === 'live'
-        }),
-      ),
-    )
-    .toBe(true)
-}
 
 test('desktop compartilha a tela com áudio do sistema e troca resolução ao vivo', async ({
   browser,

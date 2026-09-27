@@ -29,6 +29,11 @@ export class ErroApi extends Error {
   }
 }
 
+/** Mensagem pronta para a tela: a do server, se o erro veio da API; senão, a padrão. */
+export function mensagemDoErro(erro: unknown, padrao: string): string {
+  return erro instanceof ErroApi ? erro.message : padrao
+}
+
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>
 
 export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {

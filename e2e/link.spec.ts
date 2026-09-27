@@ -1,4 +1,5 @@
 import { type Browser, expect, type Page, test } from '@playwright/test'
+import { recebeVideoEAudio } from './apoio.ts'
 
 // O Chromium de teste não tem seletor de tela; a "tela" vira a câmera e o microfone falsos
 // (padrão colorido + bipe) que o --use-fake-device-for-media-stream fornece.
@@ -16,22 +17,6 @@ async function comecarATransmitir(host: Page): Promise<string> {
   await host.getByRole('button', { name: 'Compartilhar tela' }).click()
   await host.getByRole('button', { name: 'Iniciar' }).click()
   return host.locator('#link').inputValue()
-}
-
-async function recebeVideoEAudio(espectador: Page) {
-  await expect
-    .poll(() => espectador.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth))
-    .toBeGreaterThan(0)
-  await expect
-    .poll(() =>
-      espectador.locator('audio').evaluateAll((audios) =>
-        audios.some((a) => {
-          const fluxo = (a as HTMLAudioElement).srcObject
-          return fluxo instanceof MediaStream && fluxo.getAudioTracks()[0]?.readyState === 'live'
-        }),
-      ),
-    )
-    .toBe(true)
 }
 
 test('host compartilha, dois amigos assistem com áudio e veem a sessão encerrar', async ({

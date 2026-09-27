@@ -1,8 +1,8 @@
 import {
   aplicarPreset,
   type ConfigTransmissao,
-  ErroApi,
   formatarMbps,
+  mensagemDoErro,
   PRESETS,
   type PresetId,
   presetAtual,
@@ -111,7 +111,7 @@ export function TelaConfiguracoes({
     } catch (e) {
       setTeste({
         fase: 'erro',
-        mensagem: e instanceof ErroApi ? e.message : 'Não consegui medir a conexão.',
+        mensagem: mensagemDoErro(e, 'Não consegui medir a conexão.'),
       })
     }
   }

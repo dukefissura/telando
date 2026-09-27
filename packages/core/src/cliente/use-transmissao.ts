@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { type criarClienteApi, ErroApi } from '../api.ts'
+import { type criarClienteApi, mensagemDoErro } from '../api.ts'
 import type { EstatisticasEnvio } from '../estatisticas.ts'
 import type { ConfigTransmissao, TransmissaoResolvida } from '../transmissao.ts'
 import { CapturaCancelada, TransmissaoAoVivo } from './transmissao-ao-vivo.ts'
@@ -32,11 +32,10 @@ type Opcoes = {
 }
 
 function mensagemDeErro(erro: unknown): string {
-  if (erro instanceof ErroApi) return erro.message
   if (erro instanceof DOMException && erro.name === 'NotReadableError') {
     return 'O sistema não deixou capturar essa tela. Tente outra janela ou a tela inteira.'
   }
-  return 'Não consegui começar a transmissão. Tente de novo.'
+  return mensagemDoErro(erro, 'Não consegui começar a transmissão. Tente de novo.')
 }
 
 async function copiar(texto: string): Promise<boolean> {
