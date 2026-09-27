@@ -62,7 +62,7 @@ Testes (Vitest, gateway falso gravando chamadas, `TokenVerifier` para ler os JWT
 - Clique em "Compartilhar tela" chama `getDisplayMedia({ video: true, audio: true })` e `criarSessao()` em paralelo (o picker do navegador e a criação da sala correm juntos). Cancelou o picker → encerra a sessão criada.
 - Conecta no LiveKit, publica vídeo (`Track.Source.ScreenShare`) e áudio se houver (`ScreenShareAudio`), copia o link.
 - Tela "Compartilhando": link em fonte mono, "Copiar", aviso se o navegador não deu áudio, "Parar". O botão "Parar compartilhamento" do próprio navegador (evento `ended`) também encerra.
-- `hostToken` em `sessionStorage` para o F5 não perder o poder de encerrar.
+- Fechar a aba encerra a sessão (`pagehide` + `fetch` com `keepalive`). Recarregar a página perde a captura de qualquer jeito, então não guardamos o `hostToken`.
 
 ### Task 5: Assistir (`/s/:id`)
 

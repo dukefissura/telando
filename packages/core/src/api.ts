@@ -75,6 +75,8 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
       await chamar(`/sessions/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: { authorization: `Bearer ${hostToken}` },
+        // Também é chamado no pagehide, quando o host fecha a aba; sem keepalive o navegador cancela o pedido.
+        keepalive: true,
       })
     },
   }

@@ -1,0 +1,15 @@
+{
+  "name": "@telando/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@telando/config": "workspace:*",
+    "@types/node": "^22.20.4"
+  }
+}

@@ -47,6 +47,7 @@ describe('criarClienteApi', () => {
     await criarClienteApi('', fetcher).encerrarSessao('abc', 'segredo')
     expect(chamadas[0]?.init?.method).toBe('DELETE')
     expect(new Headers(chamadas[0]?.init?.headers).get('authorization')).toBe('Bearer segredo')
+    expect(chamadas[0]?.init?.keepalive).toBe(true)
   })
 
   it('transforma a resposta de erro do server em ErroApi', async () => {
