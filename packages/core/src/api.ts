@@ -11,14 +11,12 @@ const sessaoCriadaSchema = z.object({
 const entradaSchema = z.object({
   livekitUrl: z.string(),
   livekitToken: z.string(),
-  identity: z.string(),
 })
 
 const erroApiSchema = z.object({ erro: z.string(), mensagem: z.string() })
 
 export type SessaoCriada = z.infer<typeof sessaoCriadaSchema>
-export type Entrada = z.infer<typeof entradaSchema>
-export type CorpoErro = z.infer<typeof erroApiSchema>
+type Entrada = z.infer<typeof entradaSchema>
 
 export class ErroApi extends Error {
   constructor(
@@ -81,5 +79,3 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
     },
   }
 }
-
-export type ClienteApi = ReturnType<typeof criarClienteApi>

@@ -23,7 +23,12 @@ function ipDoCliente(c: Context): string {
 }
 
 // O registro de sessões vive em memória: salas que sobraram de um processo anterior não têm dono.
-await salas.apagarTodas()
+await salas.apagarTodas().catch((erro: unknown) => {
+  console.warn(
+    `Não consegui limpar as salas antigas no LiveKit (${env.LIVEKIT_URL}). Ele está rodando?`,
+    erro,
+  )
+})
 
 serve({ fetch: criarApp({ env, salas, ipDoCliente }).fetch, port: env.PORT }, ({ port }) => {
   console.log(`server em http://localhost:${port}`)

@@ -22,6 +22,10 @@ function encerrar(sessao: SessaoCriada) {
   })
 }
 
+function pararCaptura(captura: MediaStream) {
+  for (const trilha of captura.getTracks()) trilha.stop()
+}
+
 async function copiar(texto: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(texto)
@@ -40,10 +44,11 @@ export function useTransmissao() {
     const atual = ativa.current
     if (!atual) return
     ativa.current = null
-    for (const trilha of atual.captura.getTracks()) trilha.stop()
-    await atual.room.disconnect()
+    // O DELETE sai antes de qualquer await: no pagehide a página pode morrer no primeiro await.
+    const encerramento = encerrar(atual.sessao)
+    pararCaptura(atual.captura)
     setTransmissao({ fase: 'parada' })
-    await encerrar(atual.sessao)
+    await Promise.all([atual.room.disconnect(), encerramento])
   }, [])
 
   const iniciar = useCallback(async () => {
@@ -67,7 +72,7 @@ export function useTransmissao() {
       return
     }
     if (sessao.status === 'rejected') {
-      for (const trilha of captura.value.getTracks()) trilha.stop()
+      pararCaptura(captura.value)
       setTransmissao({ fase: 'erro', mensagem: mensagemDeErro(sessao.reason) })
       return
     }
@@ -95,6 +100,15 @@ export function useTransmissao() {
         )
       room.on(RoomEvent.ParticipantConnected, contarEspectadores)
       room.on(RoomEvent.ParticipantDisconnected, contarEspectadores)
+      // Só chega aqui depois que a reconexão automática do LiveKit desistiu.
+      room.on(RoomEvent.Disconnected, async () => {
+        if (ativa.current?.room !== room) return
+        await parar()
+        setTransmissao({
+          fase: 'erro',
+          mensagem: 'A conexão com o servidor caiu e a transmissão parou. Comece de novo.',
+        })
+      })
 
       setTransmissao({
         fase: 'ao-vivo',

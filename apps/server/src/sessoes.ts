@@ -8,7 +8,7 @@ import { erroApi, lerCorpo } from './http.ts'
 import { limitarPorIp } from './limite.ts'
 import { emitirLivekitToken } from './tokens.ts'
 
-type Sessao = { hostTokenHash: Buffer; hostIdentity: string }
+type Sessao = { hostTokenHash: Buffer }
 export type RegistroSessoes = Map<string, Sessao>
 
 // Sem 0/O, 1/l/I: o link às vezes é ditado ou copiado à mão.
@@ -69,7 +69,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         }
 
         await salas.criar(id, metadata)
-        sessoes.set(id, { hostTokenHash: hash(hostToken), hostIdentity })
+        sessoes.set(id, { hostTokenHash: hash(hostToken) })
 
         return c.json(
           {
@@ -104,7 +104,6 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
 
         return c.json({
           livekitUrl: env.LIVEKIT_URL,
-          identity,
           livekitToken: await emitirLivekitToken(env, {
             sala: id,
             identity,

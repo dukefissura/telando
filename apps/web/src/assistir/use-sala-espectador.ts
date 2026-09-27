@@ -17,9 +17,9 @@ export function useSalaEspectador(id: string) {
   const entrar = useCallback(
     async (apelido: string) => {
       setSala({ fase: 'entrando' })
+      const room = new Room({ adaptiveStream: true, dynacast: true })
       try {
         const entrada = await api.entrarNaSessao(id, apelido)
-        const room = new Room({ adaptiveStream: true, dynacast: true })
         room.on(RoomEvent.Disconnected, (motivo) => {
           setSala(
             motivo === DisconnectReason.ROOM_DELETED
@@ -32,6 +32,8 @@ export function useSalaEspectador(id: string) {
         await room.startAudio()
         setSala({ fase: 'conectado', room })
       } catch (erro) {
+        room.removeAllListeners()
+        await room.disconnect()
         if (erro instanceof ErroApi && erro.codigo === 'sessao_nao_encontrada') {
           setSala({ fase: 'invalida' })
         } else {

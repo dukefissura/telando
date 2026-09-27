@@ -32,7 +32,7 @@ describe('criarClienteApi', () => {
   })
 
   it('entra na sessão com o apelido', async () => {
-    const entrada = { livekitUrl: 'ws://x', livekitToken: 'jwt', identity: 'v_1' }
+    const entrada = { livekitUrl: 'ws://x', livekitToken: 'jwt' }
     const { chamadas, fetcher } = fetcherFalso(200, entrada)
 
     expect(await criarClienteApi('', fetcher).entrarNaSessao('abc', 'Capivara Azul')).toEqual(

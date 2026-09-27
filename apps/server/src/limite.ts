@@ -4,15 +4,15 @@ import { erroApi } from './http.ts'
 
 type OpcoesLimite = { limite: number; janelaMs: number; agora?: (() => number) | undefined }
 
-// Acima disso varremos as chaves velhas, para um monte de IPs diferentes não crescer a memória sem fim.
-const CHAVES_ANTES_DE_VARRER = 1000
-
 export function limitePorJanela({ limite, janelaMs, agora = Date.now }: OpcoesLimite) {
   const tentativas = new Map<string, number[]>()
+  let ultimaVarredura = agora()
 
   return (chave: string): boolean => {
     const inicioDaJanela = agora() - janelaMs
-    if (tentativas.size > CHAVES_ANTES_DE_VARRER) {
+    // Uma vez por janela, esquece os IPs que pararam de pedir, para a memória não crescer sem fim.
+    if (agora() - ultimaVarredura > janelaMs) {
+      ultimaVarredura = agora()
       for (const [outra, horarios] of tentativas) {
         if (horarios.every((t) => t <= inicioDaJanela)) tentativas.delete(outra)
       }

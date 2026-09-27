@@ -1,5 +1,5 @@
 import type { SessaoMetadata } from '@telando/core'
-import { RoomServiceClient } from 'livekit-server-sdk'
+import { RoomServiceClient, ServerError } from 'livekit-server-sdk'
 import type { Env } from './env.ts'
 
 export interface SalaGateway {
@@ -27,7 +27,11 @@ export function criarSalaGateway(env: Env): SalaGateway {
       })
     },
     async apagar(id) {
-      await cliente.deleteRoom(id)
+      await cliente.deleteRoom(id).catch((erro: unknown) => {
+        // A sala já pode ter acabado pelo emptyTimeout sem o webhook ter chegado; o objetivo foi atingido.
+        if (erro instanceof ServerError && erro.code === 'not_found') return
+        throw erro
+      })
     },
     async apagarTodas() {
       const salas = await cliente.listRooms()

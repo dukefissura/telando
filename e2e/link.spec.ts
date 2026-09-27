@@ -55,3 +55,18 @@ test('link de sessão que não existe mostra link inválido', async ({ page }) =
   await page.getByRole('button', { name: 'Assistir' }).click()
   await expect(page.getByRole('heading', { name: 'Link inválido ou expirado' })).toBeVisible()
 })
+
+test('fechar a aba do host encerra a sessão para quem assiste', async ({ browser }) => {
+  const host = await novaAba(browser)
+  await host.goto('/')
+  await host.getByRole('button', { name: 'Compartilhar tela' }).click()
+  const link = await host.locator('#link').inputValue()
+
+  const espectador = await novaAba(browser)
+  await espectador.goto(link)
+  await espectador.getByRole('button', { name: 'Assistir' }).click()
+  await recebeVideoEAudio(espectador)
+
+  await host.close()
+  await expect(espectador.getByRole('heading', { name: 'Sessão encerrada' })).toBeVisible()
+})

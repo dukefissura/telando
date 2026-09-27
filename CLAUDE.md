@@ -17,6 +17,7 @@ pnpm dev                      # server (8787) + web (5173, proxy de /api para o 
 pnpm lint                     # biome check .   (pnpm format corrige)
 pnpm typecheck                # tsc em todos os pacotes via turbo
 pnpm test                     # vitest em todos os pacotes via turbo
+pnpm e2e                      # Playwright; sobe LiveKit, server e web sozinho (reaproveita se já estiverem no ar)
 
 pnpm --filter @telando/core test                       # um pacote
 pnpm --filter @telando/core exec vitest run src/sessao.test.ts -t "aceita"   # um teste
@@ -26,6 +27,7 @@ pnpm --filter @telando/core exec vitest run src/sessao.test.ts -t "aceita"   # u
 
 - `apps/server`: Hono em Node. Todas as rotas ficam sob `/api` porque o mesmo server serve o site, que tem rotas `/:slug`. `criarApp()` em `app.ts` monta o app (testado com `app.request()`); `main.ts` carrega o `.env` da raiz e sobe.
 - `apps/web`: React 19 + Vite + Tailwind v4. Página de assistir e plano B para compartilhar pelo navegador.
+- `e2e/`: Playwright. O Chromium de teste não tem seletor de tela, então `getDisplayMedia` é trocado pela câmera/microfone falsos (`--use-fake-device-for-media-stream`).
 - `apps/desktop` (Fase 2) e `packages/ui` (quando houver telas compartilhadas) ainda não existem.
 - `packages/core`: regras sem UI compartilhadas por server e clientes (esquemas Zod, mapeamento de presets de transmissão).
 - `packages/config`: `tsconfig.base.json`.

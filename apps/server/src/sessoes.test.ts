@@ -89,11 +89,11 @@ describe('POST /api/sessions/:id/join', () => {
     const { id } = await criarSessao()
     const res = await post(`/api/sessions/${id}/join`, { apelido: '  Capivara Azul  ' })
     expect(res.status).toBe(200)
-    const entrada = (await res.json()) as { livekitToken: string; identity: string }
+    const entrada = (await res.json()) as { livekitToken: string }
     const claims = await verificador.verify(entrada.livekitToken)
 
     expect(claims.name).toBe('Capivara Azul')
-    expect(claims.sub).toBe(entrada.identity)
+    expect(claims.sub).toMatch(/^v_/)
     expect(claims.video).toMatchObject({
       room: id,
       roomJoin: true,
