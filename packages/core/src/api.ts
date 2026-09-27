@@ -69,6 +69,12 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
       const caminho = `/sessions/${encodeURIComponent(id)}/join`
       return entradaSchema.parse(await chamar(caminho, json({ apelido })))
     },
+    /** Envia um bloco ao server e devolve o upload estimado em kbps (inclui a latência). */
+    async medirUploadKbps(bytes = 1_000_000, agora = () => performance.now()): Promise<number> {
+      const inicio = agora()
+      await chamar('/teste-upload', { method: 'POST', body: new Uint8Array(bytes) })
+      return Math.round((bytes * 8) / (agora() - inicio))
+    },
     async encerrarSessao(id: string, hostToken: string): Promise<void> {
       await chamar(`/sessions/${encodeURIComponent(id)}`, {
         method: 'DELETE',

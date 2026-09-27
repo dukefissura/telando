@@ -87,4 +87,17 @@ describe('criarClienteApi', () => {
       codigo: 'servidor_indisponivel',
     })
   })
+
+  it('mede o upload pelo tempo de enviar um bloco ao server', async () => {
+    const { chamadas, fetcher } = fetcherFalso(200, { bytes: 1_000_000 })
+    const relogio = [1000, 2000]
+
+    const kbps = await criarClienteApi('', fetcher).medirUploadKbps(
+      1_000_000,
+      () => relogio.shift() ?? 0,
+    )
+    expect(kbps).toBe(8000)
+    expect(chamadas[0]?.url).toBe('/api/teste-upload')
+    expect(chamadas[0]?.init?.body).toEqual(new Uint8Array(1_000_000))
+  })
 })

@@ -73,7 +73,7 @@ export const NOMES_QUALIDADE_AUDIO: Record<QualidadeAudio, string> = {
   alta: 'Alta fidelidade',
 }
 
-const AUDIO: Record<QualidadeAudio, TransmissaoResolvida['audio']> = {
+export const AUDIO: Record<QualidadeAudio, TransmissaoResolvida['audio']> = {
   voz: { bitrateKbps: 32, estereo: false, dtx: true, red: true },
   musica: { bitrateKbps: 128, estereo: true, dtx: false, red: false },
   alta: { bitrateKbps: 256, estereo: true, dtx: false, red: true },

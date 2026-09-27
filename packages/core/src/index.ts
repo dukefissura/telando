@@ -1,6 +1,7 @@
 export { apelidoAleatorio } from './apelidos.ts'
 export { criarClienteApi, ErroApi, type SessaoCriada } from './api.ts'
 export { type AmostraEnvio, type EstatisticasEnvio, resumirEnvio } from './estatisticas.ts'
+export { lerConfigSalva, presetQueCabe, uploadNecessarioKbps } from './preferencias.ts'
 export { lerSessaoMetadata, type SessaoMetadata } from './sessao.ts'
 export {
   aplicarPreset,
