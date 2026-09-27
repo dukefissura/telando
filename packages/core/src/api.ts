@@ -29,6 +29,11 @@ export class ErroApi extends Error {
   }
 }
 
+/** Mensagem pronta para a tela: a do server, se o erro veio da API; senão, a padrão. */
+export function mensagemDoErro(erro: unknown, padrao: string): string {
+  return erro instanceof ErroApi ? erro.message : padrao
+}
+
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>
 
 export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
@@ -68,6 +73,12 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
     async entrarNaSessao(id: string, apelido?: string): Promise<Entrada> {
       const caminho = `/sessions/${encodeURIComponent(id)}/join`
       return entradaSchema.parse(await chamar(caminho, json({ apelido })))
+    },
+    /** Envia um bloco ao server e devolve o upload estimado em kbps (inclui a latência). */
+    async medirUploadKbps(bytes = 1_000_000, agora = () => performance.now()): Promise<number> {
+      const inicio = agora()
+      await chamar('/teste-upload', { method: 'POST', body: new Uint8Array(bytes) })
+      return Math.round((bytes * 8) / (agora() - inicio))
     },
     async encerrarSessao(id: string, hostToken: string): Promise<void> {
       await chamar(`/sessions/${encodeURIComponent(id)}`, {

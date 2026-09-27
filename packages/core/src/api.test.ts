@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { criarClienteApi, ErroApi } from './api.ts'
+import { criarClienteApi, ErroApi, mensagemDoErro } from './api.ts'
 
 type Chamada = { url: string; init: RequestInit | undefined }
 
@@ -86,5 +86,30 @@ describe('criarClienteApi', () => {
       status: 502,
       codigo: 'servidor_indisponivel',
     })
+  })
+
+  it('mede o upload pelo tempo de enviar um bloco ao server', async () => {
+    const { chamadas, fetcher } = fetcherFalso(200, { bytes: 1_000_000 })
+    const relogio = [1000, 2000]
+
+    const kbps = await criarClienteApi('', fetcher).medirUploadKbps(
+      1_000_000,
+      () => relogio.shift() ?? 0,
+    )
+    expect(kbps).toBe(8000)
+    expect(chamadas[0]?.url).toBe('/api/teste-upload')
+    expect(chamadas[0]?.init?.body).toEqual(new Uint8Array(1_000_000))
+  })
+})
+
+describe('mensagemDoErro', () => {
+  it('usa a mensagem do server quando o erro veio da API', () => {
+    expect(mensagemDoErro(new ErroApi(404, 'x', 'Essa sessão acabou.'), 'padrão')).toBe(
+      'Essa sessão acabou.',
+    )
+  })
+
+  it('cai no texto padrão para qualquer outro erro', () => {
+    expect(mensagemDoErro(new TypeError('boom'), 'Tente de novo.')).toBe('Tente de novo.')
   })
 })

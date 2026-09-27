@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./cliente": "./src/cliente/index.ts"
   },
   "scripts": {
     "typecheck": "tsc",
@@ -15,6 +16,13 @@
   },
   "devDependencies": {
     "@telando/config": "workspace:*",
+    "@types/react": "^19.3.0",
+    "livekit-client": "^2.22.3",
+    "react": "^19.3.0",
     "vitest": "^5.0.2"
+  },
+  "peerDependencies": {
+    "livekit-client": "^2.22.3",
+    "react": "^19.3.0"
   }
 }

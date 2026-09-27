@@ -13,11 +13,12 @@ pnpm install
 cp .env.example .env          # credenciais do LiveKit --dev já vêm preenchidas
 pnpm dev:livekit              # baixa e roda livekit-server --dev (porta 7880), sem Docker
 pnpm dev                      # server (8787) + web (5173, proxy de /api para o server)
+pnpm dev:desktop              # app Electron (renderer em 5174); rode fora do VS Code ou sem ELECTRON_RUN_AS_NODE
 
 pnpm lint                     # biome check .   (pnpm format corrige)
 pnpm typecheck                # tsc em todos os pacotes via turbo
 pnpm test                     # vitest em todos os pacotes via turbo
-pnpm e2e                      # Playwright; sobe LiveKit, server e web sozinho (reaproveita se já estiverem no ar)
+pnpm e2e                      # builda o desktop e roda o Playwright; sobe LiveKit, server e web sozinho
 
 pnpm --filter @telando/core test                       # um pacote
 pnpm --filter @telando/core exec vitest run src/sessao.test.ts -t "aceita"   # um teste
@@ -28,8 +29,9 @@ pnpm --filter @telando/core exec vitest run src/sessao.test.ts -t "aceita"   # u
 - `apps/server`: Hono em Node. Todas as rotas ficam sob `/api` porque o mesmo server serve o site, que tem rotas `/:slug`. `criarApp()` em `app.ts` monta o app (testado com `app.request()`); `main.ts` carrega o `.env` da raiz e sobe.
 - `apps/web`: React 19 + Vite + Tailwind v4. Página de assistir e plano B para compartilhar pelo navegador.
 - `e2e/`: Playwright. O Chromium de teste não tem seletor de tela, então `getDisplayMedia` é trocado pela câmera/microfone falsos (`--use-fake-device-for-media-stream`).
-- `apps/desktop` (Fase 2) e `packages/ui` (quando houver telas compartilhadas) ainda não existem.
-- `packages/core`: regras sem UI compartilhadas por server e clientes (esquemas Zod, mapeamento de presets de transmissão).
+- `apps/desktop`: Electron (só Windows). O main faz só o que exige Node/Electron: seletor de fontes (`desktopCapturer` + `setDisplayMediaRequestHandler` com áudio `loopback`), bandeja, atalho global, `electron-store`. IPC tipado em `src/compartilhado/ipc.ts`, validado no main (`exigirOrigem`).
+- `packages/ui`: telas do host (configurações, compartilhando, ajustes, estatísticas), usadas pelo web e pelo desktop. O que muda entre os dois entra pela interface `Plataforma`.
+- `packages/core`: regras puras compartilhadas (esquemas Zod, presets → constraints/encodings, estatísticas). O subpath `@telando/core/cliente` tem o que depende de navegador (LiveKit, React): `TransmissaoAoVivo`, que faz ajustes ao vivo numa fila, e `useTransmissao`. O server nunca importa esse subpath.
 - `packages/config`: `tsconfig.base.json`.
 
 Pacotes internos exportam `.ts` direto (`"exports": { ".": "./src/index.ts" }`), sem build. Imports relativos usam a extensão `.ts`.

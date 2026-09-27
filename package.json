@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:livekit": "node scripts/dev-livekit.mjs",
+    "dev:desktop": "pnpm --filter @telando/desktop desktop",
     "build": "turbo run build",
     "lint": "biome check .",
     "format": "biome check --write .",

@@ -1,0 +1,33 @@
+{
+  "name": "@telando/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Telando: compartilhe a tela por um link",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "desktop": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "electron-store": "^11.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@telando/config": "workspace:*",
+    "@telando/core": "workspace:*",
+    "@telando/ui": "workspace:*",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "44.4.5",
+    "electron-vite": "^5.0.0",
+    "livekit-client": "^2.22.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.1"
+  }
+}

@@ -138,7 +138,7 @@ Ajustes ao vivo: resolução e fps por `applyConstraints`; bitrate por `sender.s
 
 - `session.setDisplayMediaRequestHandler`: o renderer lista fontes por IPC (`desktopCapturer.getSources` com miniaturas a cada ~1s), o usuário escolhe, o renderer avisa o main da fonte escolhida e chama `getDisplayMedia`; o handler responde com a fonte e `audio: 'loopback'`.
 - `contextIsolation`, `sandbox`, sem `nodeIntegration`; preload expõe uma API tipada mínima.
-- Tray com "Parar compartilhamento" e atalho global `Ctrl+Shift+S` (configurável).
+- Tray com "Parar compartilhamento" e atalho global `Ctrl+Alt+Shift+S`, registrado só durante a transmissão.
 - Configurações persistidas com `electron-store`.
 
 ## 10. Testes
