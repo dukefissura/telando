@@ -4,7 +4,8 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 
 ## Escopo (2026-09-27, com o Luan)
 
-- **Nome Telando**, repositório público `dukefissura/telando`. Começou privado, mas o GitHub Actions não roda nos repositórios privados da conta; no público ele é gratuito e a proteção de branch funciona.
+- **Nome Telando**, repositório público `dukefissura/telando`.
+- **Sem GitHub Actions.** A conta está com o Actions travado por cobrança e o Luan preferiu não usar. O hook `pre-push` do Lefthook roda lint, typecheck e testes; os instaladores são gerados localmente e publicados com `gh release` na Fase 5. Sem CI não há proteção de branch: cada fase ainda entra por PR, mas o merge depende do `pre-push` ter passado.
 - **Só PC.** App desktop só para Windows (instalador NSIS). A página de assistir é pensada para navegador de computador. Saem macOS, Linux, layout de celular e QR code.
 - **Auto-update pelo GitHub Releases**, como no prompt original: com o repositório público não precisa de token dentro do app.
 - **LiveKit no dev sem Docker.** `pnpm dev:livekit` baixa o binário oficial e roda em `--dev`. O `docker-compose.dev.yml` continua para quem tem Docker.

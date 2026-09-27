@@ -7,3 +7,9 @@ commit-msg:
   commands:
     commitlint:
       run: pnpm commitlint --edit {1}
+
+# Faz o papel do CI: a conta não usa GitHub Actions, então nada sobe sem passar aqui.
+pre-push:
+  commands:
+    verificar:
+      run: pnpm lint && pnpm typecheck && pnpm test

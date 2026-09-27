@@ -19,6 +19,8 @@ O `pnpm dev:livekit` baixa o binário oficial do LiveKit na primeira vez, para `
 
 ## Testes
 
+O hook `pre-push` roda os três antes de cada push.
+
 ```bash
 pnpm lint
 pnpm typecheck

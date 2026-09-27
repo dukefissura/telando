@@ -6,7 +6,7 @@ A especificação completa do produto está em [`docs/prompt-original.md`](../..
 
 | Tema | Prompt original | Decidido |
 |---|---|---|
-| Nome | Telinha | **Telando**, repositório público `dukefissura/telando` (Actions não roda nos privados da conta) |
+| Nome | Telinha | **Telando**, repositório público `dukefissura/telando` ; sem GitHub Actions: lint, typecheck e testes rodam no hook `pre-push`, e os instaladores são gerados localmente e publicados com `gh release` |
 | Plataformas | Windows, macOS, Linux; assistir também no celular | **Só PC.** Desktop só Windows (NSIS). Página de assistir pensada para navegador de computador |
 | Removido por isso | | macOS (permissão, `electron-audio-loopback`, DMG), Linux (AppImage, avisos), layout de celular, QR code, tabela de limitações por SO |
 | LiveKit no dev | `docker-compose.dev.yml` | Binário `livekit-server.exe --dev` baixado por `pnpm dev:livekit`. O compose continua no repo como alternativa |
@@ -149,4 +149,4 @@ Ajustes ao vivo: resolução e fps por `applyConstraints`; bitrate por `sender.s
 
 ## 11. Fases
 
-Seguem a seção 7 do prompt, com os cortes da seção 1 acima. Cada fase numa branch `fase-N`, PR com CI verde, merge.
+Seguem a seção 7 do prompt, com os cortes da seção 1 acima. Cada fase numa branch `fase-N`, PR, merge depois do `pre-push` verde.

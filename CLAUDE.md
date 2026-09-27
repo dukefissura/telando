@@ -36,7 +36,7 @@ Estado compartilhado de uma sessão (quem apresenta, se está trancada) vive nos
 
 ## Fluxo de trabalho
 
-- Uma fase por vez, cada uma numa branch `fase-N`, entrando na `main` por PR com CI verde. A `main` é protegida e exige o CI verde. Os commits usam o e-mail noreply do GitHub (configurado no repositório).
+- Uma fase por vez, cada uma numa branch `fase-N`, entrando na `main` por PR. Não há GitHub Actions: o hook `pre-push` roda lint, typecheck e testes e faz o papel do CI; nunca use `--no-verify`. Os commits usam o e-mail noreply do GitHub (configurado no repositório).
 - Antes de fechar uma fase: `pnpm lint && pnpm typecheck && pnpm test`, depois as skills `simplify` e `code-review`.
 - Commits em Conventional Commits com descrição em pt-BR (commitlint no hook `commit-msg`; Biome no `pre-commit`).
 - pnpm 12 bloqueia scripts de instalação: dependências que precisam deles entram em `allowBuilds` no `pnpm-workspace.yaml` (`pnpm approve-builds <pacote>`).
