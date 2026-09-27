@@ -4,6 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Os tipos acompanham a menor versão de Node suportada (engines >=22), não a mais nova.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       menores:
         update-types: [minor, patch]

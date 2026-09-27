@@ -3,5 +3,6 @@ packages:
   - packages/*
   - e2e
 allowBuilds:
+  electron: true
   esbuild: true
   lefthook: true

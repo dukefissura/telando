@@ -1,4 +1,4 @@
-import { ErroApi } from '@telando/core'
+import { ErroApi, mensagemDoErro } from '@telando/core'
 import { DisconnectReason, Room, RoomEvent } from 'livekit-client'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api.ts'
@@ -39,8 +39,7 @@ export function useSalaEspectador(id: string) {
         } else {
           setSala({
             fase: 'erro',
-            mensagem:
-              erro instanceof ErroApi ? erro.message : 'Não consegui entrar. Tente de novo.',
+            mensagem: mensagemDoErro(erro, 'Não consegui entrar. Tente de novo.'),
           })
         }
       }

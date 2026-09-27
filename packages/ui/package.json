@@ -1,28 +1,27 @@
 {
-  "name": "@telando/core",
+  "name": "@telando/ui",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./cliente": "./src/cliente/index.ts"
+    "./tema.css": "./src/tema.css"
   },
   "scripts": {
-    "typecheck": "tsc",
-    "test": "vitest run"
+    "typecheck": "tsc"
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "@telando/core": "workspace:*",
+    "lucide-react": "^1.48.0"
   },
   "devDependencies": {
     "@telando/config": "workspace:*",
     "@types/react": "^19.3.0",
     "livekit-client": "^2.22.3",
-    "react": "^19.3.0",
-    "vitest": "^5.0.2"
+    "react": "^19.3.0"
   },
   "peerDependencies": {
-    "livekit-client": "^2.22.3",
-    "react": "^19.3.0"
+    "react": "^19.3.0",
+    "livekit-client": "^2.22.3"
   }
 }

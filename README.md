@@ -17,6 +17,8 @@ pnpm dev           # em outro: server em :8787 e site em http://localhost:5173
 
 O `pnpm dev:livekit` baixa o binário oficial do LiveKit na primeira vez, para `.livekit/`. Se você preferir Docker: `docker compose -f infra/docker-compose.dev.yml up`.
 
+Para o app desktop (Windows), com o LiveKit e o server rodando: `pnpm dev:desktop`. O atalho `Ctrl+Alt+Shift+S` para a transmissão de qualquer lugar.
+
 ## Testes
 
 O hook `pre-push` roda os três antes de cada push.

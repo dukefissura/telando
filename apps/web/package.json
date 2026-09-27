@@ -11,6 +11,7 @@
   "dependencies": {
     "@livekit/components-react": "^2.9.24",
     "@telando/core": "workspace:*",
+    "@telando/ui": "workspace:*",
     "livekit-client": "^2.22.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
