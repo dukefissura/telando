@@ -1,0 +1,22 @@
+{
+  "name": "@telando/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@telando/config": "workspace:*",
+    "@types/node": "^22.20.4",
+    "tsx": "^4.23.15",
+    "vitest": "^5.0.2"
+  }
+}

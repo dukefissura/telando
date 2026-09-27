@@ -1,0 +1,20 @@
+{
+  "name": "@telando/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@telando/config": "workspace:*",
+    "vitest": "^5.0.2"
+  }
+}
