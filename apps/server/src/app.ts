@@ -1,5 +1,43 @@
-import { Hono } from 'hono'
+import { type Context, Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
+import { HTTPException } from 'hono/http-exception'
+import type { Env } from './env.ts'
+import { erroApi } from './http.ts'
+import type { SalaGateway } from './salas.ts'
+import { type RegistroSessoes, rotasSessoes } from './sessoes.ts'
+import { rotasWebhook } from './webhook.ts'
 
-export function criarApp() {
-  return new Hono().basePath('/api').get('/health', (c) => c.json({ ok: true }))
+export type Deps = {
+  env: Env
+  salas: SalaGateway
+  ipDoCliente: (c: Context) => string
+  agora?: () => number
+}
+
+const limiteDeCorpo = (maxSize: number) =>
+  bodyLimit({
+    maxSize,
+    onError: () => {
+      throw erroApi(413, 'corpo_grande', 'O pedido é grande demais.')
+    },
+  })
+
+export function criarApp(deps: Deps) {
+  const sessoes: RegistroSessoes = new Map()
+
+  return new Hono()
+    .basePath('/api')
+    .get('/health', (c) => c.json({ ok: true }))
+    .use('/sessions/*', limiteDeCorpo(4 * 1024))
+    .route('/sessions', rotasSessoes(deps, sessoes))
+    .use('/livekit/webhook', limiteDeCorpo(64 * 1024))
+    .route('/livekit/webhook', rotasWebhook(deps, sessoes))
+    .onError((erro, c) => {
+      if (erro instanceof HTTPException) return erro.getResponse()
+      console.error(erro)
+      return c.json(
+        { erro: 'erro_interno', mensagem: 'Algo falhou no servidor. Tente de novo.' },
+        500,
+      )
+    })
 }
