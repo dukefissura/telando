@@ -3,7 +3,7 @@
 import { execFileSync, spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const VERSAO = '1.13.7'
@@ -41,6 +41,7 @@ if (!existsSync(binario)) {
   // No Git Bash o `tar` do PATH é o GNU, que não abre zip; o bsdtar do Windows abre.
   const tar = ehWindows ? 'C:\\Windows\\System32\\tar.exe' : 'tar'
   execFileSync(tar, ['-xf', destino, '-C', pasta])
+  await rm(destino)
 }
 
 const servidor = spawn(binario, ['--dev', '--config', join('infra', 'livekit.dev.yaml')], {

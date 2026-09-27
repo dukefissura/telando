@@ -1,1 +1,1 @@
-export { lerSessaoMetadata, type SessaoMetadata, sessaoMetadataSchema } from './sessao.ts'
+export { lerSessaoMetadata, type SessaoMetadata } from './sessao.ts'
