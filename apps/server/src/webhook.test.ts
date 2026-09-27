@@ -1,15 +1,17 @@
 import { createHash } from 'node:crypto'
 import { AccessToken } from 'livekit-server-sdk'
-import { beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { envDeTeste as env, gatewayFalso } from './apoio-testes.ts'
 import { criarApp } from './app.ts'
 
 let app: ReturnType<typeof criarApp>
+let falso: ReturnType<typeof gatewayFalso>
 
 beforeEach(() => {
+  falso = gatewayFalso()
   app = criarApp({
     env,
-    salas: gatewayFalso().gateway,
+    salas: falso.gateway,
     ipDoCliente: () => '10.0.0.1',
   })
 })
@@ -51,4 +53,50 @@ it('ignora webhook com assinatura de outro segredo', async () => {
 
   expect((await enviarWebhook(corpo, forjado)).status).toBe(401)
   expect((await entrar(id)).status).toBe(200)
+})
+
+describe('host caiu', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function evento(nome: string, sala: string, identity: string) {
+    const corpo = JSON.stringify({ event: nome, room: { name: sala }, participant: { identity } })
+    expect((await enviarWebhook(corpo, await assinar(corpo))).status).toBe(200)
+  }
+
+  it('encerra a sessão se o host não voltar em 60 segundos', async () => {
+    const id = await criarSessao()
+    const host = falso.salas.get(id)?.hostIdentity ?? ''
+
+    await evento('participant_left', id, host)
+    await vi.advanceTimersByTimeAsync(59_000)
+    expect((await entrar(id)).status).toBe(200)
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect((await entrar(id)).status).toBe(404)
+    expect(falso.salas.has(id)).toBe(false)
+  })
+
+  it('não encerra se o host voltar a tempo', async () => {
+    const id = await criarSessao()
+    const host = falso.salas.get(id)?.hostIdentity ?? ''
+
+    await evento('participant_left', id, host)
+    await vi.advanceTimersByTimeAsync(30_000)
+    await evento('participant_joined', id, host)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect((await entrar(id)).status).toBe(200)
+  })
+
+  it('espectador saindo não encerra nada', async () => {
+    const id = await criarSessao()
+
+    await evento('participant_left', id, 'v_qualquer')
+    await vi.advanceTimersByTimeAsync(120_000)
+    expect((await entrar(id)).status).toBe(200)
+  })
 })
