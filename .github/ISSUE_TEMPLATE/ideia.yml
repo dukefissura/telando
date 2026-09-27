@@ -1,0 +1,14 @@
+name: Ideia
+description: Algo que deixaria o Telando melhor
+labels: [ideia]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema isso resolve
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Como você imagina
