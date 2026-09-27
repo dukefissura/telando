@@ -9,8 +9,11 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.24",
+    "livekit-client": "^2.22.3",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
