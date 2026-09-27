@@ -37,5 +37,7 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 
 - **Chat e reações por text streams do LiveKit, não por `publishData`.** O LiveKit avisa sobre participantes que só assistem com alguns segundos de atraso; com `publishData`, a mensagem chegava sem remetente e era descartada. O handler de text stream sempre traz a identity de quem mandou, e o apelido é resolvido quando o participante aparece.
 - **A contagem de espectadores no host pode atrasar uns 2 segundos.** É o mesmo agrupamento do LiveKit; não vale a pena contornar.
-- **"Alta" força a camada cheia; "Automática" segue o tamanho do player.** O LiveKit já reduz a qualidade quando falta banda nos dois casos.
+- **Espectador sem `adaptiveStream`.** Com ele ligado, o LiveKit nunca manda mais que o tamanho do player e "Alta" não teria efeito. "Automática" faz o papel dele com um `ResizeObserver` que pede o tamanho do player; "Alta", "Média" e "Baixa" pedem a camada direto. O LiveKit ainda reduz quando falta banda.
 - **Trancar e remover mudam a sessão pelo server.** Trancar grava `trancada` nos metadados da sala; o join passa a responder 423. Remover usa o `removeParticipant` do LiveKit, e quem sai vê "Você foi removido".
+- **Quem é removido pode voltar pelo link.** Sem contas, não há como reconhecer a pessoa numa nova entrada. O alternador "Trancar sessão" diz isso na descrição; trancar resolve.
+- **Queda do host guiada pelo `sid` da conexão.** Webhooks podem chegar fora de ordem; a saída de uma conexão antiga do host é ignorada se ele já voltou com outra.
