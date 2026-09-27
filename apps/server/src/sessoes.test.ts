@@ -1,35 +1,10 @@
 import type { SessaoMetadata } from '@telando/core'
 import { TokenVerifier } from 'livekit-server-sdk'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { envDeTeste as env, gatewayFalso } from './apoio-testes.ts'
 import { criarApp } from './app.ts'
-import type { Env } from './env.ts'
-import type { SalaGateway } from './salas.ts'
 
-const env: Env = {
-  PORT: 8787,
-  PUBLIC_BASE_URL: 'https://telando.test',
-  LIVEKIT_URL: 'ws://livekit.test',
-  LIVEKIT_API_KEY: 'devkey',
-  LIVEKIT_API_SECRET: 'segredo-de-teste-com-32-caracteres!!',
-  TRUST_PROXY: '0',
-}
 const verificador = new TokenVerifier(env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET)
-
-function gatewayFalso() {
-  const salas = new Map<string, SessaoMetadata>()
-  const gateway: SalaGateway = {
-    async criar(id, metadata) {
-      salas.set(id, metadata)
-    },
-    async apagar(id) {
-      salas.delete(id)
-    },
-    async apagarTodas() {
-      salas.clear()
-    },
-  }
-  return { salas, gateway }
-}
 
 let salas: Map<string, SessaoMetadata>
 let app: ReturnType<typeof criarApp>
@@ -95,6 +70,11 @@ describe('POST /api/sessions', () => {
 
     ip = '10.0.0.2'
     await criarSessao()
+  })
+
+  it('recusa corpo grande demais', async () => {
+    const res = await post('/api/sessions', { nome: 'a'.repeat(5000) })
+    expect(res.status).toBe(413)
   })
 
   it('recusa corpo que não é JSON', async () => {
