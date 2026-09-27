@@ -1,7 +1,21 @@
 @import "tailwindcss";
 
+/* Tokens provisórios; a direção visual definitiva sai na Fase 4. */
+@theme {
+  --color-fundo: #0a0a0a;
+  --color-superficie: #141414;
+  --color-borda: #262626;
+  --color-texto: #ededed;
+  --color-texto-suave: #a1a1a1;
+  --color-ao-vivo: #22c55e;
+  --color-parar: #ef4444;
+}
+
 :root {
   color-scheme: dark;
-  background: #0a0a0a;
-  color: #ededed;
+}
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-texto);
 }

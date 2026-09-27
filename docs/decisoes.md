@@ -21,3 +21,5 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Pacotes internos exportam TypeScript direto.** Vite, tsx e Vitest compilam; não há passo de build só para o monorepo.
 - **TypeScript 7** (compilador nativo), porque é a versão estável atual e só usamos o `tsc` para checar tipos.
 - **`react-router`** em vez de TanStack Router: três rotas não justificam roteamento tipado.
+- **No boot o server apaga todas as salas do LiveKit.** O registro de sessões vive em memória, então salas de um processo anterior ficam sem dono. Isso pressupõe um LiveKit exclusivo do Telando; se a produção usar um projeto compartilhado do LiveKit Cloud, é preciso trocar por um prefixo no nome das salas.
+- **Link recarregado perde a transmissão.** Recarregar a página do host perde a captura de qualquer jeito, então o `hostToken` não é guardado no navegador; fechar a aba encerra a sessão (`pagehide` + `keepalive`).

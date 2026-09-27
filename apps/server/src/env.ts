@@ -9,6 +9,8 @@ const envSchema = z.object({
   TRUST_PROXY: z.enum(['0', '1']).default('0'),
 })
 
+export type Env = z.infer<typeof envSchema>
+
 export function lerEnv(fonte: NodeJS.ProcessEnv) {
   const resultado = envSchema.safeParse(fonte)
   if (!resultado.success) {
