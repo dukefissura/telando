@@ -13,6 +13,8 @@ type Sessao = {
   metadata: SessaoMetadata
   /** Timer que encerra a sessão se o host caiu e não voltou. */
   quedaDoHost?: ReturnType<typeof setTimeout>
+  /** Conexão atual do host no LiveKit, para ignorar eventos atrasados de conexões antigas. */
+  hostSid?: string | undefined
 }
 export type RegistroSessoes = Map<string, Sessao>
 
@@ -139,8 +141,9 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
       const sessao = buscar(id)
       exigirHost(sessao, c.req.header('authorization'))
       const { trancada } = await lerCorpo(c, trancarSchema)
-      sessao.metadata = { ...sessao.metadata, trancada }
-      await salas.atualizarMetadata(id, sessao.metadata)
+      const metadata = { ...sessao.metadata, trancada }
+      await salas.atualizarMetadata(id, metadata)
+      sessao.metadata = metadata
       return c.body(null, 204)
     })
     .delete('/:id/participantes/:identity', async (c) => {

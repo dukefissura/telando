@@ -5,7 +5,8 @@ import {
   useChatSala,
   type useTransmissao,
 } from '@telando/core/cliente'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useAtalhosDaJanela } from '../atalhos.ts'
 import { Alternador, Botao, Secao } from '../controles.tsx'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
 import { PainelChat } from '../sala/painel-chat.tsx'
@@ -44,19 +45,6 @@ function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | nul
       ))}
     </dl>
   )
-}
-
-function useAtalhosDaJanela(atalhos: Record<string, () => void>) {
-  useEffect(() => {
-    const aoTeclar = (evento: KeyboardEvent) => {
-      const alvo = evento.target as HTMLElement
-      if (evento.ctrlKey || evento.metaKey || evento.altKey) return
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(alvo.tagName)) return
-      atalhos[evento.key.toLowerCase()]?.()
-    }
-    window.addEventListener('keydown', aoTeclar)
-    return () => window.removeEventListener('keydown', aoTeclar)
-  }, [atalhos])
 }
 
 export function TelaCompartilhando({
@@ -233,7 +221,7 @@ export function TelaCompartilhando({
         <Secao titulo={`Quem está assistindo (${estado.espectadores.length})`} aberta>
           <Alternador
             rotulo="Trancar sessão"
-            descricao="Ninguém novo entra; quem já está continua assistindo."
+            descricao="Ninguém novo entra, nem quem você removeu; quem já está continua assistindo."
             ligado={estado.trancada}
             aoMudar={(trancada) => void controle.trancar(trancada)}
           />

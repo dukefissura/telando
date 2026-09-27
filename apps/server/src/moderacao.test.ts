@@ -55,6 +55,16 @@ describe('trancar a sessão', () => {
   })
 })
 
+it('se o LiveKit não confirmar, a sessão continua destrancada', async () => {
+  const { id, hostToken } = await criarSessao()
+  falso.gateway.atualizarMetadata = async () => {
+    throw new Error('LiveKit fora do ar')
+  }
+
+  expect((await trancar(id, hostToken, true)).status).toBe(500)
+  expect((await entrar(id)).status).toBe(200)
+})
+
 describe('remover alguém', () => {
   it('só o host remove', async () => {
     const { id } = await criarSessao()

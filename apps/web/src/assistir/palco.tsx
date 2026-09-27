@@ -12,7 +12,7 @@ import {
 } from '@livekit/components-react'
 import { lerSessaoMetadata } from '@telando/core'
 import { useChatSala } from '@telando/core/cliente'
-import { ColunaDeReacoes, PainelChat } from '@telando/ui'
+import { ColunaDeReacoes, PainelChat, useAtalhosDaJanela } from '@telando/ui'
 import {
   ConnectionState,
   RemoteTrackPublication,
@@ -50,23 +50,38 @@ function useAtividade(fixar: boolean) {
   return ativo
 }
 
-function aplicarQualidade(
-  publicacao: RemoteTrackPublication,
+const CAMADA: Record<Exclude<Qualidade, 'auto'>, VideoQuality> = {
+  alta: VideoQuality.HIGH,
+  media: VideoQuality.MEDIUM,
+  baixa: VideoQuality.LOW,
+}
+
+/**
+ * A sala é criada sem adaptiveStream porque, com ele, o LiveKit nunca manda mais que o tamanho do
+ * player e "Alta" não teria efeito. "Automática" faz o papel dele: pede o tamanho do player.
+ */
+function useQualidade(
+  publicacao: RemoteTrackPublication | undefined,
   qualidade: Qualidade,
-  elemento: HTMLVideoElement | null,
+  refVideo: RefObject<HTMLVideoElement | null>,
 ) {
-  if (qualidade === 'media') return publicacao.setVideoQuality(VideoQuality.MEDIUM)
-  if (qualidade === 'baixa') return publicacao.setVideoQuality(VideoQuality.LOW)
-  publicacao.setVideoQuality(VideoQuality.HIGH)
-  // "Alta" pede a camada cheia mesmo com a janela pequena; "Automática" volta a seguir o tamanho do player.
-  const alvo =
-    qualidade === 'alta'
-      ? publicacao.dimensions
-      : elemento && {
-          width: elemento.clientWidth * devicePixelRatio,
-          height: elemento.clientHeight * devicePixelRatio,
-        }
-  if (alvo) publicacao.setVideoDimensions(alvo)
+  useEffect(() => {
+    if (!publicacao) return
+    if (qualidade !== 'auto') return publicacao.setVideoQuality(CAMADA[qualidade])
+    const elemento = refVideo.current
+    if (!elemento) return
+    const pedirTamanhoDoPlayer = () => {
+      if (elemento.clientWidth === 0) return
+      publicacao.setVideoDimensions({
+        width: Math.round(elemento.clientWidth * devicePixelRatio),
+        height: Math.round(elemento.clientHeight * devicePixelRatio),
+      })
+    }
+    pedirTamanhoDoPlayer()
+    const observador = new ResizeObserver(pedirTamanhoDoPlayer)
+    observador.observe(elemento)
+    return () => observador.disconnect()
+  }, [publicacao, qualidade, refVideo])
 }
 
 function VideoDaTela({
@@ -106,7 +121,7 @@ export function Palco() {
   const [mudo, setMudo] = useState(false)
   const [qualidade, setQualidade] = useState<Qualidade>('auto')
   const [chatAberto, setChatAberto] = useState(false)
-  const [lidas, setLidas] = useState(0)
+  const [ultimaLida, setUltimaLida] = useState(-1)
   const [telaCheia, setTelaCheia] = useState(false)
   const [jaViuOHost, setJaViuOHost] = useState(false)
   const refPalco = useRef<HTMLDivElement>(null)
@@ -116,15 +131,14 @@ export function Palco() {
   const publicacao =
     tela?.publication instanceof RemoteTrackPublication ? tela.publication : undefined
   const trilha = publicacao?.track instanceof RemoteVideoTrack ? publicacao.track : undefined
-  const naoLidas = chatAberto ? 0 : chat.mensagens.filter((m) => !m.meu).length - lidas
+  // Por id, não por contagem: a lista guarda só as últimas 100 mensagens.
+  const naoLidas = chatAberto ? 0 : chat.mensagens.filter((m) => !m.meu && m.id > ultimaLida).length
 
   useEffect(() => {
     if (host) setJaViuOHost(true)
   }, [host])
 
-  useEffect(() => {
-    if (publicacao) aplicarQualidade(publicacao, qualidade, refVideo.current)
-  }, [publicacao, qualidade])
+  useQualidade(publicacao, qualidade, refVideo)
 
   useEffect(() => {
     const aoMudar = () => setTelaCheia(document.fullscreenElement !== null)
@@ -139,21 +153,16 @@ export function Palco() {
     else void refPalco.current?.requestFullscreen()
   }, [])
 
-  useEffect(() => {
-    const aoTeclar = (evento: KeyboardEvent) => {
-      if ((evento.target as HTMLElement).tagName === 'INPUT') return
-      const tecla = evento.key.toLowerCase()
-      if (tecla === 'f') alternarTelaCheia()
-      if (tecla === 'm') setMudo((atual) => !atual)
-      if (tecla === 'c') alternarChat()
-    }
-    window.addEventListener('keydown', aoTeclar)
-    return () => window.removeEventListener('keydown', aoTeclar)
-  }, [alternarTelaCheia, alternarChat])
+  useAtalhosDaJanela({
+    f: alternarTelaCheia,
+    m: () => setMudo((atual) => !atual),
+    c: alternarChat,
+  })
 
   // Com o chat aberto, tudo que chega já conta como lido.
   useEffect(() => {
-    if (chatAberto) setLidas(chat.mensagens.filter((m) => !m.meu).length)
+    const ultima = chat.mensagens.at(-1)
+    if (chatAberto && ultima) setUltimaLida(ultima.id)
   }, [chatAberto, chat.mensagens])
 
   const alternarPip =

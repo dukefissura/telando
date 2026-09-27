@@ -32,7 +32,8 @@ export function useSalaEspectador(id: string) {
   const entrar = useCallback(
     async (apelido: string) => {
       setSala({ fase: 'entrando' })
-      const room = new Room({ adaptiveStream: true, dynacast: true })
+      // Sem adaptiveStream: o seletor de qualidade do palco decide o tamanho pedido (ver useQualidade).
+      const room = new Room()
       try {
         const entrada = await api.entrarNaSessao(id, apelido)
         room.on(RoomEvent.Disconnected, (motivo) => setSala(faseAoDesconectar(motivo)))

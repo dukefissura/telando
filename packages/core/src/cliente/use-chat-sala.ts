@@ -86,6 +86,9 @@ export function useChatSala(room: Room | null) {
       const limpo = texto.trim().slice(0, 500)
       return limpo ? enviar({ t: 'chat', texto: limpo }) : Promise.resolve()
     },
-    reagir: (emoji: Reacao) => enviar({ t: 'reacao', emoji }),
+    reagir: (emoji: Reacao) =>
+      enviar({ t: 'reacao', emoji }).catch(() => {
+        // Uma reação perdida durante uma reconexão não vale um aviso na tela.
+      }),
   }
 }

@@ -63,8 +63,12 @@ describe('host caiu', () => {
     vi.useRealTimers()
   })
 
-  async function evento(nome: string, sala: string, identity: string) {
-    const corpo = JSON.stringify({ event: nome, room: { name: sala }, participant: { identity } })
+  async function evento(nome: string, sala: string, identity: string, sid = 'PA_1') {
+    const corpo = JSON.stringify({
+      event: nome,
+      room: { name: sala },
+      participant: { identity, sid },
+    })
     expect((await enviarWebhook(corpo, await assinar(corpo))).status).toBe(200)
   }
 
@@ -89,6 +93,17 @@ describe('host caiu', () => {
     await vi.advanceTimersByTimeAsync(30_000)
     await evento('participant_joined', id, host)
     await vi.advanceTimersByTimeAsync(60_000)
+    expect((await entrar(id)).status).toBe(200)
+  })
+
+  it('ignora a saída atrasada de uma conexão antiga do host', async () => {
+    const id = await criarSessao()
+    const host = falso.salas.get(id)?.hostIdentity ?? ''
+
+    await evento('participant_joined', id, host, 'PA_antiga')
+    await evento('participant_joined', id, host, 'PA_nova')
+    await evento('participant_left', id, host, 'PA_antiga')
+    await vi.advanceTimersByTimeAsync(120_000)
     expect((await entrar(id)).status).toBe(200)
   })
 

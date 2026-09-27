@@ -13,6 +13,7 @@ export function PainelChat({
   const [rascunho, setRascunho] = useState('')
   const fim = useRef<HTMLLIElement>(null)
   const idCampo = useId()
+  const [falhou, setFalhou] = useState(false)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: rola quando chega mensagem nova
   useEffect(() => {
@@ -22,8 +23,13 @@ export function PainelChat({
   const enviar = async (evento: FormEvent) => {
     evento.preventDefault()
     if (!rascunho.trim()) return
-    await aoEnviar(rascunho)
-    setRascunho('')
+    try {
+      await aoEnviar(rascunho)
+      setRascunho('')
+      setFalhou(false)
+    } catch {
+      setFalhou(true)
+    }
   }
 
   return (
@@ -56,6 +62,11 @@ export function PainelChat({
           placeholder="Enter envia"
           className="w-full rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
         />
+        {falhou && (
+          <p role="alert" className="text-parar text-xs">
+            Não deu para enviar agora. A mensagem continua aí; tente de novo.
+          </p>
+        )}
       </form>
     </section>
   )
