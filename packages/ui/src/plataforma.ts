@@ -25,6 +25,8 @@ export type Plataforma = {
     ler(): Promise<unknown>
     gravar(config: unknown): Promise<void>
   }
+  /** Avisa quando a transmissão começa ou acaba (o desktop usa no ícone da bandeja). */
+  aoMudarTransmissao?: (aoVivo: boolean) => void
   /** Atalho global do sistema para parar; devolve a função que remove o ouvinte. */
   aoAtalhoParar?: (callback: () => void) => () => void
 }

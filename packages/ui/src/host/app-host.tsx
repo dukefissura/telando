@@ -54,6 +54,9 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
 
   useEffect(() => plataforma.aoAtalhoParar?.(() => void parar()), [plataforma, parar])
 
+  const aoVivo = estado.fase === 'ao-vivo'
+  useEffect(() => plataforma.aoMudarTransmissao?.(aoVivo), [plataforma, aoVivo])
+
   if (!config) return null
   if (estado.fase === 'ao-vivo') {
     return (
