@@ -15,13 +15,13 @@ const mensagemSchema = z.discriminatedUnion('t', [
 
 export type MensagemSala = z.infer<typeof mensagemSchema>
 
-export function codificarMensagem(mensagem: MensagemSala): Uint8Array<ArrayBuffer> {
-  return new TextEncoder().encode(JSON.stringify(mensagem))
+export function codificarMensagem(mensagem: MensagemSala): string {
+  return JSON.stringify(mensagem)
 }
 
-export function lerMensagem(bytes: Uint8Array): MensagemSala | null {
+export function lerMensagem(texto: string): MensagemSala | null {
   try {
-    const resultado = mensagemSchema.safeParse(JSON.parse(new TextDecoder().decode(bytes)))
+    const resultado = mensagemSchema.safeParse(JSON.parse(texto))
     return resultado.success ? resultado.data : null
   } catch {
     // Qualquer participante pode mandar bytes quaisquer; o que não é JSON é ignorado.

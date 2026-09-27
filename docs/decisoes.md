@@ -32,3 +32,10 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Estatísticas mostram a camada mais alta que está saindo.** Com simulcast, o dynacast do LiveKit pausa a camada cheia quando nenhum espectador precisa dela; mostrar o que sai de verdade é o combinado.
 - **`ELECTRON_RUN_AS_NODE`.** Processos filhos do VS Code herdam essa variável, que faz o Electron rodar como Node puro. O E2E do desktop remove a variável ao abrir o app.
 - **O desktop fica fora do `pnpm dev`.** Abrir uma janela Electron a cada `pnpm dev` atrapalha quem só mexe no site; ele tem o próprio `pnpm dev:desktop`.
+
+## Fase 3
+
+- **Chat e reações por text streams do LiveKit, não por `publishData`.** O LiveKit avisa sobre participantes que só assistem com alguns segundos de atraso; com `publishData`, a mensagem chegava sem remetente e era descartada. O handler de text stream sempre traz a identity de quem mandou, e o apelido é resolvido quando o participante aparece.
+- **A contagem de espectadores no host pode atrasar uns 2 segundos.** É o mesmo agrupamento do LiveKit; não vale a pena contornar.
+- **"Alta" força a camada cheia; "Automática" segue o tamanho do player.** O LiveKit já reduz a qualidade quando falta banda nos dois casos.
+- **Trancar e remover mudam a sessão pelo server.** Trancar grava `trancada` nos metadados da sala; o join passa a responder 423. Remover usa o `removeParticipant` do LiveKit, e quem sai vê "Você foi removido".

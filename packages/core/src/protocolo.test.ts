@@ -9,24 +9,24 @@ it('ida e volta de chat e reação', () => {
 })
 
 it('apara o chat e recusa mensagem vazia ou longa demais', () => {
-  expect(lerMensagem(bytes({ t: 'chat', texto: '  oi  ' }))).toEqual({ t: 'chat', texto: 'oi' })
-  expect(lerMensagem(bytes({ t: 'chat', texto: '   ' }))).toBeNull()
-  expect(lerMensagem(bytes({ t: 'chat', texto: 'a'.repeat(501) }))).toBeNull()
+  expect(lerMensagem(texto({ t: 'chat', texto: '  oi  ' }))).toEqual({ t: 'chat', texto: 'oi' })
+  expect(lerMensagem(texto({ t: 'chat', texto: '   ' }))).toBeNull()
+  expect(lerMensagem(texto({ t: 'chat', texto: 'a'.repeat(501) }))).toBeNull()
 })
 
 it('recusa reação fora da lista e lixo', () => {
-  expect(lerMensagem(bytes({ t: 'reacao', emoji: '💩' }))).toBeNull()
-  expect(lerMensagem(bytes({ t: 'aprovado' }))).toBeNull()
-  expect(lerMensagem(new TextEncoder().encode('{'))).toBeNull()
+  expect(lerMensagem(texto({ t: 'reacao', emoji: '💩' }))).toBeNull()
+  expect(lerMensagem(texto({ t: 'aprovado' }))).toBeNull()
+  expect(lerMensagem('{')).toBeNull()
 })
 
 it('ignora campos a mais, como um remetente forjado', () => {
-  expect(lerMensagem(bytes({ t: 'chat', texto: 'oi', de: 'host' }))).toEqual({
+  expect(lerMensagem(texto({ t: 'chat', texto: 'oi', de: 'host' }))).toEqual({
     t: 'chat',
     texto: 'oi',
   })
 })
 
-function bytes(valor: unknown) {
-  return new TextEncoder().encode(JSON.stringify(valor))
+function texto(valor: unknown) {
+  return JSON.stringify(valor)
 }

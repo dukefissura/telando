@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@telando/core": "workspace:*",
-    "lucide-react": "^1.48.0"
+    "lucide-react": "^1.48.0",
+    "motion": "^13.4.4"
   },
   "devDependencies": {
     "@telando/config": "workspace:*",
@@ -21,7 +22,7 @@
     "react": "^19.3.0"
   },
   "peerDependencies": {
-    "react": "^19.3.0",
-    "livekit-client": "^2.22.3"
+    "livekit-client": "^2.22.3",
+    "react": "^19.3.0"
   }
 }

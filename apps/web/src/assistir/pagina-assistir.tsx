@@ -2,16 +2,12 @@ import { RoomContext } from '@livekit/components-react'
 import { apelidoAleatorio } from '@telando/core'
 import { type FormEvent, useState } from 'react'
 import { useParams } from 'react-router'
+import { Aviso } from './aviso.tsx'
 import { Palco } from './palco.tsx'
 import { useSalaEspectador } from './use-sala-espectador.ts'
 
-function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
-  return (
-    <main className="mx-auto grid min-h-dvh max-w-md content-center gap-2 p-8" aria-live="polite">
-      <h1 className="font-semibold text-xl">{titulo}</h1>
-      <p className="text-texto-suave">{texto}</p>
-    </main>
-  )
+function Centro({ children }: { children: React.ReactNode }) {
+  return <main className="grid min-h-dvh place-items-center">{children}</main>
 }
 
 export function PaginaAssistir() {
@@ -19,25 +15,72 @@ export function PaginaAssistir() {
   const { sala, entrar } = useSalaEspectador(id)
   const [apelido, setApelido] = useState(apelidoAleatorio)
 
-  if (sala.fase === 'conectado') {
-    return (
-      <RoomContext.Provider value={sala.room}>
-        <Palco />
-      </RoomContext.Provider>
-    )
-  }
-  if (sala.fase === 'encerrada') {
-    return (
-      <Aviso titulo="Sessão encerrada" texto="Quem estava compartilhando parou a transmissão." />
-    )
-  }
-  if (sala.fase === 'invalida') {
-    return (
-      <Aviso
-        titulo="Link inválido ou expirado"
-        texto="Essa sessão já acabou ou o link veio incompleto. Peça um link novo."
-      />
-    )
+  const entrarDeNovo = (
+    <button
+      type="button"
+      onClick={() => void entrar(apelido)}
+      className="rounded-lg bg-texto px-4 py-2 font-medium text-fundo text-sm"
+    >
+      Entrar de novo
+    </button>
+  )
+
+  switch (sala.fase) {
+    case 'conectado':
+      return (
+        <RoomContext.Provider value={sala.room}>
+          <Palco />
+        </RoomContext.Provider>
+      )
+    case 'encerrada':
+      return (
+        <Centro>
+          <Aviso
+            titulo="Sessão encerrada"
+            texto="Quem estava compartilhando parou a transmissão."
+          />
+        </Centro>
+      )
+    case 'removido':
+      return (
+        <Centro>
+          <Aviso
+            titulo="Você foi removido da sessão"
+            texto="O host tirou você desta transmissão."
+          />
+        </Centro>
+      )
+    case 'trancada':
+      return (
+        <Centro>
+          <Aviso
+            titulo="Sessão trancada"
+            texto="O host trancou a sessão e ninguém novo pode entrar. Peça para ele destrancar."
+          >
+            {entrarDeNovo}
+          </Aviso>
+        </Centro>
+      )
+    case 'invalida':
+      return (
+        <Centro>
+          <Aviso
+            titulo="Link inválido ou expirado"
+            texto="Essa sessão já acabou ou o link veio incompleto. Peça um link novo."
+          />
+        </Centro>
+      )
+    case 'caiu':
+      return (
+        <Centro>
+          <Aviso
+            titulo="A conexão caiu"
+            texto="Tentamos reconectar e não deu. Confira sua internet."
+          >
+            {entrarDeNovo}
+          </Aviso>
+        </Centro>
+      )
   }
 
   const enviar = (evento: FormEvent) => {
@@ -46,8 +89,8 @@ export function PaginaAssistir() {
   }
 
   return (
-    <main className="mx-auto grid min-h-dvh max-w-sm content-center p-8">
-      <form onSubmit={enviar} className="grid gap-4">
+    <Centro>
+      <form onSubmit={enviar} className="grid w-full max-w-sm gap-4 p-8">
         <h1 className="font-semibold text-xl">Entrar para assistir</h1>
         <div className="grid gap-2">
           <label htmlFor="apelido" className="text-sm text-texto-suave">
@@ -69,11 +112,11 @@ export function PaginaAssistir() {
           {sala.fase === 'entrando' ? 'Entrando…' : 'Assistir'}
         </button>
         {sala.fase === 'erro' && (
-          <p role="alert" className="text-sm text-parar">
+          <p role="alert" className="text-parar text-sm">
             {sala.mensagem}
           </p>
         )}
       </form>
-    </main>
+    </Centro>
   )
 }
