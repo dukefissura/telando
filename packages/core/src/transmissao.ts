@@ -105,6 +105,7 @@ export type CamadaSimulcast = Dimensoes & { fps: number; bitrateKbps: number }
 export type TransmissaoResolvida = {
   alvo: Dimensoes
   limitadoPelaFonte: boolean
+  fps: number
   constraintsVideo: MediaTrackConstraints
   contentHint: string
   degradacao: RTCDegradationPreference
@@ -186,6 +187,17 @@ function escolherCodec(codec: Codec, codecsDoHost: string[]): Exclude<Codec, 'au
 const formatarMbps = (kbps: number) =>
   (kbps / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 
+/** Processamento de voz estraga música e jogo; no áudio do sistema ele fica sempre desligado. */
+export function constraintsDoAudioSistema(config: ConfigTransmissao): MediaTrackConstraints | null {
+  if (!config.audioSistema) return null
+  return {
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+    channelCount: AUDIO[config.qualidadeAudio].estereo ? 2 : 1,
+  }
+}
+
 export function resolverTransmissao(
   config: ConfigTransmissao,
   fonte: Dimensoes,
@@ -221,6 +233,7 @@ export function resolverTransmissao(
   return {
     alvo,
     limitadoPelaFonte,
+    fps: config.fps,
     constraintsVideo: {
       width: { max: alvo.largura },
       height: { max: alvo.altura },
@@ -232,14 +245,7 @@ export function resolverTransmissao(
     bitrateKbps,
     camadas,
     audio,
-    constraintsAudioSistema: config.audioSistema
-      ? {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-          channelCount: audio.estereo ? 2 : 1,
-        }
-      : null,
+    constraintsAudioSistema: constraintsDoAudioSistema(config),
     constraintsMicrofone: microfone.ativo
       ? {
           ...(microfone.deviceId && { deviceId: { exact: microfone.deviceId } }),

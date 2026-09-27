@@ -1,5 +1,6 @@
 export { apelidoAleatorio } from './apelidos.ts'
 export { criarClienteApi, ErroApi, type SessaoCriada } from './api.ts'
+export { type AmostraEnvio, type EstatisticasEnvio, resumirEnvio } from './estatisticas.ts'
 export { lerSessaoMetadata, type SessaoMetadata } from './sessao.ts'
 export {
   aplicarPreset,
@@ -8,6 +9,7 @@ export {
   type ConfigMicrofone,
   type ConfigTransmissao,
   configPadrao,
+  constraintsDoAudioSistema,
   type Dimensoes,
   type Fps,
   NOMES_QUALIDADE_AUDIO,
