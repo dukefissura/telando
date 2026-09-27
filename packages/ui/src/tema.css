@@ -1,0 +1,23 @@
+/* Tokens provisórios; a direção visual definitiva sai na Fase 4. */
+@source "./";
+
+@theme {
+  --color-fundo: #0a0a0a;
+  --color-superficie: #141414;
+  --color-superficie-2: #1c1c1c;
+  --color-borda: #262626;
+  --color-texto: #ededed;
+  --color-texto-suave: #a1a1a1;
+  --color-ao-vivo: #22c55e;
+  --color-parar: #ef4444;
+  --color-aviso: #eab308;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-texto);
+}

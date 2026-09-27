@@ -67,3 +67,26 @@ it('sem vídeo saindo devolve zeros', () => {
     limitacao: null,
   })
 })
+
+it('ignora a camada que o LiveKit pausou porque ninguém está pedindo', () => {
+  const pausada = {
+    id: 'v-pausada',
+    type: 'outbound-rtp',
+    kind: 'video',
+    active: false,
+    bytesSent: 0,
+    frameWidth: 3840,
+    frameHeight: 2160,
+  }
+  const { estatisticas } = resumirEnvio([...relatorio(0, 0), pausada], null, 0)
+
+  expect(estatisticas).toMatchObject({ largura: 1920, altura: 1080, fps: 60, codec: 'VP9' })
+})
+
+it('não mostra bitrate negativo quando a trilha é republicada e o contador recomeça', () => {
+  const antes = resumirEnvio(relatorio(1_000_000, 500_000), null, 1000)
+  const depois = resumirEnvio(relatorio(1_500_000, 4_000), antes.amostra, 2000)
+
+  expect(depois.estatisticas.audioKbps).toBe(0)
+  expect(depois.estatisticas.videoKbps).toBe(4000)
+})

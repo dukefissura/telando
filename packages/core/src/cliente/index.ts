@@ -1,5 +1,6 @@
 export {
   CapturaCancelada,
+  codecsDoHost,
   type EventosTransmissao,
   TransmissaoAoVivo,
 } from './transmissao-ao-vivo.ts'

@@ -16,6 +16,7 @@ import {
   type TransmissaoResolvida,
 } from '../transmissao.ts'
 import { type AudioComVolume, criarAudioComVolume } from './audio-com-volume.ts'
+import { ajustarEncodings } from './encodings.ts'
 import { opcoesDePublicacao } from './opcoes-livekit.ts'
 
 type ClienteApi = ReturnType<typeof criarClienteApi>
@@ -32,7 +33,7 @@ type Captura = { video: MediaStreamTrack; audio: MediaStreamTrack | null; fonte:
 
 export class CapturaCancelada extends Error {}
 
-function codecsDoHost(): string[] {
+export function codecsDoHost(): string[] {
   const codecs = RTCRtpSender.getCapabilities('video')?.codecs ?? []
   return codecs.map((codec) => codec.mimeType.split('/')[1]?.toLowerCase() ?? '')
 }
@@ -65,22 +66,6 @@ async function prepararVideo(video: MediaStreamTrack, resolvida: TransmissaoReso
   await video.applyConstraints(resolvida.constraintsVideo)
 }
 
-// O LiveKit calcula as camadas uma vez, na publicação. Para bitrate e fps mudarem sem republicar,
-// ajustamos direto os encodings do sender: o de escala 1 é a camada cheia, os outros seguem `camadas`.
-async function ajustarEncodings(sender: RTCRtpSender | undefined, resolvida: TransmissaoResolvida) {
-  if (!sender) return
-  const parametros = sender.getParameters()
-  const daMenorParaMaior = [...parametros.encodings].sort(
-    (a, b) => (b.scaleResolutionDownBy ?? 1) - (a.scaleResolutionDownBy ?? 1),
-  )
-  daMenorParaMaior.forEach((encoding, indice) => {
-    const camada = indice < daMenorParaMaior.length - 1 ? resolvida.camadas[indice] : undefined
-    encoding.maxBitrate = (camada?.bitrateKbps ?? resolvida.bitrateKbps) * 1000
-    encoding.maxFramerate = camada?.fps ?? resolvida.fps
-  })
-  await sender.setParameters(parametros)
-}
-
 const precisaRepublicarVideo = (antes: TransmissaoResolvida, depois: TransmissaoResolvida) =>
   antes.codec !== depois.codec ||
   antes.backupCodec !== depois.backupCodec ||
@@ -93,6 +78,8 @@ export class TransmissaoAoVivo {
   private amostra: AmostraEnvio | null = null
   private audioSistema: { volume: AudioComVolume; trilha: LocalTrack } | null = null
   private microfone: LocalTrack | null = null
+  private ajustePendente: ConfigTransmissao | null = null
+  private ajustando: Promise<void> | null = null
 
   private constructor(
     private readonly api: ClienteApi,
@@ -218,8 +205,25 @@ export class TransmissaoAoVivo {
     this.microfone = await publicar(this.room, trilha, { source: Track.Source.Microphone })
   }
 
-  /** Aplica mudanças de configuração sem derrubar quem está assistindo. */
-  async ajustar(config: ConfigTransmissao) {
+  /**
+   * Aplica mudanças de configuração sem derrubar quem está assistindo. Um deslizante chama isto
+   * dezenas de vezes por segundo; os ajustes rodam um por vez e só o mais recente pendente vale.
+   */
+  ajustar(config: ConfigTransmissao): Promise<void> {
+    this.ajustePendente = config
+    this.ajustando ??= (async () => {
+      while (this.ajustePendente) {
+        const proximo = this.ajustePendente
+        this.ajustePendente = null
+        await this.aplicarAjuste(proximo)
+      }
+    })().finally(() => {
+      this.ajustando = null
+    })
+    return this.ajustando
+  }
+
+  private async aplicarAjuste(config: ConfigTransmissao) {
     const anterior = this._resolvida
     const resolvida = resolverTransmissao(config, this.captura.fonte, codecsDoHost())
     const pediuAudioSemTer = config.audioSistema && !this.captura.audio

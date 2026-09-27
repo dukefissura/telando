@@ -39,10 +39,13 @@ export function resumirEnvio(
     .filter((r) => r.kind === 'audio')
     .reduce((soma, r) => soma + numero(r.bytesSent), 0)
 
-  const maisAlta = video.reduce<Registro | undefined>(
-    (maior, r) => (!maior || numero(r.frameWidth) > numero(maior.frameWidth) ? r : maior),
-    undefined,
-  )
+  // O dynacast do LiveKit pausa camadas que ninguém pediu; elas seguem no relatório com o tamanho antigo.
+  const maisAlta = video
+    .filter((r) => r.active !== false)
+    .reduce<Registro | undefined>(
+      (maior, r) => (!maior || numero(r.frameWidth) > numero(maior.frameWidth) ? r : maior),
+      undefined,
+    )
   const mimeType = registros.find((r) => r.type === 'codec' && r.id === maisAlta?.codecId)?.mimeType
   const perda = Math.max(
     0,
@@ -52,8 +55,9 @@ export function resumirEnvio(
   )
 
   const segundos = anterior ? (agoraMs - anterior.em) / 1000 : 0
+  // Uma trilha republicada ganha sender novo e o contador de bytes recomeça do zero.
   const kbps = (bytes: number, antes: number) =>
-    segundos > 0 ? Math.round(((bytes - antes) * 8) / 1000 / segundos) : 0
+    segundos > 0 && bytes >= antes ? Math.round(((bytes - antes) * 8) / 1000 / segundos) : 0
 
   return {
     estatisticas: {
