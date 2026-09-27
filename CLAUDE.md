@@ -29,8 +29,8 @@ pnpm --filter @telando/core exec vitest run src/sessao.test.ts -t "aceita"   # u
 - `apps/server`: Hono em Node. Todas as rotas ficam sob `/api` porque o mesmo server serve o site, que tem rotas `/:slug`. `criarApp()` em `app.ts` monta o app (testado com `app.request()`); `main.ts` carrega o `.env` da raiz e sobe.
 - `apps/web`: React 19 + Vite + Tailwind v4. Página de assistir e plano B para compartilhar pelo navegador.
 - `e2e/`: Playwright. O Chromium de teste não tem seletor de tela, então `getDisplayMedia` é trocado pela câmera/microfone falsos (`--use-fake-device-for-media-stream`).
-- : Electron (só Windows). O main faz só o que exige Node/Electron: seletor de fontes ( +  com áudio ), bandeja, atalho global, . IPC tipado em , validado no main ().
-- : telas do host (configurações, compartilhando, ajustes, estatísticas), usadas pelo web e pelo desktop. O que muda entre os dois entra pela interface .
+- `apps/desktop`: Electron (só Windows). O main faz só o que exige Node/Electron: seletor de fontes (`desktopCapturer` + `setDisplayMediaRequestHandler` com áudio `loopback`), bandeja, atalho global, `electron-store`. IPC tipado em `src/compartilhado/ipc.ts`, validado no main (`exigirOrigem`).
+- `packages/ui`: telas do host (configurações, compartilhando, ajustes, estatísticas), usadas pelo web e pelo desktop. O que muda entre os dois entra pela interface `Plataforma`.
 - `packages/core`: regras puras compartilhadas (esquemas Zod, presets → constraints/encodings, estatísticas). O subpath `@telando/core/cliente` tem o que depende de navegador (LiveKit, React): `TransmissaoAoVivo`, que faz ajustes ao vivo numa fila, e `useTransmissao`. O server nunca importa esse subpath.
 - `packages/config`: `tsconfig.base.json`.
 
