@@ -1,0 +1,9 @@
+pre-commit:
+  commands:
+    biome:
+      run: pnpm biome check --staged --no-errors-on-unmatched --files-ignore-unknown=true
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm commitlint --edit {1}
