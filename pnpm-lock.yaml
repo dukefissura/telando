@@ -190,6 +190,9 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.9)
+      '@telando/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       hono:
         specifier: ^4.13.9
         version: 4.13.9

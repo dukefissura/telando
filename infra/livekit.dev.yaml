@@ -1,5 +1,7 @@
 # Complementa o modo --dev (chave devkey, segredo "secret").
-# O endpoint do webhook nasce na Fase 1; antes disso o LiveKit só registra a falha de entrega.
+room:
+  # Só o server cria salas. Sem isso, um token de uma sessão encerrada recriaria a sala vazia.
+  auto_create: false
 webhook:
   api_key: devkey
   urls:
