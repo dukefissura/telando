@@ -1,11 +1,11 @@
-import { type ConfigTransmissao, uploadNecessarioKbps } from '@telando/core'
+import { type ConfigTransmissao, formatarMbps, uploadNecessarioKbps } from '@telando/core'
 import { codecsDoHost, type Estatisticas, type useTransmissao } from '@telando/core/cliente'
 import { useEffect, useState } from 'react'
 import { Botao, Secao } from '../controles.tsx'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
-import { formatarMbps, PainelAudio, PainelVideo } from './paineis.tsx'
+import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
-import { useMicrofones } from './tela-configuracoes.tsx'
+import { useMicrofones } from './use-microfones.ts'
 
 type Controle = ReturnType<typeof useTransmissao>
 
@@ -64,8 +64,12 @@ export function TelaCompartilhando({
   const { estado, estatisticas } = controle
   const [painel, setPainel] = useState<'nenhum' | 'ajustes' | 'fonte'>('nenhum')
   const [verEstatisticas, setVerEstatisticas] = useState(false)
-  const microfones = useMicrofones()
+  // Os controles mostram o que o host escolheu na hora; a transmissão alcança logo depois.
+  const [rascunho, setRascunho] = useState<ConfigTransmissao | null>(null)
+  const [avisoFonte, setAvisoFonte] = useState<string | null>(null)
   const fontes = useFontes(painel === 'fonte' ? plataforma.fontes : undefined)
+  const configAtual = rascunho ?? (estado.fase === 'ao-vivo' ? estado.config : null)
+  const microfones = useMicrofones(configAtual?.microfone.ativo ?? false)
 
   useAtalhosDaJanela({
     p: controle.alternarPausa,
@@ -73,17 +77,28 @@ export function TelaCompartilhando({
     n: controle.alternarMicrofone,
   })
 
-  if (estado.fase !== 'ao-vivo') return null
-  const { config, resolvida } = estado
+  if (estado.fase !== 'ao-vivo' || !configAtual) return null
+  const { resolvida } = estado
+  const config = configAtual
+  const aviso = estado.aviso ?? avisoFonte
 
-  const ajustar = (nova: ConfigTransmissao) => {
-    aoMudarConfig(nova)
-    void controle.ajustar(nova)
+  const ajustar = async (nova: ConfigTransmissao) => {
+    setRascunho(nova)
+    if (await controle.ajustar(nova)) aoMudarConfig(nova)
+    else setRascunho(null)
   }
 
   const trocarFonte = async (fonte?: FonteDeCaptura) => {
-    if (fonte) await plataforma.fontes?.escolher(fonte.id)
     setPainel('nenhum')
+    setAvisoFonte(null)
+    if (fonte) {
+      try {
+        await plataforma.fontes?.escolher(fonte.id)
+      } catch {
+        setAvisoFonte('Essa janela acabou de fechar. Escolha outra.')
+        return
+      }
+    }
     await controle.trocarFonte()
   }
 
@@ -124,6 +139,11 @@ export function TelaCompartilhando({
         <p className="text-sm text-texto-suave">
           Sem áudio: a captura não trouxe som. No navegador, marque “Compartilhar áudio” no seletor;
           no Windows isso funciona com a tela inteira ou com uma aba.
+        </p>
+      )}
+      {aviso && (
+        <p role="alert" className="rounded-lg border border-parar/40 px-3 py-2 text-parar text-sm">
+          {aviso}
         </p>
       )}
       {estatisticas?.limitacao && (
@@ -184,7 +204,7 @@ export function TelaCompartilhando({
           <Secao titulo="Vídeo" aberta>
             <PainelVideo
               config={config}
-              aoMudar={ajustar}
+              aoMudar={(nova) => void ajustar(nova)}
               codecsDoHost={codecsDoHost()}
               limitadoPelaFonte={resolvida.limitadoPelaFonte}
               uploadNecessarioKbps={uploadNecessarioKbps(resolvida)}
@@ -193,7 +213,7 @@ export function TelaCompartilhando({
           <Secao titulo="Áudio" aberta>
             <PainelAudio
               config={config}
-              aoMudar={ajustar}
+              aoMudar={(nova) => void ajustar(nova)}
               nivelAudio={controle.nivelAudio}
               microfones={microfones}
             />

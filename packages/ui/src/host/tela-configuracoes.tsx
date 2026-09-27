@@ -2,6 +2,7 @@ import {
   aplicarPreset,
   type ConfigTransmissao,
   ErroApi,
+  formatarMbps,
   PRESETS,
   type PresetId,
   presetAtual,
@@ -10,24 +11,15 @@ import {
   uploadNecessarioKbps,
 } from '@telando/core'
 import { codecsDoHost } from '@telando/core/cliente'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Botao, Secao, Segmentado } from '../controles.tsx'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
-import { formatarMbps, PainelAudio, PainelVideo } from './paineis.tsx'
+import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
+import { useMicrofones } from './use-microfones.ts'
 
 // Janelas e o seletor do navegador só revelam o tamanho depois de capturar.
 const FONTE_PRESUMIDA = { largura: 1920, altura: 1080 }
-
-export function useMicrofones() {
-  const [microfones, setMicrofones] = useState<MediaDeviceInfo[]>([])
-  useEffect(() => {
-    void navigator.mediaDevices
-      .enumerateDevices()
-      .then((dispositivos) => setMicrofones(dispositivos.filter((d) => d.kind === 'audioinput')))
-  }, [])
-  return microfones
-}
 
 type Teste =
   | { fase: 'parado' }
@@ -87,8 +79,9 @@ export function TelaConfiguracoes({
   erro: string | null
 }) {
   const fontes = useFontes(plataforma.fontes)
-  const microfones = useMicrofones()
+  const microfones = useMicrofones(config.microfone.ativo)
   const [fonteEscolhida, setFonteEscolhida] = useState<FonteDeCaptura | null>(null)
+  const [erroFonte, setErroFonte] = useState<string | null>(null)
   const [teste, setTeste] = useState<Teste>({ fase: 'parado' })
 
   const fonteAtual = fontes.find((fonte) => fonte.id === fonteEscolhida?.id) ?? fonteEscolhida
@@ -102,8 +95,13 @@ export function TelaConfiguracoes({
   const precisaEscolherFonte = Boolean(plataforma.fontes) && !fonteAtual
 
   const escolherFonte = async (fonte: FonteDeCaptura) => {
-    setFonteEscolhida(fonte)
-    await plataforma.fontes?.escolher(fonte.id)
+    try {
+      await plataforma.fontes?.escolher(fonte.id)
+      setFonteEscolhida(fonte)
+      setErroFonte(null)
+    } catch {
+      setErroFonte('Essa janela acabou de fechar. Escolha outra.')
+    }
   }
 
   const testar = async () => {
@@ -140,11 +138,18 @@ export function TelaConfiguracoes({
       <div>
         <Secao titulo="Fonte" aberta={Boolean(plataforma.fontes)}>
           {plataforma.fontes ? (
-            <PainelFonte
-              lista={fontes}
-              escolhida={fonteAtual?.id ?? null}
-              aoEscolher={escolherFonte}
-            />
+            <>
+              <PainelFonte
+                lista={fontes}
+                escolhida={fonteAtual?.id ?? null}
+                aoEscolher={escolherFonte}
+              />
+              {erroFonte && (
+                <p role="alert" className="text-parar text-xs">
+                  {erroFonte}
+                </p>
+              )}
+            </>
           ) : (
             <p className="text-sm text-texto-suave">
               Ao iniciar, o navegador abre o seletor dele: dá para escolher a tela inteira, uma

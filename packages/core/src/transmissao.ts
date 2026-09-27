@@ -184,8 +184,8 @@ function escolherCodec(codec: Codec, codecsDoHost: string[]): Exclude<Codec, 'au
   return ORDEM_CODEC_AUTOMATICO.find((candidato) => codecsDoHost.includes(candidato)) ?? 'vp8'
 }
 
-const formatarMbps = (kbps: number) =>
-  (kbps / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+export const formatarMbps = (kbps: number) =>
+  `${(kbps / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Mbps`
 
 /** Processamento de voz estraga música e jogo; no áudio do sistema ele fica sempre desligado. */
 export function constraintsDoAudioSistema(config: ConfigTransmissao): MediaTrackConstraints | null {
@@ -224,9 +224,7 @@ export function resolverTransmissao(
   const partesDoResumo = [
     `${alvo.altura}p`,
     `${config.fps} fps`,
-    config.bitrateMaxKbps === 'auto'
-      ? 'bitrate automático'
-      : `até ${formatarMbps(bitrateKbps)} Mbps`,
+    config.bitrateMaxKbps === 'auto' ? 'bitrate automático' : `até ${formatarMbps(bitrateKbps)}`,
     config.audioSistema ? `áudio ${NOMES_QUALIDADE_AUDIO[config.qualidadeAudio]}` : 'sem áudio',
   ]
 

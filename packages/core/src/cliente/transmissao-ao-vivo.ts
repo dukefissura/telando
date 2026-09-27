@@ -79,7 +79,10 @@ export class TransmissaoAoVivo {
   private audioSistema: { volume: AudioComVolume; trilha: LocalTrack } | null = null
   private microfone: LocalTrack | null = null
   private ajustePendente: ConfigTransmissao | null = null
-  private ajustando: Promise<void> | null = null
+  private ajusteAgendado: Promise<void> | null = null
+  private fila: Promise<void> = Promise.resolve()
+  // Trilhas republicadas nascem ligadas; isto guarda o que o host desligou para reaplicar.
+  private readonly desligado = { video: false, audio: false, microfone: false }
 
   private constructor(
     private readonly api: ClienteApi,
@@ -125,6 +128,7 @@ export class TransmissaoAoVivo {
     }
 
     const room = new Room()
+    let transmissao: TransmissaoAoVivo | null = null
     try {
       const resolvida = resolverTransmissao(config, captura.value.fonte, codecsDoHost())
       await prepararVideo(captura.value.video, resolvida)
@@ -132,7 +136,7 @@ export class TransmissaoAoVivo {
       const opcoes = opcoesDePublicacao(resolvida)
       const video = comoVideo(await publicar(room, captura.value.video, opcoes.video))
 
-      const transmissao = new TransmissaoAoVivo(
+      transmissao = new TransmissaoAoVivo(
         api,
         sessao.value,
         room,
@@ -147,8 +151,12 @@ export class TransmissaoAoVivo {
       transmissao.escutar()
       return transmissao
     } catch (erro) {
-      pararCaptura(captura.value)
-      await Promise.all([room.disconnect(), encerrarNoServer(api, sessao.value)])
+      if (transmissao) {
+        await transmissao.encerrar()
+      } else {
+        pararCaptura(captura.value)
+        await Promise.all([room.disconnect(), encerrarNoServer(api, sessao.value)])
+      }
       throw erro
     }
   }
@@ -185,6 +193,7 @@ export class TransmissaoAoVivo {
       const volume = criarAudioComVolume(audio, this._resolvida.audio.estereo)
       const trilha = await publicar(this.room, volume.trilha, opcoes)
       this.audioSistema = { volume, trilha }
+      if (this.desligado.audio) await trilha.mute()
     }
     this.audioSistema.volume.definirGanho(this._config.volumeAudio)
   }
@@ -203,6 +212,7 @@ export class TransmissaoAoVivo {
     const [trilha] = fluxo.getAudioTracks()
     if (!trilha) return
     this.microfone = await publicar(this.room, trilha, { source: Track.Source.Microphone })
+    if (this.desligado.microfone) await this.microfone.mute()
   }
 
   /**
@@ -211,37 +221,51 @@ export class TransmissaoAoVivo {
    */
   ajustar(config: ConfigTransmissao): Promise<void> {
     this.ajustePendente = config
-    this.ajustando ??= (async () => {
-      while (this.ajustePendente) {
-        const proximo = this.ajustePendente
-        this.ajustePendente = null
-        await this.aplicarAjuste(proximo)
-      }
-    })().finally(() => {
-      this.ajustando = null
+    this.ajusteAgendado ??= this.enfileirar(async () => {
+      const proximo = this.ajustePendente
+      this.ajustePendente = null
+      this.ajusteAgendado = null
+      if (proximo) await this.aplicarAjuste(proximo)
     })
-    return this.ajustando
+    return this.ajusteAgendado
+  }
+
+  /** Captura outra tela ou janela e troca a trilha publicada; o link continua o mesmo. */
+  trocarFonte(): Promise<void> {
+    return this.enfileirar(() => this.capturarOutraFonte())
+  }
+
+  // Ajustes e troca de fonte mexem nas mesmas trilhas; rodando em fila, um não pega a trilha
+  // que o outro acabou de despublicar.
+  private enfileirar(tarefa: () => Promise<void>): Promise<void> {
+    const resultado = this.fila.then(tarefa)
+    this.fila = resultado.catch(() => {
+      // O erro já foi entregue a quem pediu a tarefa; a fila segue para a próxima.
+    })
+    return resultado
   }
 
   private async aplicarAjuste(config: ConfigTransmissao) {
     const anterior = this._resolvida
-    const resolvida = resolverTransmissao(config, this.captura.fonte, codecsDoHost())
-    const pediuAudioSemTer = config.audioSistema && !this.captura.audio
+    const ligouAudioSemTer =
+      config.audioSistema && !this._config.audioSistema && !this.captura.audio
     this._config = config
-    this._resolvida = resolvida
 
-    if (pediuAudioSemTer) {
+    if (ligouAudioSemTer) {
       // O áudio vem junto da captura de tela; para ligar depois, é preciso capturar de novo.
-      await this.trocarFonte()
+      await this.capturarOutraFonte()
     } else {
-      await prepararVideo(this.captura.video, resolvida)
-      await this.video.setDegradationPreference(resolvida.degradacao)
+      this._resolvida = resolverTransmissao(config, this.captura.fonte, codecsDoHost())
+      await prepararVideo(this.captura.video, this._resolvida)
+      await this.video.setDegradationPreference(this._resolvida.degradacao)
     }
+    const resolvida = this._resolvida
 
     const opcoes = opcoesDePublicacao(resolvida)
     if (precisaRepublicarVideo(anterior, resolvida)) {
       await this.room.localParticipant.unpublishTrack(this.video, false)
       this.video = comoVideo(await publicar(this.room, this.captura.video, opcoes.video))
+      if (this.desligado.video) await this.video.mute()
     } else {
       await ajustarEncodings(this.video.sender, resolvida)
     }
@@ -255,14 +279,19 @@ export class TransmissaoAoVivo {
     await this.sincronizarMicrofone(anterior)
   }
 
-  /** Captura outra tela ou janela e troca a trilha publicada; o link continua o mesmo. */
-  async trocarFonte() {
+  private async capturarOutraFonte() {
     const nova = await capturarTela(this._config)
+    try {
+      const resolvida = resolverTransmissao(this._config, nova.fonte, codecsDoHost())
+      await prepararVideo(nova.video, resolvida)
+      await this.video.replaceTrack(nova.video, true)
+      this._resolvida = resolvida
+    } catch (erro) {
+      pararCaptura(nova)
+      throw erro
+    }
     const antiga = this.captura
-    this._resolvida = resolverTransmissao(this._config, nova.fonte, codecsDoHost())
-    await prepararVideo(nova.video, this._resolvida)
     this.captura = nova
-    await this.video.replaceTrack(nova.video, true)
     await ajustarEncodings(this.video.sender, this._resolvida)
     await this.sincronizarAudioSistema(opcoesDePublicacao(this._resolvida).audio)
     pararCaptura(antiga)
@@ -270,15 +299,18 @@ export class TransmissaoAoVivo {
   }
 
   async pausarVideo(pausar: boolean) {
+    this.desligado.video = pausar
     await (pausar ? this.video.mute() : this.video.unmute())
   }
 
   async mutarAudioSistema(mutar: boolean) {
+    this.desligado.audio = mutar
     if (!this.audioSistema) return
     await (mutar ? this.audioSistema.trilha.mute() : this.audioSistema.trilha.unmute())
   }
 
   async mutarMicrofone(mutar: boolean) {
+    this.desligado.microfone = mutar
     if (!this.microfone) return
     await (mutar ? this.microfone.mute() : this.microfone.unmute())
   }

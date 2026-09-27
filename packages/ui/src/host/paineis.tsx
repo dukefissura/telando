@@ -2,6 +2,7 @@ import {
   type Codec,
   type ConfigTransmissao,
   type Fps,
+  formatarMbps,
   NOMES_QUALIDADE_AUDIO,
   type QualidadeAudio,
   type Resolucao,
@@ -37,9 +38,6 @@ const NOMES_CODEC: Record<Exclude<Codec, 'auto'>, string> = {
   h264: 'H.264',
   vp8: 'VP8',
 }
-
-export const formatarMbps = (kbps: number) =>
-  `${(kbps / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Mbps`
 
 export function PainelVideo({
   config,

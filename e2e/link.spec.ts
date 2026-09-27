@@ -107,3 +107,27 @@ function quadrosDecodificados(espectador: Page) {
     .locator('video')
     .evaluate((v: HTMLVideoElement) => v.getVideoPlaybackQuality().totalVideoFrames)
 }
+
+test('ajustar com uma captura sem áudio não reabre o seletor de tela', async ({ browser }) => {
+  const contexto = await browser.newContext()
+  await contexto.addInitScript(() => {
+    const janela = window as Window & { capturas?: number }
+    janela.capturas = 0
+    navigator.mediaDevices.getDisplayMedia = () => {
+      janela.capturas = (janela.capturas ?? 0) + 1
+      return navigator.mediaDevices.getUserMedia({ video: true })
+    }
+  })
+  const host = await contexto.newPage()
+  await comecarATransmitir(host)
+  await expect(
+    host.getByText('Sem áudio: a captura não trouxe som.', { exact: false }),
+  ).toBeVisible()
+
+  await host.getByRole('button', { name: 'Ajustes' }).click()
+  await host.getByText('30', { exact: true }).click()
+  await host.getByText('60', { exact: true }).click()
+  await expect(host.getByText('60 fps')).toBeVisible()
+
+  expect(await host.evaluate(() => (window as Window & { capturas?: number }).capturas)).toBe(1)
+})

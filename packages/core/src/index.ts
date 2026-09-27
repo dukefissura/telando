@@ -13,6 +13,7 @@ export {
   constraintsDoAudioSistema,
   type Dimensoes,
   type Fps,
+  formatarMbps,
   NOMES_QUALIDADE_AUDIO,
   type Otimizacao,
   PRESETS,

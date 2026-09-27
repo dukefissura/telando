@@ -17,7 +17,8 @@ import Store from 'electron-store'
 import { CANAIS } from '../compartilhado/ipc.ts'
 import { criarSeletorDeFontes } from './fontes.ts'
 
-const ATALHO_PARAR = 'CommandOrControl+Shift+S'
+// Ctrl+Shift+S é o 'Salvar como' de muita coisa; com Alt junto ninguém usa.
+const ATALHO_PARAR = 'CommandOrControl+Alt+Shift+S'
 const PERMISSOES = new Set(['media', 'display-capture', 'clipboard-sanitized-write'])
 const LIMITE_PREFERENCIAS = 16 * 1024
 
@@ -43,6 +44,21 @@ function pedirParada() {
   janela?.webContents.send(CANAIS.atalhoParar)
 }
 
+let atalhoRegistrado = false
+
+// O atalho só existe enquanto há o que parar, para não ocupar a combinação no sistema à toa.
+function atualizarAtalho() {
+  if (transmitindo && !atalhoRegistrado) {
+    atalhoRegistrado = globalShortcut.register(ATALHO_PARAR, pedirParada)
+    if (!atalhoRegistrado) {
+      console.warn(`Outro programa já usa ${ATALHO_PARAR}; o atalho de parar ficou sem efeito.`)
+    }
+  } else if (!transmitindo && atalhoRegistrado) {
+    globalShortcut.unregister(ATALHO_PARAR)
+    atalhoRegistrado = false
+  }
+}
+
 function atualizarBandeja() {
   if (!bandeja) return
   bandeja.setImage(recurso(transmitindo ? 'bandeja-ao-vivo.png' : 'bandeja.png'))
@@ -53,7 +69,7 @@ function atualizarBandeja() {
       {
         label: 'Parar compartilhamento',
         enabled: transmitindo,
-        accelerator: ATALHO_PARAR,
+        ...(atalhoRegistrado && { accelerator: ATALHO_PARAR }),
         click: pedirParada,
       },
       { type: 'separator' },
@@ -132,6 +148,7 @@ function registrarIpc() {
   ipcMain.on(CANAIS.transmitindo, (evento, estado: unknown) => {
     exigirOrigem(evento)
     transmitindo = estado === true
+    atualizarAtalho()
     atualizarBandeja()
   })
 }
@@ -165,7 +182,6 @@ if (!app.requestSingleInstanceLock()) {
     bandeja = new Tray(nativeImage.createFromPath(recurso('bandeja.png')))
     bandeja.on('click', mostrarJanela)
     atualizarBandeja()
-    globalShortcut.register(ATALHO_PARAR, pedirParada)
   })
 
   app.on('will-quit', () => globalShortcut.unregisterAll())

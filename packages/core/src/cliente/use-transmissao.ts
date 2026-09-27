@@ -19,6 +19,8 @@ export type EstadoTransmissao =
       pausado: boolean
       audioMudo: boolean
       microfoneMudo: boolean
+      /** Um ajuste ou troca de fonte que não deu certo; a transmissão continua como estava. */
+      aviso: string | null
     }
 
 export type Estatisticas = EstatisticasEnvio & { cpuPct: number | null }
@@ -94,6 +96,7 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
           pausado: false,
           audioMudo: false,
           microfoneMudo: false,
+          aviso: null,
         })
       } catch (erro) {
         setEstado(
@@ -106,34 +109,45 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     [api, atualizarAoVivo, parar],
   )
 
-  const ajustar = useCallback(
-    async (config: ConfigTransmissao) => {
+  /** Roda uma mudança na transmissão e devolve se deu certo; se não, mostra o aviso. */
+  const mudarTransmissao = useCallback(
+    async (mudanca: (transmissao: TransmissaoAoVivo) => Promise<void>, falha: string) => {
       const transmissao = ativa.current
-      if (!transmissao) return
+      if (!transmissao) return false
+      let aviso: string | null = null
       try {
-        await transmissao.ajustar(config)
+        await mudanca(transmissao)
       } catch (erro) {
-        if (!(erro instanceof CapturaCancelada)) throw erro
+        if (!(erro instanceof CapturaCancelada)) aviso = falha
       }
       atualizarAoVivo({
         config: transmissao.config,
         resolvida: transmissao.resolvida,
         comAudio: transmissao.comAudio,
+        aviso,
       })
+      return aviso === null
     },
     [atualizarAoVivo],
   )
 
-  const trocarFonte = useCallback(async () => {
-    const transmissao = ativa.current
-    if (!transmissao) return
-    try {
-      await transmissao.trocarFonte()
-    } catch (erro) {
-      if (!(erro instanceof CapturaCancelada)) throw erro
-    }
-    atualizarAoVivo({ resolvida: transmissao.resolvida, comAudio: transmissao.comAudio })
-  }, [atualizarAoVivo])
+  const ajustar = useCallback(
+    (config: ConfigTransmissao) =>
+      mudarTransmissao(
+        (transmissao) => transmissao.ajustar(config),
+        'Não consegui aplicar esse ajuste. A transmissão segue com o anterior.',
+      ),
+    [mudarTransmissao],
+  )
+
+  const trocarFonte = useCallback(
+    () =>
+      mudarTransmissao(
+        (transmissao) => transmissao.trocarFonte(),
+        'Não consegui capturar essa tela ou janela. A transmissão segue com a anterior.',
+      ),
+    [mudarTransmissao],
+  )
 
   const copiarLink = useCallback(async () => {
     const link = ativa.current?.sessao.url
