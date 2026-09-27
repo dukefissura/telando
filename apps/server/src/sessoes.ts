@@ -65,7 +65,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         const id = novoIdSessao()
         const hostToken = randomBytes(32).toString('base64url')
         const hostIdentity = `h_${nanoid(10)}`
-        const hostNome = nome || 'Host'
+        const hostNome = nome ?? ''
         const metadata: SessaoMetadata = {
           v: 1,
           hostIdentity,
@@ -86,7 +86,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
             livekitToken: await emitirLivekitToken(env, {
               sala: id,
               identity: hostIdentity,
-              nome: hostNome,
+              nome: hostNome || 'Host',
               papel: 'host',
             }),
           },

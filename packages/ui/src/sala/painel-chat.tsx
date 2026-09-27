@@ -1,5 +1,5 @@
 import type { ItemChat } from '@telando/core/cliente'
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
 
 export function PainelChat({
   mensagens,
@@ -12,6 +12,7 @@ export function PainelChat({
 }) {
   const [rascunho, setRascunho] = useState('')
   const fim = useRef<HTMLLIElement>(null)
+  const idCampo = useId()
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: rola quando chega mensagem nova
   useEffect(() => {
@@ -34,7 +35,7 @@ export function PainelChat({
           </li>
         )}
         {mensagens.map((mensagem) => (
-          <li key={mensagem.id} className="break-words">
+          <li key={mensagem.id} className="wrap-break-word">
             <span className={`font-medium ${mensagem.meu ? 'text-texto-suave' : ''}`}>
               {mensagem.meu ? 'Você' : mensagem.nome}
             </span>{' '}
@@ -43,13 +44,16 @@ export function PainelChat({
         ))}
         <li ref={fim} aria-hidden />
       </ol>
-      <form onSubmit={enviar} className="border-borda border-t p-2">
+      <form onSubmit={enviar} className="grid gap-1 border-borda border-t p-2">
+        <label htmlFor={idCampo} className="text-texto-suave text-xs">
+          Mensagem para a sala
+        </label>
         <input
+          id={idCampo}
           value={rascunho}
           onChange={(e) => setRascunho(e.target.value)}
           maxLength={500}
-          placeholder="Escreva uma mensagem"
-          aria-label="Mensagem"
+          placeholder="Enter envia"
           className="w-full rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
         />
       </form>

@@ -189,7 +189,7 @@ export function Palco() {
           <p
             className={`absolute top-4 left-4 rounded-md bg-fundo/80 px-2.5 py-1 text-sm transition-opacity duration-200 ${ativo ? 'opacity-100' : 'opacity-0'}`}
           >
-            Tela de {sessao.hostNome}
+            {sessao.hostNome ? `Tela de ${sessao.hostNome}` : 'Tela compartilhada'}
           </p>
         )}
 

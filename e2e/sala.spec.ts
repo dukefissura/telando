@@ -32,14 +32,14 @@ test('chat e reações vão e voltam entre host e espectador', async ({ browser 
   await recebeVideoEAudio(espectador)
 
   await host.locator('summary', { hasText: 'Chat' }).click()
-  await host.getByLabel('Mensagem').fill('dá pra ver?')
-  await host.getByLabel('Mensagem').press('Enter')
+  await host.getByLabel('Mensagem para a sala').fill('dá pra ver?')
+  await host.getByLabel('Mensagem para a sala').press('Enter')
 
   await espectador.getByRole('button', { name: 'Abrir o chat' }).click()
   await expect(espectador.getByText('dá pra ver?')).toBeVisible()
 
-  await espectador.getByLabel('Mensagem').fill('tudo certo')
-  await espectador.getByLabel('Mensagem').press('Enter')
+  await espectador.getByLabel('Mensagem para a sala').fill('tudo certo')
+  await espectador.getByLabel('Mensagem para a sala').press('Enter')
   await expect(host.getByText('Capivara Azul tudo certo')).toBeVisible()
 
   await espectador.getByRole('button', { name: 'Reagir com 👏' }).click()
