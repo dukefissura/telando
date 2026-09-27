@@ -13,9 +13,16 @@ export const envDeTeste: Env = {
 
 export function gatewayFalso() {
   const salas = new Map<string, SessaoMetadata>()
+  const removidos: Array<{ sala: string; identity: string }> = []
   const gateway: SalaGateway = {
     async criar(id, metadata) {
       salas.set(id, metadata)
+    },
+    async atualizarMetadata(id, metadata) {
+      salas.set(id, metadata)
+    },
+    async remover(sala, identity) {
+      removidos.push({ sala, identity })
     },
     async apagar(id) {
       salas.delete(id)
@@ -24,5 +31,5 @@ export function gatewayFalso() {
       salas.clear()
     },
   }
-  return { salas, gateway }
+  return { salas, removidos, gateway }
 }

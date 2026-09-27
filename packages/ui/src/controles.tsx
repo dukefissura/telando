@@ -3,7 +3,8 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 const VARIANTES = {
   primario: 'bg-texto text-fundo hover:bg-white',
   secundario: 'border border-borda hover:bg-superficie-2',
-  perigo: 'bg-parar text-white hover:brightness-110',
+  // Fundo mais escuro que o texto de erro: branco sobre #dc2626 dá 4,8:1 (AA).
+  perigo: 'bg-parar-fundo text-white hover:bg-parar-fundo-forte',
   fantasma: 'text-texto-suave hover:text-texto hover:bg-superficie-2',
 }
 

@@ -8,7 +8,14 @@ import { erroApi, lerCorpo } from './http.ts'
 import { limitarPorIp } from './limite.ts'
 import { emitirLivekitToken } from './tokens.ts'
 
-type Sessao = { hostTokenHash: Buffer }
+type Sessao = {
+  hostTokenHash: Buffer
+  metadata: SessaoMetadata
+  /** Timer que encerra a sessão se o host caiu e não voltou. */
+  quedaDoHost?: ReturnType<typeof setTimeout>
+  /** Conexão atual do host no LiveKit, para ignorar eventos atrasados de conexões antigas. */
+  hostSid?: string | undefined
+}
 export type RegistroSessoes = Map<string, Sessao>
 
 // Sem 0/O, 1/l/I: o link às vezes é ditado ou copiado à mão.
@@ -19,6 +26,7 @@ const hash = (hostToken: string) => createHash('sha256').update(hostToken).diges
 const nomeSchema = z.string().trim().max(32)
 const criarSchema = z.object({ nome: nomeSchema.optional() })
 const entrarSchema = z.object({ apelido: nomeSchema.optional() })
+const trancarSchema = z.object({ trancada: z.boolean() })
 
 const MINUTO = 60_000
 
@@ -59,7 +67,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         const id = novoIdSessao()
         const hostToken = randomBytes(32).toString('base64url')
         const hostIdentity = `h_${nanoid(10)}`
-        const hostNome = nome || 'Host'
+        const hostNome = nome ?? ''
         const metadata: SessaoMetadata = {
           v: 1,
           hostIdentity,
@@ -69,7 +77,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         }
 
         await salas.criar(id, metadata)
-        sessoes.set(id, { hostTokenHash: hash(hostToken) })
+        sessoes.set(id, { hostTokenHash: hash(hostToken), metadata })
 
         return c.json(
           {
@@ -80,7 +88,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
             livekitToken: await emitirLivekitToken(env, {
               sala: id,
               identity: hostIdentity,
-              nome: hostNome,
+              nome: hostNome || 'Host',
               papel: 'host',
             }),
           },
@@ -98,7 +106,13 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
       }),
       async (c) => {
         const id = c.req.param('id')
-        buscar(id)
+        if (buscar(id).metadata.trancada) {
+          throw erroApi(
+            423,
+            'sessao_trancada',
+            'O host trancou a sessão. Peça para ele destrancar.',
+          )
+        }
         const { apelido } = await lerCorpo(c, entrarSchema)
         const identity = `v_${nanoid(10)}`
 
@@ -115,9 +129,31 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
     )
     .delete('/:id', async (c) => {
       const id = c.req.param('id')
-      exigirHost(buscar(id), c.req.header('authorization'))
+      const sessao = buscar(id)
+      exigirHost(sessao, c.req.header('authorization'))
+      clearTimeout(sessao.quedaDoHost)
       await salas.apagar(id)
       sessoes.delete(id)
+      return c.body(null, 204)
+    })
+    .put('/:id/trancada', async (c) => {
+      const id = c.req.param('id')
+      const sessao = buscar(id)
+      exigirHost(sessao, c.req.header('authorization'))
+      const { trancada } = await lerCorpo(c, trancarSchema)
+      const metadata = { ...sessao.metadata, trancada }
+      await salas.atualizarMetadata(id, metadata)
+      sessao.metadata = metadata
+      return c.body(null, 204)
+    })
+    .delete('/:id/participantes/:identity', async (c) => {
+      const { id, identity } = c.req.param()
+      const sessao = buscar(id)
+      exigirHost(sessao, c.req.header('authorization'))
+      if (identity === sessao.metadata.hostIdentity) {
+        throw erroApi(400, 'remover_host', 'Para sair, pare a transmissão.')
+      }
+      await salas.remover(id, identity)
       return c.body(null, 204)
     })
 }

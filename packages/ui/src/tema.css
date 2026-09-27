@@ -10,6 +10,8 @@
   --color-texto-suave: #a1a1a1;
   --color-ao-vivo: #22c55e;
   --color-parar: #ef4444;
+  --color-parar-fundo: #dc2626;
+  --color-parar-fundo-forte: #b91c1c;
   --color-aviso: #eab308;
 }
 
@@ -20,4 +22,15 @@
 body {
   background: var(--color-fundo);
   color: var(--color-texto);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: precisa vencer as transições de cada componente */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: idem */
+    animation-duration: 0.01ms !important;
+  }
 }
