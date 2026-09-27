@@ -6,11 +6,9 @@ A especificação completa do produto está em [`docs/prompt-original.md`](../..
 
 | Tema | Prompt original | Decidido |
 |---|---|---|
-| Nome | Telinha | **Telando**, repositório privado `dukefissura/telando` |
+| Nome | Telinha | **Telando**, repositório público `dukefissura/telando` (Actions não roda nos privados da conta) |
 | Plataformas | Windows, macOS, Linux; assistir também no celular | **Só PC.** Desktop só Windows (NSIS). Página de assistir pensada para navegador de computador |
 | Removido por isso | | macOS (permissão, `electron-audio-loopback`, DMG), Linux (AppImage, avisos), layout de celular, QR code, tabela de limitações por SO |
-| Proteção da `main` | Via `gh api` | Repositório privado no plano gratuito não tem proteção de branch. Vira convenção: todo PR roda o CI e só entra com ele verde |
-| Auto-update | GitHub Releases | Repo privado exigiria token dentro do app. `electron-updater` com provider `generic`; a URL vem de `TELANDO_UPDATE_URL` no build |
 | LiveKit no dev | `docker-compose.dev.yml` | Binário `livekit-server.exe --dev` baixado por `pnpm dev:livekit`. O compose continua no repo como alternativa |
 | Produção | VPS ou LiveKit Cloud | Em aberto; as duas documentadas, nada no código depende da escolha |
 | Rotas da API | `/sessions`, `/links` | Tudo sob `/api/*`, porque o mesmo server serve o site e o site tem `/:slug` |

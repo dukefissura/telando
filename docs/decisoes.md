@@ -4,10 +4,9 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 
 ## Escopo (2026-09-27, com o Luan)
 
-- **Nome Telando**, repositório privado `dukefissura/telando`.
+- **Nome Telando**, repositório público `dukefissura/telando`. Começou privado, mas o GitHub Actions não roda nos repositórios privados da conta; no público ele é gratuito e a proteção de branch funciona.
 - **Só PC.** App desktop só para Windows (instalador NSIS). A página de assistir é pensada para navegador de computador. Saem macOS, Linux, layout de celular e QR code.
-- **Proteção da `main` é convenção.** Repositório privado no plano gratuito do GitHub não aceita proteção de branch. Todo PR roda o CI e só entra com ele verde.
-- **Auto-update pelo servidor próprio** (provider `generic` do `electron-updater`). Ler releases de repositório privado exigiria um token dentro do app.
+- **Auto-update pelo GitHub Releases**, como no prompt original: com o repositório público não precisa de token dentro do app.
 - **LiveKit no dev sem Docker.** `pnpm dev:livekit` baixa o binário oficial e roda em `--dev`. O `docker-compose.dev.yml` continua para quem tem Docker.
 - **Produção em aberto** entre VPS e LiveKit Cloud. O código não depende da escolha.
 
