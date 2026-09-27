@@ -73,3 +73,42 @@ export function resumirEnvio(
     amostra: { em: agoraMs, bytesVideo, bytesAudio },
   }
 }
+
+export type Recebimento = {
+  largura: number
+  altura: number
+  fps: number
+  kbps: number
+  perdaPct: number
+}
+
+export type AmostraRecebimento = { em: number; bytes: number }
+
+export function resumirRecebimento(
+  relatorio: Iterable<Registro>,
+  anterior: AmostraRecebimento | null,
+  agoraMs: number,
+): { recebimento: Recebimento | null; amostra: AmostraRecebimento } {
+  const video = [...relatorio].find((r) => r.type === 'inbound-rtp' && r.kind === 'video')
+  const bytes = numero(video?.bytesReceived)
+  const amostra = { em: agoraMs, bytes }
+  if (!video) return { recebimento: null, amostra }
+
+  const segundos = anterior ? (agoraMs - anterior.em) / 1000 : 0
+  const recebidos = numero(video.packetsReceived)
+  const perdidos = numero(video.packetsLost)
+  return {
+    recebimento: {
+      largura: numero(video.frameWidth),
+      altura: numero(video.frameHeight),
+      fps: Math.round(numero(video.framesPerSecond)),
+      kbps:
+        anterior && segundos > 0 && bytes >= anterior.bytes
+          ? Math.round(((bytes - anterior.bytes) * 8) / 1000 / segundos)
+          : 0,
+      perdaPct:
+        recebidos + perdidos > 0 ? Math.round((perdidos / (recebidos + perdidos)) * 1000) / 10 : 0,
+    },
+    amostra,
+  }
+}

@@ -1,5 +1,5 @@
-import { expect, it } from 'vitest'
-import { resumirEnvio } from './estatisticas.ts'
+import { describe, expect, it } from 'vitest'
+import { resumirEnvio, resumirRecebimento } from './estatisticas.ts'
 
 function relatorio(bytesVideo: number, bytesAudio: number) {
   return [
@@ -89,4 +89,37 @@ it('não mostra bitrate negativo quando a trilha é republicada e o contador rec
 
   expect(depois.estatisticas.audioKbps).toBe(0)
   expect(depois.estatisticas.videoKbps).toBe(4000)
+})
+
+describe('resumirRecebimento', () => {
+  const recebido = (bytes: number, recebidos: number, perdidos: number) => [
+    {
+      id: 'in',
+      type: 'inbound-rtp',
+      kind: 'video',
+      bytesReceived: bytes,
+      frameWidth: 1280,
+      frameHeight: 720,
+      framesPerSecond: 29.7,
+      packetsReceived: recebidos,
+      packetsLost: perdidos,
+    },
+  ]
+
+  it('lê resolução, fps, bitrate e perda do que chega', () => {
+    const primeira = resumirRecebimento(recebido(0, 0, 0), null, 0)
+    const segunda = resumirRecebimento(recebido(500_000, 990, 10), primeira.amostra, 1000)
+
+    expect(segunda.recebimento).toEqual({
+      largura: 1280,
+      altura: 720,
+      fps: 30,
+      kbps: 4000,
+      perdaPct: 1,
+    })
+  })
+
+  it('sem vídeo chegando devolve null', () => {
+    expect(resumirRecebimento([], null, 0).recebimento).toBeNull()
+  })
 })
