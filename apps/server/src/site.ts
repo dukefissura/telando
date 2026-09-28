@@ -8,19 +8,15 @@ import { erroApi } from './http.ts'
 type Opcoes = {
   /** Pasta com o build do apps/web. */
   dist: string
-  /** Endereço público do LiveKit: o navegador conecta direto nele. */
-  livekitUrl: string
 }
 
 /**
- * Em produção um processo só atende a API e o site. O site é uma SPA: qualquer rota que não seja
- * arquivo nem API (/luan, /s/abc) recebe o index.html e o React decide o que mostrar.
+ * Em produção um processo só atende a API e o site. O site é a página que abre o app: qualquer
+ * rota que não seja arquivo nem API (/luan, /s/abc) recebe o index.html, que lê o link.
  */
-export function criarSite(api: ReturnType<typeof criarApp>, { dist, livekitUrl }: Opcoes) {
+export function criarSite(api: ReturnType<typeof criarApp>, { dist }: Opcoes) {
   // O serveStatic do Node só aceita caminho relativo à pasta de trabalho.
   const raiz = relative(process.cwd(), dist)
-  const livekit = new URL(livekitUrl)
-  const livekitHttp = `${livekit.protocol === 'wss:' ? 'https:' : 'http:'}//${livekit.host}`
 
   return new Hono()
     .use(
@@ -29,12 +25,10 @@ export function criarSite(api: ReturnType<typeof criarApp>, { dist, livekitUrl }
         contentSecurityPolicy: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
-          // Estilos inline vêm do React (larguras calculadas, como a do medidor de nível).
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'blob:'],
-          mediaSrc: ["'self'", 'blob:'],
+          styleSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:'],
           fontSrc: ["'self'"],
-          connectSrc: ["'self'", livekit.origin, livekitHttp],
+          connectSrc: ["'self'"],
           frameAncestors: ["'none'"],
           baseUri: ["'self'"],
           formAction: ["'self'"],

@@ -35,9 +35,7 @@ await salas.apagarTodas().catch((erro: unknown) => {
 })
 
 const api = criarApp({ env, salas, links, ipDoCliente })
-const app = env.WEB_DIST
-  ? criarSite(api, { dist: resolve(env.WEB_DIST), livekitUrl: env.LIVEKIT_URL })
-  : api
+const app = env.WEB_DIST ? criarSite(api, { dist: resolve(env.WEB_DIST) }) : api
 
 serve({ fetch: app.fetch, port: env.PORT, ...(env.HOST && { hostname: env.HOST }) }, ({ port }) => {
   console.log(`server em http://localhost:${port}${env.WEB_DIST ? ' (API e site)' : ' (só API)'}`)

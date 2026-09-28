@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
 
-type Fontes = NonNullable<Plataforma['fontes']>
+type Fontes = Plataforma['fontes']
 
 /** Lista telas e janelas, com miniaturas que se atualizam a cada segundo enquanto estiver aberto. */
 export function useFontes(fontes: Fontes | undefined) {
@@ -83,7 +83,7 @@ export function PainelFonte({
     <div className="grid gap-4">
       <div className="grid gap-2">
         <h3 className="text-sm text-texto-suave">Telas</h3>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {telas.map((fonte) => (
             <CartaoFonte
               key={fonte.id}
@@ -106,7 +106,7 @@ export function PainelFonte({
             className="w-40 rounded-md border border-borda bg-superficie px-2 py-1 text-xs"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {janelas.map((fonte) => (
             <CartaoFonte
               key={fonte.id}

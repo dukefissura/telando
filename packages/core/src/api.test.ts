@@ -87,6 +87,11 @@ describe('criarClienteApi', () => {
     expect(await criarClienteApi('', fetcher).estadoDoLink('luan')).toEqual(estado)
   })
 
+  it('monta o endereço dos eventos do link fixo a partir do server', () => {
+    const api = criarClienteApi('http://localhost:8787')
+    expect(api.urlEventosDoLink('luan')).toBe('http://localhost:8787/api/links/luan/events')
+  })
+
   it('aponta o link fixo para a sessão com segredo e hostToken', async () => {
     const { chamadas, fetcher } = fetcherFalso(204, undefined)
     const api = criarClienteApi('', fetcher)

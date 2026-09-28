@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { assistir, novaAba, recebeVideoEAudio, transmitir } from './apoio.ts'
+import { abrirLink, assistir, fecharTodos, recebeVideoEAudio, transmitir } from './apoio.ts'
 
-test('chat e reações vão e voltam entre host e espectador', async ({ browser }) => {
-  const { host, link } = await transmitir(browser)
-  const espectador = await assistir(browser, link, 'Capivara Azul')
+test.skip(process.platform !== 'win32', 'O app só existe para Windows')
+test.afterEach(fecharTodos)
+
+test('chat e reações vão e voltam entre host e espectador', async () => {
+  const { host, link } = await transmitir()
+  const { janela: espectador } = await assistir(link, 'Capivara Azul')
   await recebeVideoEAudio(espectador)
 
   await host.locator('summary', { hasText: 'Chat' }).click()
@@ -21,9 +24,9 @@ test('chat e reações vão e voltam entre host e espectador', async ({ browser 
   await expect(host.getByText('👏', { exact: true }).last()).toBeVisible()
 })
 
-test('host remove um espectador', async ({ browser }) => {
-  const { host, link } = await transmitir(browser)
-  const espectador = await assistir(browser, link, 'Tatu Verde')
+test('host remove um espectador', async () => {
+  const { host, link } = await transmitir()
+  const { janela: espectador } = await assistir(link, 'Tatu Verde')
   await recebeVideoEAudio(espectador)
 
   await host.getByRole('button', { name: 'Remover Tatu Verde' }).click()
@@ -33,16 +36,15 @@ test('host remove um espectador', async ({ browser }) => {
   await expect(host.getByTestId('espectadores')).toContainText('0 pessoas assistindo')
 })
 
-test('com a sessão trancada, ninguém novo entra', async ({ browser }) => {
-  const { host, link } = await transmitir(browser)
-  const primeiro = await assistir(browser, link, 'Mico Roxo')
+test('com a sessão trancada, ninguém novo entra', async () => {
+  const { host, link } = await transmitir()
+  const { janela: primeiro } = await assistir(link, 'Mico Roxo')
   await recebeVideoEAudio(primeiro)
 
   await host.getByRole('switch', { name: 'Trancar sessão' }).click()
   await expect(host.getByRole('switch', { name: 'Trancar sessão' })).toBeChecked()
-  // Trancada, a página já avisa antes de pedir o apelido.
-  const atrasado = await novaAba(browser)
-  await atrasado.goto(link)
+  // Trancada, o app já avisa antes de pedir o apelido.
+  const { janela: atrasado } = await abrirLink(link)
   await expect(atrasado.getByRole('heading', { name: 'Sessão trancada' })).toBeVisible()
   await recebeVideoEAudio(primeiro)
 
@@ -53,9 +55,9 @@ test('com a sessão trancada, ninguém novo entra', async ({ browser }) => {
   await recebeVideoEAudio(atrasado)
 })
 
-test('quem assiste vê quando o host pausa e retoma', async ({ browser }) => {
-  const { host, link } = await transmitir(browser)
-  const espectador = await assistir(browser, link, 'Onça Cinza')
+test('quem assiste vê quando o host pausa e retoma', async () => {
+  const { host, link } = await transmitir()
+  const { janela: espectador } = await assistir(link, 'Onça Cinza')
   await recebeVideoEAudio(espectador)
 
   await host.getByRole('button', { name: 'Pausar vídeo' }).click()

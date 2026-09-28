@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: '.',
-  timeout: 60_000,
+  // Cada teste abre dois ou três apps Electron.
+  timeout: 90_000,
   fullyParallel: false,
   reporter: 'list',
   use: {
@@ -13,16 +14,8 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: [
-            '--use-fake-ui-for-media-stream',
-            '--use-fake-device-for-media-stream',
-            '--autoplay-policy=no-user-gesture-required',
-          ],
-        },
-      },
+      // Só a página do site roda no Chromium; os apps são abertos pelos próprios testes.
+      use: devices['Desktop Chrome'],
     },
   ],
   webServer: [

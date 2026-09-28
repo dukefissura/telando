@@ -8,13 +8,19 @@ files:
   - out/**
   - resources/**
   - package.json
+# O instalador registra telando:// no Windows; é por ele que o link da página abre o app.
+protocols:
+  - name: Telando
+    schemes:
+      - telando
 win:
   target: nsis
   icon: build/icone.png
 nsis:
   oneClick: true
   perMachine: false
-  artifactName: Telando-Setup-${version}.${ext}
+  # Nome fixo: a página do site aponta para releases/latest/download/Telando-Setup.exe.
+  artifactName: Telando-Setup.${ext}
   shortcutName: Telando
 publish:
   provider: github

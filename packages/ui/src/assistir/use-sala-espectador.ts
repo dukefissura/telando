@@ -1,7 +1,7 @@
 import { ErroApi, mensagemDoErro } from '@telando/core'
 import { DisconnectReason, Room, RoomEvent } from 'livekit-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api } from '../api.ts'
+import type { Plataforma } from '../plataforma.ts'
 
 export type SalaEspectador =
   | { fase: 'formulario' }
@@ -26,7 +26,7 @@ function faseAoDesconectar(motivo: DisconnectReason | undefined): SalaEspectador
   return { fase: 'caiu' }
 }
 
-export function useSalaEspectador(id: string) {
+export function useSalaEspectador(api: Plataforma['api'], id: string) {
   const [sala, setSala] = useState<SalaEspectador>({ fase: 'formulario' })
   // Um clique duplo (ou o StrictMode montando duas vezes) não pode abrir duas conexões.
   const entrando = useRef(false)
@@ -50,14 +50,12 @@ export function useSalaEspectador(id: string) {
         const entrada = await api.entrarNaSessao(id, apelido)
         room.on(RoomEvent.Disconnected, (motivo) => setSala(faseAoDesconectar(motivo)))
         await room.connect(entrada.livekitUrl, entrada.livekitToken)
-        // A página pode ter fechado (ou trocado de sessão) enquanto conectava.
+        // A tela pode ter fechado (ou trocado de sessão) enquanto conectava.
         if (!montado.current) {
           room.removeAllListeners()
           await room.disconnect()
           return
         }
-        // Chamado dentro do clique em "Assistir": é o gesto que o navegador exige para tocar som.
-        await room.startAudio()
         setSala({ fase: 'conectado', room })
       } catch (erro) {
         room.removeAllListeners()
@@ -73,13 +71,13 @@ export function useSalaEspectador(id: string) {
         entrando.current = false
       }
     },
-    [id],
+    [api, id],
   )
 
   useEffect(() => {
     if (sala.fase !== 'conectado') return
     const { room } = sala
-    // Sair de propósito (fechar a aba, trocar de sessão) não é "a conexão caiu".
+    // Sair de propósito (fechar o app, voltar ao início) não é "a conexão caiu".
     const sair = () => {
       room.removeAllListeners()
       void room.disconnect()

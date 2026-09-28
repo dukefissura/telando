@@ -19,7 +19,7 @@ beforeEach(async () => {
     links: await linksDeTeste(),
     ipDoCliente: () => '10.0.0.1',
   })
-  site = criarSite(api, { dist, livekitUrl: 'wss://livekit.telando.test' })
+  site = criarSite(api, { dist })
 })
 
 it('a API continua respondendo', async () => {
@@ -41,11 +41,11 @@ it('arquivos com hash no nome ficam em cache por um ano', async () => {
   expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
 })
 
-it('a CSP libera só o próprio site e o LiveKit', async () => {
+it('a CSP libera só o próprio site', async () => {
   const csp = (await site.request('/')).headers.get('content-security-policy') ?? ''
   expect(csp).toContain("default-src 'self'")
-  expect(csp).toContain('connect-src')
-  expect(csp).toContain('wss://livekit.telando.test')
+  expect(csp).toContain("connect-src 'self'")
+  expect(csp).not.toContain('livekit')
   expect(csp).toContain("frame-ancestors 'none'")
 })
 

@@ -130,6 +130,10 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
     async estadoDoLink(slug: string): Promise<EstadoLink> {
       return estadoLinkSchema.parse(await chamar(`/links/${encodeURIComponent(slug)}`, {}))
     },
+    /** O EventSource não passa pelo cliente: precisa do endereço completo. */
+    urlEventosDoLink(slug: string): string {
+      return `${base}/api/links/${encodeURIComponent(slug)}/events`
+    },
     async apontarLink(
       slug: string,
       segredo: string,

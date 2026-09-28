@@ -1,17 +1,12 @@
 import { RoomContext } from '@livekit/components-react'
 import { apelidoAleatorio, ErroApi } from '@telando/core'
-import { Botao, BotaoTema, classeCampo } from '@telando/ui'
-import { type FormEvent, useEffect, useState } from 'react'
-import { useParams } from 'react-router'
-import { api } from '../api.ts'
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
+import { Botao, classeCampo } from '../controles.tsx'
+import type { Plataforma } from '../plataforma.ts'
+import { BotaoTema } from '../tema.tsx'
 import { Aviso, Centro } from './aviso.tsx'
 import { Palco } from './palco.tsx'
 import { useSalaEspectador } from './use-sala-espectador.ts'
-
-export function PaginaAssistir() {
-  const { id = '' } = useParams()
-  return <Assistir id={id} />
-}
 
 type Previa =
   | { fase: 'carregando' }
@@ -19,7 +14,7 @@ type Previa =
   | { fase: 'invalida' }
 
 /** Quem está compartilhando, antes de entrar: e um link morto aparece na hora, sem clique. */
-function usePrevia(id: string, pular: boolean) {
+function usePrevia(api: Plataforma['api'], id: string, pular: boolean) {
   const [previa, setPrevia] = useState<Previa>({ fase: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   // biome-ignore lint/correctness/useExhaustiveDependencies: tentativa existe para buscar de novo
@@ -36,24 +31,35 @@ function usePrevia(id: string, pular: boolean) {
     return () => {
       ativo = false
     }
-  }, [id, pular, tentativa])
+  }, [api, id, pular, tentativa])
   return { previa, recarregar: () => setTentativa((n) => n + 1) }
 }
 
 /**
- * Entra numa sessão. Com `entrarComApelido`, pula o formulário: é o caso do link fixo, em que a
- * pessoa já escolheu o apelido enquanto esperava o dono começar.
+ * Entra numa sessão. Com `autoEntrar`, pula o formulário e mostra `enquanto` até conectar: é o
+ * caso do link fixo, em que a pessoa já escolheu o apelido enquanto esperava o dono começar.
  */
-export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelido?: string }) {
-  const { sala, entrar } = useSalaEspectador(id)
-  const [apelido, setApelido] = useState(() => entrarComApelido ?? apelidoAleatorio())
-  const { previa, recarregar } = usePrevia(id, entrarComApelido !== undefined)
+export function Assistir({
+  plataforma,
+  id,
+  aoVoltar,
+  autoEntrar,
+}: {
+  plataforma: Pick<Plataforma, 'api' | 'fontes'>
+  id: string
+  aoVoltar: () => void
+  autoEntrar?: { apelido: string; enquanto: ReactNode }
+}) {
+  const { sala, entrar } = useSalaEspectador(plataforma.api, id)
+  const [apelido, setApelido] = useState(() => autoEntrar?.apelido ?? apelidoAleatorio())
+  const { previa, recarregar } = usePrevia(plataforma.api, id, autoEntrar !== undefined)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: entra uma vez, ao montar
   useEffect(() => {
-    if (entrarComApelido !== undefined) void entrar(entrarComApelido)
+    if (autoEntrar) void entrar(autoEntrar.apelido)
   }, [])
 
+  const voltar = <Botao onClick={aoVoltar}>Voltar ao início</Botao>
   const entrarDeNovo = (
     <Botao variante="primario" onClick={() => void entrar(apelido)}>
       Entrar de novo
@@ -72,7 +78,7 @@ export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelid
   if (sala.fase === 'conectado') {
     return (
       <RoomContext.Provider value={sala.room}>
-        <Palco />
+        <Palco fontes={plataforma.fontes} aoSair={aoVoltar} />
       </RoomContext.Provider>
     )
   }
@@ -80,18 +86,24 @@ export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelid
   const aviso = (() => {
     if (sala.fase === 'encerrada')
       return (
-        <Aviso titulo="Sessão encerrada" texto="Quem estava compartilhando parou a transmissão." />
+        <Aviso titulo="Sessão encerrada" texto="Quem estava compartilhando parou a transmissão.">
+          {voltar}
+        </Aviso>
       )
     if (sala.fase === 'removido')
       return (
-        <Aviso titulo="Você foi removido da sessão" texto="O host tirou você desta transmissão." />
+        <Aviso titulo="Você foi removido da sessão" texto="O host tirou você desta transmissão.">
+          {voltar}
+        </Aviso>
       )
     if (sala.fase === 'invalida' || previa.fase === 'invalida')
       return (
         <Aviso
           titulo="Link inválido ou expirado"
           texto="Essa sessão já acabou ou o link veio incompleto. Peça um link novo."
-        />
+        >
+          {voltar}
+        </Aviso>
       )
     if (
       sala.fase === 'trancada' ||
@@ -103,17 +115,22 @@ export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelid
           texto="O host trancou a sessão e ninguém novo pode entrar. Peça para ele destrancar."
         >
           {tentarDeNovo}
+          {voltar}
         </Aviso>
       )
     if (sala.fase === 'caiu')
       return (
         <Aviso titulo="A conexão caiu" texto="Tentamos reconectar e não deu. Confira sua internet.">
           {entrarDeNovo}
+          {voltar}
         </Aviso>
       )
     return null
   })()
   if (aviso) return <Centro>{aviso}</Centro>
+  if (autoEntrar && (sala.fase === 'formulario' || sala.fase === 'entrando')) {
+    return autoEntrar.enquanto
+  }
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault()
@@ -148,14 +165,19 @@ export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelid
             className={classeCampo}
           />
         </div>
-        <Botao
-          type="submit"
-          variante="primario"
-          className="h-10"
-          disabled={sala.fase === 'entrando'}
-        >
-          {sala.fase === 'entrando' ? 'Entrando…' : 'Assistir'}
-        </Botao>
+        <div className="grid gap-2">
+          <Botao
+            type="submit"
+            variante="primario"
+            className="h-10"
+            disabled={sala.fase === 'entrando'}
+          >
+            {sala.fase === 'entrando' ? 'Entrando…' : 'Assistir'}
+          </Botao>
+          <Botao variante="fantasma" onClick={aoVoltar}>
+            Voltar
+          </Botao>
+        </div>
         {sala.fase === 'erro' && (
           <p role="alert" className="text-parar text-sm">
             {sala.mensagem}
