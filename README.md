@@ -40,5 +40,3 @@ pnpm typecheck
 pnpm test
 pnpm e2e   # abre apps de verdade e captura a tela
 ```
-
-O porquê das escolhas técnicas está em [`docs/decisoes.md`](docs/decisoes.md).

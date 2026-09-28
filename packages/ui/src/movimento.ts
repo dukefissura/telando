@@ -1,4 +1,4 @@
-// Curvas e tempos do handoff de movimento (docs/design.md): quem anima usa daqui, para as telas
+// Curvas e tempos do movimento do app: quem anima usa daqui, para as telas
 // não divergirem.
 
 /** Para movimentos de posição. */

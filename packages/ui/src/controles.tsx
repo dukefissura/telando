@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 /**
  * Resposta ao toque de todo botão: sobe 1px sob o mouse e afunda ao apertar, mais rápido na
- * descida. Só translate e scale (docs/design.md); o reduced-motion do tema.css zera a transição.
+ * descida. Só translate e scale; o reduced-motion do tema.css zera a transição.
  */
 export const animacaoBotao =
   'transition-[color,background-color,border-color,opacity,translate,scale] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] active:duration-75'

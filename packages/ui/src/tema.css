@@ -19,7 +19,6 @@
 
 @source "./";
 
-/* Valores e o porquê de cada um estão em docs/design.md. */
 @theme inline {
   --color-fundo: var(--fundo);
   --color-superficie: var(--superficie);
