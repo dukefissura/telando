@@ -60,3 +60,15 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Sem QR code nem tela de permissão do macOS**, pela decisão de ser só PC.
 - **A página de entrar pergunta ao server antes** (`GET /api/sessions/:id`): mostra quem está compartilhando, e um link morto ou uma sessão trancada aparecem sem clique.
 - **Aviso de queda de qualidade só depois de 5 segundos seguidos.** No começo de toda transmissão o WebRTC relata limitação de banda enquanto estima a conexão.
+
+## Fase 5
+
+- **Sem GitHub Actions.** A verificação roda no `pre-push` do Lefthook (lint, typecheck e testes), e os instaladores são gerados na máquina de quem publica. O E2E fica manual (`pnpm e2e`) porque precisa de LiveKit e abre janelas.
+- **Um processo entrega API e site em produção** (`WEB_DIST`), com CSP estrita: scripts só da própria origem, conexões só para ela e para o LiveKit, sem iframe. Menos uma peça para configurar que um servidor estático separado.
+- **O server roda TypeScript direto no Node 24**, sem etapa de build. Por isso o código usa só sintaxe que o Node sabe apagar (`erasableSyntaxOnly`), e a imagem Docker instala o `core` como workspace, não copiado para `node_modules` (onde o Node não remove tipos).
+- **Instalador NSIS de um clique, por usuário**, sem pedir administrador. As dependências do processo principal vão dentro do bundle do electron-vite; o instalador não leva `node_modules`.
+- **Atualização automática pelos releases públicos do GitHub** (`electron-updater`). Sem internet ou sem release novo, o app só registra e segue. O `publicar` exige `VITE_TELANDO_SERVER` com `https://` para nenhuma versão sair apontando para localhost.
+- **Instalador sem assinatura de código.** O SmartScreen avisa na primeira execução; um certificado custa caro para um projeto pequeno. Fica anotado no README.
+- **Compose de produção em `network_mode: host`.** O LiveKit precisa de uma faixa grande de portas UDP, e assim o `ufw` da máquina vale para todos os serviços (portas publicadas pelo Docker passam por fora dele). As chaves do LiveKit entram pela variável `LIVEKIT_CONFIG`, montada pelo Compose a partir do `.env`, sem arquivo de configuração com segredo.
+- **Sem TURN/TLS na porta 443 no compose da VPS.** Dividir a 443 entre o Caddy e o TURN exige roteamento por SNI (Caddy com o módulo layer4) ou um IP a mais. Fica TURN por UDP na 3478 e ICE por TCP na 7881; quem precisar da 443 usa o LiveKit Cloud, e o README explica os dois caminhos.
+- **Os arquivos de produção não foram testados num servidor.** A instalação das dependências da imagem foi simulada numa cópia limpa (o server subiu com 18 MB de `node_modules`), mas não havia Docker nem VPS disponíveis.
