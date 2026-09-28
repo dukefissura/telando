@@ -35,6 +35,8 @@ export type EstadoTransmissao =
 
 export type Estatisticas = EstatisticasEnvio & { cpuPct: number | null }
 
+const SEGUNDOS_ATE_AVISAR_LIMITACAO = 5
+
 type Opcoes = {
   api: ReturnType<typeof criarClienteApi>
   /** Só o desktop sabe o uso de CPU do processo. */
@@ -226,6 +228,9 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
   const aoVivo = estado.fase === 'ao-vivo'
   useEffect(() => {
     if (!aoVivo) return
+    // Nos primeiros segundos o WebRTC ainda está estimando a banda e sempre relata limitação;
+    // o aviso só vale se ela durar.
+    let segundosLimitado = 0
     const intervalo = setInterval(async () => {
       const transmissao = ativa.current
       if (!transmissao) return
@@ -233,7 +238,9 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
         transmissao.estatisticas(),
         usoDeCpu ? usoDeCpu() : Promise.resolve(null),
       ])
-      setEstatisticas({ ...envio, cpuPct })
+      segundosLimitado = envio.limitacao ? segundosLimitado + 1 : 0
+      const limitacao = segundosLimitado >= SEGUNDOS_ATE_AVISAR_LIMITACAO ? envio.limitacao : null
+      setEstatisticas({ ...envio, limitacao, cpuPct })
     }, 1000)
     return () => clearInterval(intervalo)
   }, [aoVivo, usoDeCpu])

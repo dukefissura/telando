@@ -25,6 +25,7 @@
     "electron": "44.4.5",
     "electron-vite": "^5.0.0",
     "livekit-client": "^2.22.3",
+    "motion": "^13.4.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",

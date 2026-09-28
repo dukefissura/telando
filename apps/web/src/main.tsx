@@ -1,4 +1,5 @@
 import { AppHost, aplicarTemaSalvo } from '@telando/ui'
+import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
@@ -20,6 +21,8 @@ if (!raiz) throw new Error('index.html sem #root')
 
 createRoot(raiz).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <MotionConfig reducedMotion="user">
+      <RouterProvider router={router} />
+    </MotionConfig>
   </StrictMode>,
 )

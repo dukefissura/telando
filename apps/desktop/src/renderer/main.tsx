@@ -1,5 +1,6 @@
 import { criarClienteApi } from '@telando/core'
 import { AppHost, aplicarTemaSalvo, type Plataforma } from '@telando/ui'
+import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './estilo.css'
@@ -27,6 +28,8 @@ if (!raiz) throw new Error('index.html sem #root')
 
 createRoot(raiz).render(
   <StrictMode>
-    <AppHost plataforma={plataformaDesktop} />
+    <MotionConfig reducedMotion="user">
+      <AppHost plataforma={plataformaDesktop} />
+    </MotionConfig>
   </StrictMode>,
 )

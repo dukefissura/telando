@@ -6,6 +6,7 @@ import {
   useChatSala,
   type useTransmissao,
 } from '@telando/core/cliente'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
 import { Alternador, Botao, Secao } from '../controles.tsx'
@@ -166,23 +167,31 @@ export function TelaCompartilhando({
         {estado.pausado && <span className="ml-auto text-aviso">Vídeo pausado</span>}
       </div>
 
-      {pedidosAtivos.map((pedido) => (
-        <section
-          key={pedido.identity}
-          aria-label={`Pedido de ${pedido.nome}`}
-          className="flex items-center justify-between gap-3 rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
-        >
-          <span>{pedido.nome} quer mostrar a tela</span>
-          <span className="flex gap-2">
-            <Botao variante="primario" onClick={() => void aprovar(pedido)}>
-              Aprovar
-            </Botao>
-            <Botao variante="fantasma" onClick={() => void recusar(pedido)}>
-              Recusar
-            </Botao>
-          </span>
-        </section>
-      ))}
+      <AnimatePresence initial={false}>
+        {pedidosAtivos.map((pedido) => (
+          <motion.section
+            key={pedido.identity}
+            aria-label={`Pedido de ${pedido.nome}`}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex items-center justify-between gap-3 rounded-xl border border-borda bg-superficie py-2 pr-2 pl-4 text-sm"
+          >
+            <span>
+              <span className="font-medium">{pedido.nome}</span> quer mostrar a tela
+            </span>
+            <span className="flex gap-1">
+              <Botao variante="primario" onClick={() => void aprovar(pedido)}>
+                Aprovar
+              </Botao>
+              <Botao variante="fantasma" onClick={() => void recusar(pedido)}>
+                Recusar
+              </Botao>
+            </span>
+          </motion.section>
+        ))}
+      </AnimatePresence>
 
       {apresentador && (
         <section

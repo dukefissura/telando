@@ -9,6 +9,7 @@ import {
 import { type AvisoRevezamento, compartilharComoConvidado } from '@telando/core/cliente'
 import { Alternador, Botao, Segmentado } from '@telando/ui'
 import type { Room } from 'livekit-client'
+import { motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 type Pedido = 'livre' | 'pedido' | 'recusado'
@@ -103,9 +104,12 @@ export function EscolherOQueCompartilhar({ revezamento }: { revezamento: Revezam
   const [comAudio, setComAudio] = useState(true)
 
   return (
-    <section
+    <motion.section
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       aria-label="Você foi aprovado"
-      className="grid w-96 gap-4 rounded-xl border border-borda bg-fundo p-4"
+      className="grid w-[30rem] max-w-[calc(100vw-2rem)] gap-5 rounded-xl border border-borda bg-fundo p-5"
     >
       <h2 className="font-semibold">Você foi aprovado, escolha o que compartilhar</h2>
       <Segmentado
@@ -131,7 +135,7 @@ export function EscolherOQueCompartilhar({ revezamento }: { revezamento: Revezam
           {revezamento.erro}
         </p>
       )}
-    </section>
+    </motion.section>
   )
 }
 
