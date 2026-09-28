@@ -1,4 +1,5 @@
 import { apelidoAleatorio, ErroApi, estadoLinkSchema, mensagemDoErro } from '@telando/core'
+import { classeCampo } from '@telando/ui'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { api } from '../api.ts'
@@ -111,7 +112,7 @@ export function PaginaLinkFixo() {
             value={apelido}
             maxLength={32}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-borda bg-superficie px-3 py-2"
+            className={classeCampo}
           />
         </label>
       </div>

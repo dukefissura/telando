@@ -1,5 +1,6 @@
 import type { ItemChat } from '@telando/core/cliente'
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
+import { classeCampo } from '../controles.tsx'
 
 export function PainelChat({
   mensagens,
@@ -60,7 +61,7 @@ export function PainelChat({
           onChange={(e) => setRascunho(e.target.value)}
           maxLength={500}
           placeholder="Enter envia"
-          className="w-full rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
+          className={classeCampo}
         />
         {falhou && (
           <p role="alert" className="text-parar text-xs">

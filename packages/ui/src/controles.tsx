@@ -1,22 +1,31 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 const VARIANTES = {
-  primario: 'bg-texto text-fundo hover:bg-white',
-  secundario: 'border border-borda hover:bg-superficie-2',
+  primario: 'bg-destaque text-sobre-destaque hover:bg-destaque/90',
+  secundario: 'border border-borda bg-superficie hover:bg-superficie-2',
   // Fundo mais escuro que o texto de erro: branco sobre #dc2626 dá 4,8:1 (AA).
   perigo: 'bg-parar-fundo text-white hover:bg-parar-fundo-forte',
-  fantasma: 'text-texto-suave hover:text-texto hover:bg-superficie-2',
+  fantasma: 'text-texto-suave hover:bg-superficie-2 hover:text-texto',
+}
+
+const TAMANHOS = {
+  normal: 'h-9 px-3 text-sm',
+  grande: 'h-14 px-7 text-base',
 }
 
 export function Botao({
   variante = 'secundario',
+  tamanho = 'normal',
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: keyof typeof VARIANTES }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variante?: keyof typeof VARIANTES
+  tamanho?: keyof typeof TAMANHOS
+}) {
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 font-medium text-sm transition-colors disabled:opacity-50 ${VARIANTES[variante]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 ${VARIANTES[variante]} ${TAMANHOS[tamanho]} ${className}`}
       {...props}
     />
   )
@@ -36,7 +45,7 @@ export function Alternador({
   desabilitado?: boolean
 }) {
   return (
-    <label className="flex items-start justify-between gap-4 py-1">
+    <label className="flex cursor-pointer items-start justify-between gap-4 py-1">
       <span className="grid gap-0.5">
         <span className="text-sm">{rotulo}</span>
         {descricao && <span className="text-texto-suave text-xs">{descricao}</span>}
@@ -48,7 +57,7 @@ export function Alternador({
         checked={ligado}
         disabled={desabilitado}
         onChange={(e) => aoMudar(e.target.checked)}
-        className="mt-0.5 size-4 accent-texto"
+        className="relative mt-0.5 h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-superficie-2 ring-1 ring-borda transition-colors duration-150 ring-inset before:absolute before:top-0.5 before:left-0.5 before:size-4 before:rounded-full before:bg-texto-suave before:transition-transform before:duration-150 before:content-[''] checked:bg-destaque checked:ring-destaque checked:before:translate-x-4 checked:before:bg-sobre-destaque disabled:opacity-50"
       />
     </label>
   )
@@ -68,14 +77,14 @@ export function Segmentado<T extends string | number>({
   return (
     <fieldset className="grid gap-1.5">
       <legend className="mb-1.5 text-sm text-texto-suave">{rotulo}</legend>
-      <div className="flex flex-wrap gap-1 rounded-lg bg-superficie p-1">
+      <div className="flex flex-wrap gap-1 rounded-lg border border-borda bg-superficie p-1">
         {opcoes.map((opcao) => (
           <label
             key={String(opcao.valor)}
             title={opcao.dica}
-            className={`flex-1 cursor-pointer whitespace-nowrap rounded-md px-2.5 py-1.5 text-center text-sm has-[:focus-visible]:outline-2 ${
+            className={`flex-1 cursor-pointer whitespace-nowrap rounded-md px-2.5 py-1.5 text-center text-sm transition-colors duration-150 has-focus-visible:outline-2 has-focus-visible:outline-destaque ${
               opcao.valor === valor
-                ? 'bg-superficie-2 text-texto'
+                ? 'bg-superficie-2 font-medium text-texto ring-1 ring-borda'
                 : 'text-texto-suave hover:text-texto'
             }`}
           >
@@ -105,9 +114,12 @@ export function Secao({
 }) {
   return (
     <details open={aberta} className="group border-borda border-t py-3">
-      <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-sm">
+      <summary className="flex cursor-pointer list-none items-center justify-between rounded-md font-medium text-sm">
         {titulo}
-        <span className="text-texto-suave transition-transform group-open:rotate-90" aria-hidden>
+        <span
+          className="text-texto-suave transition-transform duration-150 group-open:rotate-90"
+          aria-hidden
+        >
           ›
         </span>
       </summary>
@@ -115,3 +127,7 @@ export function Secao({
     </details>
   )
 }
+
+/** Campo de texto com o visual padrão; o rótulo fica sempre visível acima. */
+export const classeCampo =
+  'h-9 w-full rounded-lg border border-borda bg-superficie px-3 text-sm placeholder:text-texto-suave/70'

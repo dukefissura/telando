@@ -1,4 +1,5 @@
-import { AppHost } from '@telando/ui'
+import { AppHost, aplicarTemaSalvo } from '@telando/ui'
+import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
@@ -13,11 +14,15 @@ const router = createBrowserRouter([
   { path: '/:slug', element: <PaginaLinkFixo /> },
 ])
 
+aplicarTemaSalvo()
+
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('index.html sem #root')
 
 createRoot(raiz).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <MotionConfig reducedMotion="user">
+      <RouterProvider router={router} />
+    </MotionConfig>
   </StrictMode>,
 )

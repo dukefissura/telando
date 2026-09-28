@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { novaAba, recebeVideoEAudio, transmitir } from './apoio.ts'
+import { lerLink, novaAba, recebeVideoEAudio, transmitir } from './apoio.ts'
 
 test('host compartilha, dois amigos assistem com áudio e veem a sessão encerrar', async ({
   browser,
@@ -24,7 +24,6 @@ test('host compartilha, dois amigos assistem com áudio e veem a sessão encerra
 
 test('link de sessão que não existe mostra link inválido', async ({ page }) => {
   await page.goto('/s/naoexiste1234')
-  await page.getByRole('button', { name: 'Assistir' }).click()
   await expect(page.getByRole('heading', { name: 'Link inválido ou expirado' })).toBeVisible()
 })
 
@@ -48,7 +47,7 @@ test('ajustes ao vivo não derrubam quem está assistindo', async ({ browser }) 
   await host.getByText('Jogo', { exact: true }).click()
   await expect(host.getByTestId('resumo')).toContainText('60 fps · até 8 Mbps · áudio Música')
   await host.getByRole('button', { name: 'Iniciar' }).click()
-  const link = await host.locator('#link').inputValue()
+  const link = await lerLink(host)
 
   const espectador = await novaAba(browser)
   await espectador.goto(link)

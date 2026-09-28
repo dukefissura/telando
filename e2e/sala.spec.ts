@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { assistir, recebeVideoEAudio, transmitir } from './apoio.ts'
+import { assistir, novaAba, recebeVideoEAudio, transmitir } from './apoio.ts'
 
 test('chat e reações vão e voltam entre host e espectador', async ({ browser }) => {
   const { host, link } = await transmitir(browser)
@@ -40,13 +40,16 @@ test('com a sessão trancada, ninguém novo entra', async ({ browser }) => {
 
   await host.getByRole('switch', { name: 'Trancar sessão' }).click()
   await expect(host.getByRole('switch', { name: 'Trancar sessão' })).toBeChecked()
-  const atrasado = await assistir(browser, link, 'Boto Rosa')
+  // Trancada, a página já avisa antes de pedir o apelido.
+  const atrasado = await novaAba(browser)
+  await atrasado.goto(link)
   await expect(atrasado.getByRole('heading', { name: 'Sessão trancada' })).toBeVisible()
   await recebeVideoEAudio(primeiro)
 
   await host.getByRole('switch', { name: 'Trancar sessão' }).click()
   await expect(host.getByRole('switch', { name: 'Trancar sessão' })).not.toBeChecked()
-  await atrasado.getByRole('button', { name: 'Entrar de novo' }).click()
+  await atrasado.getByRole('button', { name: 'Tentar de novo' }).click()
+  await atrasado.getByRole('button', { name: 'Assistir' }).click()
   await recebeVideoEAudio(atrasado)
 })
 

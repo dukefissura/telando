@@ -3,6 +3,7 @@ import { useTransmissao } from '@telando/core/cliente'
 import { useCallback, useEffect, useState } from 'react'
 import { Botao } from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
+import { BotaoTema } from '../tema.tsx'
 import { TelaCompartilhando } from './tela-compartilhando.tsx'
 import { TelaConfiguracoes } from './tela-configuracoes.tsx'
 import { TelaLinkFixo } from './tela-link-fixo.tsx'
@@ -23,30 +24,45 @@ function useConfigSalva(preferencias: Plataforma['preferencias']) {
 }
 
 function TelaInicio({
+  meuLink,
   aoCompartilhar,
   aoAbrirLinkFixo,
 }: {
+  meuLink: MeuLinkFixo | null
   aoCompartilhar: () => void
   aoAbrirLinkFixo: (() => void) | null
 }) {
   return (
-    <main className="mx-auto grid min-h-dvh max-w-xl content-center gap-6 p-8">
-      <div className="grid gap-2">
-        <h1 className="font-semibold text-3xl tracking-tight">Telando</h1>
-        <p className="text-texto-suave">Mostre sua tela para quem tiver o link.</p>
+    <main className="relative grid min-h-dvh content-center px-8 py-16">
+      <div className="absolute top-4 right-4">
+        <BotaoTema />
       </div>
-      <Botao
-        variante="primario"
-        className="justify-self-start px-5 py-3 text-base"
-        onClick={aoCompartilhar}
-      >
-        Compartilhar tela
-      </Botao>
-      {aoAbrirLinkFixo && (
-        <Botao variante="fantasma" className="justify-self-start" onClick={aoAbrirLinkFixo}>
-          Meu link fixo
+      <div className="mx-auto grid w-full max-w-md gap-10">
+        <div className="grid gap-3">
+          <h1 className="font-semibold text-[40px] leading-[1.1] tracking-tight">Telando</h1>
+          <p className="text-lg text-texto-suave">Mostre sua tela para quem tiver o link.</p>
+        </div>
+
+        <Botao variante="primario" tamanho="grande" onClick={aoCompartilhar}>
+          Compartilhar tela
         </Botao>
-      )}
+
+        {aoAbrirLinkFixo && (
+          <div className="flex items-center justify-between gap-4 border-borda border-t pt-5">
+            {meuLink ? (
+              <p className="min-w-0 truncate font-mono text-sm">
+                <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
+                <span className="text-destaque">{meuLink.slug}</span>
+              </p>
+            ) : (
+              <p className="text-sm text-texto-suave">Um endereço que seus amigos salvam.</p>
+            )}
+            <Botao variante="fantasma" onClick={aoAbrirLinkFixo}>
+              {meuLink ? 'Editar link fixo' : 'Criar link fixo'}
+            </Botao>
+          </div>
+        )}
+      </div>
     </main>
   )
 }
@@ -82,7 +98,9 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
       const segredo = comLink ? await linkFixo.segredo() : null
       await controle.iniciar(
         config,
-        comLink && segredo ? { slug: meuLink.slug, segredo, url: meuLink.url } : undefined,
+        comLink && segredo
+          ? { slug: meuLink.slug, segredo, nome: meuLink.nome, url: meuLink.url }
+          : undefined,
       )
     } catch (erro) {
       setErroAoPreparar(
@@ -135,6 +153,7 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
   }
   return (
     <TelaInicio
+      meuLink={meuLink}
       aoCompartilhar={() => setTela('configurando')}
       aoAbrirLinkFixo={linkFixo ? () => setTela('link-fixo') : null}
     />
