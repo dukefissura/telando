@@ -41,3 +41,13 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Trancar e remover mudam a sessão pelo server.** Trancar grava `trancada` nos metadados da sala; o join passa a responder 423. Remover usa o `removeParticipant` do LiveKit, e quem sai vê "Você foi removido".
 - **Quem é removido pode voltar pelo link.** Sem contas, não há como reconhecer a pessoa numa nova entrada. O alternador "Trancar sessão" diz isso na descrição; trancar resolve.
 - **Queda do host guiada pelo `sid` da conexão.** Webhooks podem chegar fora de ordem; a saída de uma conexão antiga do host é ignorada se ele já voltou com outra.
+
+## Fase 3b
+
+- **Link fixo só no desktop.** O segredo que prova quem é o dono é gerado no processo principal e guardado com `safeStorage` (DPAPI do Windows). O site não oferece link fixo.
+- **A página do link fixo entra sozinha.** Quem abre `/luan` com o dono offline já escolhe o apelido; quando ele começa, a página conecta sem clique. Se o navegador bloquear o som, aparece "Clique para ativar o som". Quando a transmissão acaba, a página volta a esperar a próxima.
+- **Reservas de link em fila e gravação que desfaz ao falhar.** Duas pessoas pedindo o mesmo link livre ao mesmo tempo: só uma leva. Se o disco falhar, a reserva não fica valendo só na memória.
+- **Espectador sai na hora ao fechar a aba** (`pagehide`). Sem isso, o LiveKit só percebe a saída uns 20 segundos depois, o que atrasava devolver a vez quando quem apresentava fechava a aba. Uma queda de rede de verdade continua levando esses 20 segundos.
+- **O sid de cada conexão decide se uma saída vale.** Vale para o host (timer de queda) e para quem apresenta (a vez volta ao host).
+- **Limite de sessões por IP configurável** (`SESSOES_POR_MINUTO`, padrão 10). Os testes E2E sobem o server com um valor alto.
+- **Cache do Turborepo por dependência.** `typecheck` e `test` dependem das mesmas tarefas dos pacotes internos; antes, mudar o `core` não invalidava o cache da `ui` e escondia erros.

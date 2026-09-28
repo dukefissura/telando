@@ -1,15 +1,16 @@
 import { createHash } from 'node:crypto'
 import { AccessToken } from 'livekit-server-sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { envDeTeste as env, gatewayFalso } from './apoio-testes.ts'
+import { envDeTeste as env, gatewayFalso, linksDeTeste } from './apoio-testes.ts'
 import { criarApp } from './app.ts'
 
 let app: ReturnType<typeof criarApp>
 let falso: ReturnType<typeof gatewayFalso>
 
-beforeEach(() => {
+beforeEach(async () => {
   falso = gatewayFalso()
   app = criarApp({
+    links: await linksDeTeste(),
     env,
     salas: falso.gateway,
     ipDoCliente: () => '10.0.0.1',

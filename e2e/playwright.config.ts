@@ -33,6 +33,8 @@ export default defineConfig({
     },
     {
       command: 'pnpm --dir ../apps/server exec tsx src/main.ts',
+      // A suíte cria bem mais que 10 sessões por minuto, todas do mesmo IP.
+      env: { SESSOES_POR_MINUTO: '1000' },
       url: 'http://localhost:8787/api/health',
       reuseExistingServer: true,
     },

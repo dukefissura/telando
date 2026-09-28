@@ -12,8 +12,8 @@ import {
 } from '@telando/core'
 import { codecsDoHost } from '@telando/core/cliente'
 import { useState } from 'react'
-import { Botao, Secao, Segmentado } from '../controles.tsx'
-import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
+import { Alternador, Botao, Secao, Segmentado } from '../controles.tsx'
+import type { FonteDeCaptura, MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
 import { useMicrofones } from './use-microfones.ts'
@@ -69,6 +69,9 @@ export function TelaConfiguracoes({
   aoVoltar,
   iniciando,
   erro,
+  linkFixo,
+  usarLinkFixo,
+  aoMudarUsarLinkFixo,
 }: {
   plataforma: Plataforma
   config: ConfigTransmissao
@@ -77,6 +80,9 @@ export function TelaConfiguracoes({
   aoVoltar: () => void
   iniciando: boolean
   erro: string | null
+  linkFixo: MeuLinkFixo | null
+  usarLinkFixo: boolean
+  aoMudarUsarLinkFixo: (usar: boolean) => void
 }) {
   const fontes = useFontes(plataforma.fontes)
   const microfones = useMicrofones(config.microfone.ativo)
@@ -196,6 +202,14 @@ export function TelaConfiguracoes({
       </div>
 
       <div className="grid gap-2">
+        {linkFixo && (
+          <Alternador
+            rotulo="Usar meu link fixo nesta transmissão"
+            descricao={linkFixo.url}
+            ligado={usarLinkFixo}
+            aoMudar={aoMudarUsarLinkFixo}
+          />
+        )}
         <Botao
           variante="primario"
           className="py-3"

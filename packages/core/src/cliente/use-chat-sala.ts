@@ -10,6 +10,9 @@ import {
 
 export type ItemChat = { id: number; nome: string; texto: string; meu: boolean }
 export type ReacaoNaTela = { id: number; emoji: Reacao; nome: string }
+/** Avisos do revezamento: não aparecem no chat, vão para quem cuida da vez de compartilhar. */
+export type AvisoRevezamento = Exclude<MensagemSala, { t: 'chat' } | { t: 'reacao' }>
+export type Remetente = { identity: string; nome: string }
 
 // Tudo é efêmero e só em memória; os limites evitam que alguém inunde a tela dos outros.
 const MAXIMO_MENSAGENS = 100
@@ -38,10 +41,19 @@ function nomeDe(room: Room, identity: string): Promise<string> {
   })
 }
 
-export function useChatSala(room: Room | null) {
+/**
+ * Chat, reações e avisos de revezamento passam pelo mesmo tópico: o LiveKit aceita um só handler
+ * de text stream por tópico, então este hook é o único que escuta a sala.
+ */
+export function useChatSala(
+  room: Room | null,
+  aoAviso?: (aviso: AvisoRevezamento, de: Remetente) => void,
+) {
   const [mensagens, setMensagens] = useState<ItemChat[]>([])
   const [reacoes, setReacoes] = useState<ReacaoNaTela[]>([])
   const proximoId = useRef(0)
+  const aoAvisoAtual = useRef(aoAviso)
+  aoAvisoAtual.current = aoAviso
 
   const mostrar = useCallback((mensagem: MensagemSala, nome: string, meu: boolean) => {
     const id = proximoId.current++
@@ -49,15 +61,15 @@ export function useChatSala(room: Room | null) {
       setMensagens((atuais) =>
         [...atuais, { id, nome, texto: mensagem.texto, meu }].slice(-MAXIMO_MENSAGENS),
       )
-      return
+    } else if (mensagem.t === 'reacao') {
+      setReacoes((atuais) =>
+        [...atuais, { id, emoji: mensagem.emoji, nome }].slice(-MAXIMO_REACOES_NA_TELA),
+      )
+      setTimeout(
+        () => setReacoes((atuais) => atuais.filter((reacao) => reacao.id !== id)),
+        DURACAO_REACAO_MS,
+      )
     }
-    setReacoes((atuais) =>
-      [...atuais, { id, emoji: mensagem.emoji, nome }].slice(-MAXIMO_REACOES_NA_TELA),
-    )
-    setTimeout(
-      () => setReacoes((atuais) => atuais.filter((reacao) => reacao.id !== id)),
-      DURACAO_REACAO_MS,
-    )
   }, [])
 
   useEffect(() => {
@@ -65,15 +77,21 @@ export function useChatSala(room: Room | null) {
     // Text streams dizem quem mandou mesmo quando o participante ainda não apareceu para nós.
     room.registerTextStreamHandler(TOPICO, async (leitor, { identity }) => {
       const mensagem = lerMensagem(await leitor.readAll())
-      if (mensagem) mostrar(mensagem, await nomeDe(room, identity), false)
+      if (!mensagem) return
+      const nome = await nomeDe(room, identity)
+      if (mensagem.t === 'chat' || mensagem.t === 'reacao') mostrar(mensagem, nome, false)
+      else aoAvisoAtual.current?.(mensagem, { identity, nome })
     })
     return () => room.unregisterTextStreamHandler(TOPICO)
   }, [room, mostrar])
 
   const enviar = useCallback(
-    async (mensagem: MensagemSala) => {
+    async (mensagem: MensagemSala, para?: string[]) => {
       if (!room) return
-      await room.localParticipant.sendText(codificarMensagem(mensagem), { topic: TOPICO })
+      await room.localParticipant.sendText(codificarMensagem(mensagem), {
+        topic: TOPICO,
+        ...(para && { destinationIdentities: para }),
+      })
       mostrar(mensagem, room.localParticipant.name || 'Você', true)
     },
     [room, mostrar],
@@ -90,5 +108,6 @@ export function useChatSala(room: Room | null) {
       enviar({ t: 'reacao', emoji }).catch(() => {
         // Uma reação perdida durante uma reconexão não vale um aviso na tela.
       }),
+    avisar: (aviso: AvisoRevezamento, para: string) => enviar(aviso, [para]),
   }
 }

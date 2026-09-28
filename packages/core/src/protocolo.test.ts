@@ -30,3 +30,14 @@ it('ignora campos a mais, como um remetente forjado', () => {
 function texto(valor: unknown) {
   return JSON.stringify(valor)
 }
+
+it('pedidos de revezamento vão e voltam', () => {
+  for (const t of [
+    'pedido-tela',
+    'pedido-cancelado',
+    'pedido-recusado',
+    'devolver-tela',
+  ] as const) {
+    expect(lerMensagem(codificarMensagem({ t }))).toEqual({ t })
+  }
+})

@@ -1,29 +1,11 @@
-import { type Browser, expect, type Page, test } from '@playwright/test'
-import { recebeVideoEAudio } from './apoio.ts'
-
-// O Chromium de teste não tem seletor de tela; a "tela" vira a câmera e o microfone falsos
-// (padrão colorido + bipe) que o --use-fake-device-for-media-stream fornece.
-async function novaAba(browser: Browser): Promise<Page> {
-  const contexto = await browser.newContext()
-  await contexto.addInitScript(() => {
-    navigator.mediaDevices.getDisplayMedia = () =>
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-  })
-  return contexto.newPage()
-}
-
-async function comecarATransmitir(host: Page): Promise<string> {
-  await host.goto('/')
-  await host.getByRole('button', { name: 'Compartilhar tela' }).click()
-  await host.getByRole('button', { name: 'Iniciar' }).click()
-  return host.locator('#link').inputValue()
-}
+import { expect, type Page, test } from '@playwright/test'
+import { novaAba, recebeVideoEAudio, transmitir } from './apoio.ts'
 
 test('host compartilha, dois amigos assistem com áudio e veem a sessão encerrar', async ({
   browser,
 }) => {
   const host = await novaAba(browser)
-  const link = await comecarATransmitir(host)
+  const { link } = await transmitir(browser, host)
   expect(link).toMatch(/\/s\/[A-Za-z0-9]{12}$/)
 
   const espectadores = [await novaAba(browser), await novaAba(browser)]
@@ -48,7 +30,7 @@ test('link de sessão que não existe mostra link inválido', async ({ page }) =
 
 test('fechar a aba do host encerra a sessão para quem assiste', async ({ browser }) => {
   const host = await novaAba(browser)
-  const link = await comecarATransmitir(host)
+  const { link } = await transmitir(browser, host)
 
   const espectador = await novaAba(browser)
   await espectador.goto(link)
@@ -104,7 +86,7 @@ test('ajustar com uma captura sem áudio não reabre o seletor de tela', async (
     }
   })
   const host = await contexto.newPage()
-  await comecarATransmitir(host)
+  await transmitir(browser, host)
   await expect(
     host.getByText('Sem áudio: a captura não trouxe som.', { exact: false }),
   ).toBeVisible()

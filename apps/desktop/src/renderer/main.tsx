@@ -11,6 +11,11 @@ const plataformaDesktop: Plataforma = {
   fontes: { listar: telando.listarFontes, escolher: telando.escolherFonte },
   usoDeCpu: telando.usoDeCpu,
   preferencias: { ler: telando.lerPreferencias, gravar: telando.gravarPreferencias },
+  linkFixo: {
+    segredo: telando.segredoDoLink,
+    ler: telando.lerLinkFixo,
+    gravar: telando.gravarLinkFixo,
+  },
   aoMudarTransmissao: telando.avisarTransmitindo,
   aoAtalhoParar: telando.aoAtalhoParar,
 }

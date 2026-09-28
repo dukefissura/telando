@@ -1,4 +1,4 @@
-import type { FonteDeCaptura } from '@telando/ui'
+import type { FonteDeCaptura, MeuLinkFixo } from '@telando/ui'
 
 /** O que o preload expõe em `window.telando`. Tudo passa por IPC e é validado no main. */
 export type TelandoDesktop = {
@@ -8,6 +8,9 @@ export type TelandoDesktop = {
   lerPreferencias(): Promise<unknown>
   gravarPreferencias(config: unknown): Promise<void>
   avisarTransmitindo(transmitindo: boolean): void
+  segredoDoLink(): Promise<string>
+  lerLinkFixo(): Promise<MeuLinkFixo | null>
+  gravarLinkFixo(link: MeuLinkFixo): Promise<void>
   aoAtalhoParar(callback: () => void): () => void
 }
 
@@ -19,4 +22,7 @@ export const CANAIS = {
   gravarPreferencias: 'preferencias:gravar',
   transmitindo: 'transmissao:estado',
   atalhoParar: 'atalho:parar',
+  segredoDoLink: 'link:segredo',
+  lerLinkFixo: 'link:ler',
+  gravarLinkFixo: 'link:gravar',
 } as const
