@@ -261,10 +261,15 @@ export function TelaCompartilhando({
             {estado.microfoneMudo ? 'Ligar microfone' : 'Mutar microfone'}
           </Botao>
         )}
-        <Botao onClick={() => (plataforma.fontes ? setPainel('fonte') : void trocarFonte())}>
+        <span className="mx-1 w-px self-stretch bg-borda" aria-hidden />
+        <Botao
+          variante="fantasma"
+          onClick={() => (plataforma.fontes ? setPainel('fonte') : void trocarFonte())}
+        >
           Trocar tela/janela
         </Botao>
         <Botao
+          variante="fantasma"
           onClick={() => setPainel(painel === 'ajustes' ? 'nenhum' : 'ajustes')}
           aria-expanded={painel === 'ajustes'}
         >
