@@ -207,8 +207,13 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     [atualizarAoVivo],
   )
 
+  /** Devolve se copiou de verdade: sem permissão de área de transferência, o botão avisa. */
   const copiarLink = useCallback(
-    async (link: string) => atualizarAoVivo({ copiado: await copiar(link) }),
+    async (link: string) => {
+      const copiado = await copiar(link)
+      atualizarAoVivo({ copiado })
+      return copiado
+    },
     [atualizarAoVivo],
   )
 

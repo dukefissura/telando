@@ -48,7 +48,8 @@ test('com a sessão trancada, ninguém novo entra', async ({ browser }) => {
 
   await host.getByRole('switch', { name: 'Trancar sessão' }).click()
   await expect(host.getByRole('switch', { name: 'Trancar sessão' })).not.toBeChecked()
-  await atrasado.getByRole('button', { name: 'Entrar de novo' }).click()
+  await atrasado.getByRole('button', { name: 'Tentar de novo' }).click()
+  await atrasado.getByRole('button', { name: 'Assistir' }).click()
   await recebeVideoEAudio(atrasado)
 })
 

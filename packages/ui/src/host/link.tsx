@@ -9,6 +9,8 @@ function partesDo(url: string) {
   return { base: `${host}${pathname.slice(0, corte)}`, final: pathname.slice(corte) }
 }
 
+type Copia = 'parado' | 'copiado' | 'falhou'
+
 /**
  * O link é o que o app existe para produzir, então ele é o elemento de destaque da tela do host:
  * Geist Mono grande, e o endereço pessoal do link fixo na cor de destaque, como um canal de TV.
@@ -26,16 +28,16 @@ export function Link({
   url: string
   grande: boolean
   destacarFinal: boolean
-  aoCopiar: (url: string) => void
+  aoCopiar: (url: string) => Promise<boolean>
 }) {
-  const [acabouDeCopiar, setAcabouDeCopiar] = useState(false)
+  const [copia, setCopia] = useState<Copia>('parado')
   const { base, final } = partesDo(url)
 
   useEffect(() => {
-    if (!acabouDeCopiar) return
-    const timer = setTimeout(() => setAcabouDeCopiar(false), 2000)
+    if (copia === 'parado') return
+    const timer = setTimeout(() => setCopia('parado'), 2500)
     return () => clearTimeout(timer)
-  }, [acabouDeCopiar])
+  }, [copia])
 
   return (
     <div className="grid gap-1.5">
@@ -56,17 +58,14 @@ export function Link({
         </output>
         <Botao
           variante={grande ? 'primario' : 'secundario'}
-          onClick={() => {
-            aoCopiar(url)
-            setAcabouDeCopiar(true)
-          }}
+          onClick={async () => setCopia((await aoCopiar(url)) ? 'copiado' : 'falhou')}
         >
-          {acabouDeCopiar ? (
+          {copia === 'copiado' ? (
             <Check size={16} strokeWidth={1.5} aria-hidden />
           ) : (
             <Copy size={16} strokeWidth={1.5} aria-hidden />
           )}
-          {acabouDeCopiar ? 'Copiado' : 'Copiar'}
+          {copia === 'copiado' ? 'Copiado' : copia === 'falhou' ? 'Selecione e copie' : 'Copiar'}
         </Botao>
       </div>
     </div>

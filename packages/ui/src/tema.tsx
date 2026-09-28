@@ -24,7 +24,10 @@ export function aplicarTemaSalvo() {
 }
 
 export function BotaoTema() {
-  const [tema, setTema] = useState(lerTemaSalvo)
+  // O tema aplicado na página é a fonte da verdade; o armazenamento pode estar bloqueado.
+  const [tema, setTema] = useState<Tema>(() =>
+    document.documentElement.dataset.tema === 'claro' ? 'claro' : 'escuro',
+  )
   const proximo: Tema = tema === 'escuro' ? 'claro' : 'escuro'
   const rotulo = proximo === 'claro' ? 'Usar tema claro' : 'Usar tema escuro'
   const Icone = proximo === 'claro' ? Sun : Moon

@@ -21,6 +21,8 @@ type Previa =
 /** Quem está compartilhando, antes de entrar: e um link morto aparece na hora, sem clique. */
 function usePrevia(id: string, pular: boolean) {
   const [previa, setPrevia] = useState<Previa>({ fase: 'carregando' })
+  const [tentativa, setTentativa] = useState(0)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tentativa existe para buscar de novo
   useEffect(() => {
     if (pular) return
     let ativo = true
@@ -34,8 +36,8 @@ function usePrevia(id: string, pular: boolean) {
     return () => {
       ativo = false
     }
-  }, [id, pular])
-  return previa
+  }, [id, pular, tentativa])
+  return { previa, recarregar: () => setTentativa((n) => n + 1) }
 }
 
 /**
@@ -45,7 +47,7 @@ function usePrevia(id: string, pular: boolean) {
 export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelido?: string }) {
   const { sala, entrar } = useSalaEspectador(id)
   const [apelido, setApelido] = useState(() => entrarComApelido ?? apelidoAleatorio())
-  const previa = usePrevia(id, entrarComApelido !== undefined)
+  const { previa, recarregar } = usePrevia(id, entrarComApelido !== undefined)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: entra uma vez, ao montar
   useEffect(() => {
@@ -55,6 +57,15 @@ export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelid
   const entrarDeNovo = (
     <Botao variante="primario" onClick={() => void entrar(apelido)}>
       Entrar de novo
+    </Botao>
+  )
+  // Trancada antes de tentar entrar: perguntar de novo ao server se o host já destrancou.
+  const tentarDeNovo = (
+    <Botao
+      variante="primario"
+      onClick={() => (sala.fase === 'trancada' ? void entrar(apelido) : recarregar())}
+    >
+      Tentar de novo
     </Botao>
   )
 
@@ -91,7 +102,7 @@ export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelid
           titulo="Sessão trancada"
           texto="O host trancou a sessão e ninguém novo pode entrar. Peça para ele destrancar."
         >
-          {entrarDeNovo}
+          {tentarDeNovo}
         </Aviso>
       )
     if (sala.fase === 'caiu')
