@@ -171,6 +171,8 @@ function PreviaAoVivo({ fonte }: { fonte: FonteDeCaptura }) {
           for (const trilha of capturado.getTracks()) trilha.stop()
           return
         }
+        // A janela capturada fechou (ou saiu da tela): mostra a miniatura em vez de um quadro congelado.
+        capturado.getVideoTracks()[0]?.addEventListener('ended', () => ativo && setFalhou(true))
         if (refVideo.current) refVideo.current.srcObject = capturado
       })
       .catch(() => {
@@ -315,7 +317,7 @@ export function TelaConfiguracoes({
             </Secao>
           </div>
 
-          {fonteEscolhida && <PreviaAoVivo fonte={fonteEscolhida} />}
+          {fonteAtual && <PreviaAoVivo fonte={fonteAtual} />}
 
           <div className="grid gap-2">
             <p className="font-mono text-sm" data-testid="resumo">

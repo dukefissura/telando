@@ -12,8 +12,10 @@ const TAMANHO_MINIATURA = { width: 320, height: 180 }
 export function criarSeletorDeFontes(idsParaEsconder: () => string[]) {
   let ultimas = new Map<string, DesktopCapturerSource>()
   let escolhida: string | null = null
-  // Ícones de janela quase nunca mudam: busca só quando aparece uma janela nova.
-  const icones = new Map<string, string | null>()
+  // Ícones de janela quase nunca mudam: busca só quando aparece uma janela nova. A chave junta
+  // id e nome porque o Windows reaproveita o id (HWND) de janelas fechadas.
+  let icones = new Map<string, string | null>()
+  const chaveDoIcone = (fonte: DesktopCapturerSource) => `${fonte.id}|${fonte.name}`
 
   const buscar = (comIcones: boolean) =>
     desktopCapturer.getSources({
@@ -25,12 +27,19 @@ export function criarSeletorDeFontes(idsParaEsconder: () => string[]) {
   async function listar(): Promise<FonteDeCaptura[]> {
     const esconder = new Set(idsParaEsconder())
     let fontes = await buscar(false)
-    if (fontes.some((fonte) => !fonte.id.startsWith('screen:') && !icones.has(fonte.id))) {
+    if (
+      fontes.some((fonte) => !fonte.id.startsWith('screen:') && !icones.has(chaveDoIcone(fonte)))
+    ) {
       fontes = await buscar(true)
-      for (const fonte of fontes) {
-        icones.set(fonte.id, fonte.appIcon?.isEmpty() === false ? fonte.appIcon.toDataURL() : null)
-      }
     }
+    // Refeito a cada volta: só as janelas abertas agora, sem acumular as que fecharam.
+    icones = new Map(
+      fontes.map((fonte) => [
+        chaveDoIcone(fonte),
+        icones.get(chaveDoIcone(fonte)) ??
+          (fonte.appIcon?.isEmpty() === false ? fonte.appIcon.toDataURL() : null),
+      ]),
+    )
     fontes = fontes.filter((fonte) => !esconder.has(fonte.id))
     ultimas = new Map(fontes.map((fonte) => [fonte.id, fonte]))
 
@@ -50,7 +59,7 @@ export function criarSeletorDeFontes(idsParaEsconder: () => string[]) {
           : fonte.name,
         tipo: ehTela ? 'tela' : 'janela',
         miniatura: `data:image/jpeg;base64,${miniatura}`,
-        icone: icones.get(fonte.id) ?? null,
+        icone: icones.get(chaveDoIcone(fonte)) ?? null,
         largura: monitor ? Math.round(monitor.size.width * monitor.scaleFactor) : null,
         altura: monitor ? Math.round(monitor.size.height * monitor.scaleFactor) : null,
         frequencia: Math.round((monitor ?? principal).displayFrequency) || 60,
