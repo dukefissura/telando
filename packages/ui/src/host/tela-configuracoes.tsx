@@ -12,7 +12,7 @@ import {
 } from '@telando/core'
 import { codecsDoHost } from '@telando/core/cliente'
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alternador, Botao, Secao, Segmentado } from '../controles.tsx'
 import { ENTRADA } from '../movimento.ts'
 import type { FonteDeCaptura, MeuLinkFixo, Plataforma } from '../plataforma.ts'
@@ -149,6 +149,61 @@ function ReguaDeUpload({ teste, necessarioKbps }: { teste: Teste; necessarioKbps
   )
 }
 
+/**
+ * A fonte escolhida ao vivo, na taxa de atualização do monitor: o que quem assiste vai ver, sem o
+ * atraso da miniatura. É uma captura só de vídeo, que para quando a fonte muda ou a tela sai.
+ */
+function PreviaAoVivo({ fonte }: { fonte: FonteDeCaptura }) {
+  const refVideo = useRef<HTMLVideoElement>(null)
+  const [falhou, setFalhou] = useState(false)
+  const { id, frequencia } = fonte
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: trocar de fonte (id) reinicia a captura; o main responde com a fonte escolhida
+  useEffect(() => {
+    let ativo = true
+    let fluxo: MediaStream | null = null
+    setFalhou(false)
+    navigator.mediaDevices
+      .getDisplayMedia({ video: { frameRate: { ideal: frequencia } }, audio: false })
+      .then((capturado) => {
+        fluxo = capturado
+        if (!ativo) {
+          for (const trilha of capturado.getTracks()) trilha.stop()
+          return
+        }
+        if (refVideo.current) refVideo.current.srcObject = capturado
+      })
+      .catch(() => {
+        // A janela pode ter fechado entre escolher e capturar; a miniatura da grade continua valendo.
+        if (ativo) setFalhou(true)
+      })
+    return () => {
+      ativo = false
+      for (const trilha of fluxo?.getTracks() ?? []) trilha.stop()
+    }
+  }, [id, frequencia])
+
+  if (falhou) {
+    return (
+      <img
+        src={fonte.miniatura}
+        alt={`Prévia de ${fonte.nome}`}
+        className="aspect-video w-full rounded-lg border border-borda bg-black object-contain"
+      />
+    )
+  }
+  return (
+    <video
+      ref={refVideo}
+      autoPlay
+      muted
+      playsInline
+      aria-label={`Prévia ao vivo de ${fonte.nome}`}
+      className="aspect-video w-full rounded-lg border border-borda bg-black object-contain"
+    />
+  )
+}
+
 export function TelaConfiguracoes({
   plataforma,
   config,
@@ -260,13 +315,7 @@ export function TelaConfiguracoes({
             </Secao>
           </div>
 
-          {fonteAtual && (
-            <img
-              src={fonteAtual.miniatura}
-              alt={`Prévia de ${fonteAtual.nome}`}
-              className="aspect-video w-full rounded-lg border border-borda bg-black object-contain"
-            />
-          )}
+          {fonteEscolhida && <PreviaAoVivo fonte={fonteEscolhida} />}
 
           <div className="grid gap-2">
             <p className="font-mono text-sm" data-testid="resumo">

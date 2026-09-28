@@ -17,7 +17,6 @@ import {
   Tray,
 } from 'electron'
 import Store from 'electron-store'
-import { autoUpdater } from 'electron-updater'
 import { CANAIS } from '../compartilhado/ipc.ts'
 import { criarSeletorDeFontes } from './fontes.ts'
 
@@ -270,11 +269,14 @@ if (!app.requestSingleInstanceLock()) {
     bandeja.on('click', mostrarJanela)
     atualizarBandeja()
     // Só o app instalado se atualiza; o electron-updater lê os releases públicos do GitHub.
+    // Carregado só aqui: é metade do main e não tem nada a ver com abrir a janela.
     if (app.isPackaged) {
-      autoUpdater.checkForUpdatesAndNotify().catch((erro: unknown) => {
-        // Sem internet ou sem release novo: o app segue na versão atual.
-        console.warn('Não consegui procurar atualização.', erro)
-      })
+      import('electron-updater')
+        .then(({ autoUpdater }) => autoUpdater.checkForUpdatesAndNotify())
+        .catch((erro: unknown) => {
+          // Sem internet ou sem release novo: o app segue na versão atual.
+          console.warn('Não consegui procurar atualização.', erro)
+        })
     }
   })
 
