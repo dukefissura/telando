@@ -15,7 +15,17 @@ const entradaSchema = z.object({
 
 const erroApiSchema = z.object({ erro: z.string(), mensagem: z.string() })
 
+const linkReservadoSchema = z.object({ url: z.string() })
+
+export const estadoLinkSchema = z.object({
+  nome: z.string(),
+  aoVivo: z.boolean(),
+  sessionId: z.string().optional(),
+  url: z.string(),
+})
+
 export type SessaoCriada = z.infer<typeof sessaoCriadaSchema>
+export type EstadoLink = z.infer<typeof estadoLinkSchema>
 type Entrada = z.infer<typeof entradaSchema>
 
 export class ErroApi extends Error {
@@ -98,6 +108,43 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
     async removerParticipante(id: string, hostToken: string, identity: string): Promise<void> {
       const caminho = `/sessions/${encodeURIComponent(id)}/participantes/${encodeURIComponent(identity)}`
       await chamar(caminho, { method: 'DELETE', headers: { authorization: `Bearer ${hostToken}` } })
+    },
+    async passarVez(id: string, hostToken: string, identity: string | null): Promise<void> {
+      await chamar(`/sessions/${encodeURIComponent(id)}/presenter`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${hostToken}` },
+        body: JSON.stringify({ identity }),
+      })
+    },
+    async reservarLink(slug: string, segredo: string, nome: string) {
+      const caminho = `/links/${encodeURIComponent(slug)}`
+      const corpo = { ...json({ segredo, nome }), method: 'PUT' }
+      return linkReservadoSchema.parse(await chamar(caminho, corpo))
+    },
+    async estadoDoLink(slug: string): Promise<EstadoLink> {
+      return estadoLinkSchema.parse(await chamar(`/links/${encodeURIComponent(slug)}`, {}))
+    },
+    async apontarLink(
+      slug: string,
+      segredo: string,
+      sessao: Pick<SessaoCriada, 'id' | 'hostToken'>,
+    ): Promise<void> {
+      await chamar(`/links/${encodeURIComponent(slug)}/live`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${sessao.hostToken}`,
+        },
+        body: JSON.stringify({ segredo, sessionId: sessao.id }),
+      })
+    },
+    async desapontarLink(slug: string, segredo: string): Promise<void> {
+      await chamar(`/links/${encodeURIComponent(slug)}/live`, {
+        ...json({ segredo }),
+        method: 'DELETE',
+        // Também sai no pagehide, junto com o encerramento da sessão.
+        keepalive: true,
+      })
     },
   }
 }

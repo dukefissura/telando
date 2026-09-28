@@ -57,6 +57,7 @@ export function BarraDeControles({
   telaCheia,
   aoAlternarTelaCheia,
   aoAlternarPip,
+  revezamento,
 }: {
   volume: number
   mudo: boolean
@@ -72,6 +73,8 @@ export function BarraDeControles({
   telaCheia: boolean
   aoAlternarTelaCheia: () => void
   aoAlternarPip: (() => void) | null
+  /** Pedir, cancelar ou devolver a vez de compartilhar. */
+  revezamento: ReactNode
 }) {
   const icone = { size: 18, strokeWidth: 1.5, 'aria-hidden': true } as const
   return (
@@ -105,6 +108,9 @@ export function BarraDeControles({
 
       <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
       <BotoesDeReacao aoReagir={aoReagir} />
+
+      <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
+      {revezamento}
 
       <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
       <BotaoIcone

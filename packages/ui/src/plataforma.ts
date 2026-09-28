@@ -12,6 +12,8 @@ export type FonteDeCaptura = {
   altura: number | null
 }
 
+export type MeuLinkFixo = { slug: string; nome: string; url: string }
+
 /** O que muda entre o site e o app desktop. */
 export type Plataforma = {
   api: ReturnType<typeof criarClienteApi>
@@ -24,6 +26,12 @@ export type Plataforma = {
   preferencias: {
     ler(): Promise<unknown>
     gravar(config: unknown): Promise<void>
+  }
+  /** Link fixo pessoal (só no desktop). O segredo nunca sai do computador de quem é dono. */
+  linkFixo?: {
+    segredo(): Promise<string>
+    ler(): Promise<MeuLinkFixo | null>
+    gravar(link: MeuLinkFixo): Promise<void>
   }
   /** Avisa quando a transmissão começa ou acaba (o desktop usa no ícone da bandeja). */
   aoMudarTransmissao?: (aoVivo: boolean) => void

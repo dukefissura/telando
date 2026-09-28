@@ -1,5 +1,12 @@
 export { apelidoAleatorio } from './apelidos.ts'
-export { criarClienteApi, ErroApi, mensagemDoErro, type SessaoCriada } from './api.ts'
+export {
+  criarClienteApi,
+  ErroApi,
+  type EstadoLink,
+  estadoLinkSchema,
+  mensagemDoErro,
+  type SessaoCriada,
+} from './api.ts'
 export {
   type AmostraEnvio,
   type AmostraRecebimento,

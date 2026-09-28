@@ -1,19 +1,28 @@
 import { RoomContext } from '@livekit/components-react'
 import { apelidoAleatorio } from '@telando/core'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { Aviso } from './aviso.tsx'
+import { Aviso, Centro } from './aviso.tsx'
 import { Palco } from './palco.tsx'
 import { useSalaEspectador } from './use-sala-espectador.ts'
 
-function Centro({ children }: { children: React.ReactNode }) {
-  return <main className="grid min-h-dvh place-items-center">{children}</main>
-}
-
 export function PaginaAssistir() {
   const { id = '' } = useParams()
+  return <Assistir id={id} />
+}
+
+/**
+ * Entra numa sessão. Com `entrarComApelido`, pula o formulário: é o caso do link fixo, em que a
+ * pessoa já escolheu o apelido enquanto esperava o dono começar.
+ */
+export function Assistir({ id, entrarComApelido }: { id: string; entrarComApelido?: string }) {
   const { sala, entrar } = useSalaEspectador(id)
-  const [apelido, setApelido] = useState(apelidoAleatorio)
+  const [apelido, setApelido] = useState(() => entrarComApelido ?? apelidoAleatorio())
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: entra uma vez, ao montar
+  useEffect(() => {
+    if (entrarComApelido !== undefined) void entrar(entrarComApelido)
+  }, [])
 
   const entrarDeNovo = (
     <button
