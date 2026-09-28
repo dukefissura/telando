@@ -7,6 +7,7 @@ export {
   mensagemDoErro,
   type SessaoCriada,
 } from './api.ts'
+export { type Destino, destinoDoLink } from './destino-link.ts'
 export {
   type AmostraEnvio,
   type AmostraRecebimento,
