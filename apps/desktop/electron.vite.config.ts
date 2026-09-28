@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
 
 export default defineConfig({
-  main: {},
+  main: {
+    // Tudo que o main usa vai dentro do bundle: o instalador não precisa levar node_modules.
+    build: { externalizeDeps: { exclude: ['electron-store', 'electron-updater'] } },
+  },
   preload: {
     // Preload com sandbox precisa ser CommonJS.
     build: {

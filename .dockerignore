@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/out
+**/release
+**/.turbo
+.git
+.livekit
+data
+e2e
+apps/desktop
+.env*
+!.env.example
