@@ -1,8 +1,8 @@
 # Telando
 
-Mostra a sua tela para os amigos por um link. Eles abrem no navegador do computador e assistem, sem instalar nada.
+Mostra a sua tela para os amigos por um link. Todo mundo usa o app para Windows: você compartilha, eles clicam no link e o Telando abre direto na sua transmissão. Quem ainda não tem o app cai numa página com o download.
 
-Quem compartilha usa o app para Windows ou o próprio navegador. O vídeo passa por um servidor [LiveKit](https://livekit.io). O que mudou em cada versão está no [CHANGELOG](CHANGELOG.md), e o porquê das escolhas em [`docs/decisoes.md`](docs/decisoes.md).
+O vídeo passa por um servidor [LiveKit](https://livekit.io). O que mudou em cada versão está no [CHANGELOG](CHANGELOG.md), e o porquê das escolhas em [`docs/decisoes.md`](docs/decisoes.md).
 
 ## Rodar localmente
 
@@ -12,12 +12,22 @@ Precisa de Node 22 ou mais novo e pnpm (`npm i -g pnpm`).
 pnpm install
 cp .env.example .env
 pnpm dev:livekit   # num terminal: baixa e roda o LiveKit em modo dev
-pnpm dev           # em outro: server em :8787 e site em http://localhost:5173
+pnpm dev           # em outro: server em :8787 e a página do site em http://localhost:5173
+pnpm dev:desktop   # e o app
 ```
 
 O `pnpm dev:livekit` baixa o binário oficial do LiveKit na primeira vez, para `.livekit/`. Se você preferir Docker: `docker compose -f infra/docker-compose.dev.yml up`.
 
-Para o app desktop, com o LiveKit e o server rodando: `pnpm dev:desktop`. O atalho `Ctrl+Alt+Shift+S` para a transmissão de qualquer lugar.
+O atalho `Ctrl+Alt+Shift+S` para a transmissão de qualquer lugar.
+
+Para testar quem assiste na mesma máquina, abra um segundo app com outro perfil e cole o link no "Entrar com um link":
+
+```bash
+pnpm --filter @telando/desktop build
+TELANDO_PERFIL=/tmp/telando-amigo pnpm --filter @telando/desktop exec electron .
+```
+
+No modo dev o app não registra o `telando://` no Windows (só o instalador registra), então a página do site não abre o app de desenvolvimento.
 
 ### Como fica em produção, na sua máquina
 
@@ -41,7 +51,7 @@ pnpm typecheck
 pnpm test
 ```
 
-Os testes de ponta a ponta abrem o Chromium e o app desktop com tela e microfone falsos. Eles sobem o LiveKit, o server e o site sozinhos (ou usam os que já estiverem rodando):
+Os testes de ponta a ponta abrem um app de verdade para cada pessoa (quem compartilha e quem assiste), capturando a tela real, e testam a página do site no Chromium. Eles sobem o LiveKit, o server e o site sozinhos (ou usam os que já estiverem rodando):
 
 ```bash
 pnpm e2e
@@ -56,7 +66,7 @@ cd apps/desktop
 pnpm instalador
 ```
 
-O instalador sai em `apps/desktop/release/Telando-Setup-<versão>.exe`. Sem configurar nada, o app aponta para `http://localhost:8787`; serve para testar na própria máquina.
+O instalador sai em `apps/desktop/release/Telando-Setup.exe` e registra o `telando://` no Windows. Sem configurar nada, o app aponta para `http://localhost:8787`; serve para testar na própria máquina. A página do site aponta o botão de download para `releases/latest/download/Telando-Setup.exe` deste repositório.
 
 Para publicar uma versão:
 
@@ -78,7 +88,7 @@ O instalador não é assinado, então o Windows SmartScreen avisa na primeira ex
 
 ### Numa VPS com Docker
 
-Os arquivos estão em [`infra/producao`](infra/producao). Eles sobem o LiveKit, o server (que também entrega o site) e o Caddy, que cuida do HTTPS. **Ainda não foram testados num servidor de verdade**: a instalação das dependências da imagem foi conferida, mas o Docker em si não.
+Os arquivos estão em [`infra/producao`](infra/producao). Eles sobem o LiveKit, o server (que também entrega a página que abre o app) e o Caddy, que cuida do HTTPS. **Ainda não foram testados num servidor de verdade**: a instalação das dependências da imagem foi conferida, mas o Docker em si não.
 
 Você precisa de:
 
@@ -116,8 +126,7 @@ O server apaga todas as salas do LiveKit ao iniciar, então o projeto do Cloud p
 
 ## Limitações
 
-- **Só computador.** O app de compartilhar é só para Windows; a página de assistir é feita para o navegador do computador.
-- **Som do computador pelo navegador** só no Chrome e no Edge.
+- **Só Windows.** Compartilhar e assistir acontecem no app, que existe só para Windows. Não dá para assistir pelo navegador.
 - **Sem TURN na porta 443** no compose da VPS. Redes que só liberam a porta 443 (algumas empresas e faculdades) podem não conseguir assistir. O LiveKit Cloud resolve isso.
 - **Sem contas.** Quem é removido de uma sessão pode voltar pelo link; trancar a sessão impede.
 - **Um servidor só.** As sessões vivem na memória do processo, então não dá para ter duas instâncias do server lado a lado.

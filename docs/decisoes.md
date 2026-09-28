@@ -72,3 +72,15 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Compose de produção em `network_mode: host`.** O LiveKit precisa de uma faixa grande de portas UDP, e assim o `ufw` da máquina vale para todos os serviços (portas publicadas pelo Docker passam por fora dele). As chaves do LiveKit entram pela variável `LIVEKIT_CONFIG`, montada pelo Compose a partir do `.env`, sem arquivo de configuração com segredo.
 - **Sem TURN/TLS na porta 443 no compose da VPS.** Dividir a 443 entre o Caddy e o TURN exige roteamento por SNI (Caddy com o módulo layer4) ou um IP a mais. Fica TURN por UDP na 3478 e ICE por TCP na 7881; quem precisar da 443 usa o LiveKit Cloud, e o README explica os dois caminhos.
 - **Os arquivos de produção não foram testados num servidor.** A instalação das dependências da imagem foi simulada numa cópia limpa (o server subiu com 18 MB de `node_modules`), mas não havia Docker nem VPS disponíveis.
+
+## Fase 6
+
+- **Tudo no app** (pedido do usuário em 2026-09-28): quem assiste também usa o Telando para Windows. Saem assistir e compartilhar pelo navegador, a `plataforma-web` e o aviso "Clique para ativar o som". A `Plataforma` perde os campos opcionais que só existiam por causa do navegador.
+- **O link continua `https://`.** WhatsApp, Discord e afins não transformam `telando://` em link clicável. A página do site lê o link, tenta o protocolo uma vez e oferece o instalador (`releases/latest/download/Telando-Setup.exe`, por isso o nome do instalador é fixo).
+- **`destinoDoLink` ignora o domínio.** O app só fala com o próprio server, então só o caminho importa; id e slug seguem as mesmas regras do server.
+- **Só o instalador registra `telando://`.** No dev, o app não mexe no registro do Windows, para não roubar o protocolo do app instalado. Os testes entregam o link pelos argumentos e pela segunda instância.
+- **Um link nunca derruba uma transmissão.** Qualquer página pode abrir `telando://`; com o app ao vivo, o link só mostra "Pare a sua transmissão para assistir". Um link de sessão também nunca entra sem o clique em "Assistir"; só a espera do link fixo entra sozinha, como já era no navegador.
+- **`TELANDO_PERFIL` troca a pasta de dados do app**, aplicada antes do `electron-store` e do lock de instância única. É o único jeito de ter dois apps na mesma máquina, o que os testes E2E e quem desenvolve precisam para fazer o papel de quem compartilha e de quem assiste.
+- **Som sem clique** com `autoplayPolicy: 'no-user-gesture-required'` na janela do app.
+- **Janela maximizada, mínimo 960×600**, lembrando o último estado. Telas de quem compartilha em duas colunas a partir de 1100px.
+- **Movimento do handoff de design (1a–1j).** O texto da espera do link fixo virou "Deixe o Telando aberto: ele entra na transmissão assim que começar.", porque não há mais página. O selo do palco aparece assim que o host está na sala (antes esperava o primeiro quadro), para o endereço do canal ter para onde voar. Os testes rodam com `reducedMotion: 'reduce'`.
