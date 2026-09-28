@@ -79,6 +79,22 @@ test('o app aberto por um link telando:// já começa na tela de assistir', asyn
   await expect(janela.getByRole('heading', { name: 'Entrar para assistir' })).toBeVisible()
 })
 
+test('com uma sessão aberta, outro link pergunta antes de trocar', async () => {
+  const primeira = await transmitir()
+  const segunda = await transmitir()
+  const amigo = await assistir(primeira.link, 'Boto Rosa')
+  await recebeVideoEAudio(amigo.janela)
+
+  await entregarLink(amigo.perfil, `telando://s/${segunda.sessao.id}`)
+  await amigo.janela.getByRole('button', { name: 'Ficar aqui' }).click()
+  await expect(amigo.janela.getByRole('alertdialog')).toBeHidden()
+  await recebeVideoEAudio(amigo.janela)
+
+  await entregarLink(amigo.perfil, `telando://s/${segunda.sessao.id}`)
+  await amigo.janela.getByRole('button', { name: 'Abrir', exact: true }).click()
+  await expect(amigo.janela.getByRole('heading', { name: 'Entrar para assistir' })).toBeVisible()
+})
+
 test('um link que chega durante a transmissão não derruba o host', async () => {
   const outra = await transmitir()
   const { hostApp, host } = await transmitir()

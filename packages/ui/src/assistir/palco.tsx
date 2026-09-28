@@ -262,7 +262,11 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
   return (
     <div ref={refPalco} className={`flex h-dvh bg-black ${ativo ? '' : 'cursor-none'}`}>
       <main className="relative min-w-0 flex-1">
-        <AnimatePresence initial={false}>{conteudo}</AnimatePresence>
+        {/* "wait": o que sai termina antes do novo entrar; os vídeos de dois apresentadores
+            dividem a refVideo, e a saída atrasada do antigo apagaria a do novo. */}
+        <AnimatePresence initial={false} mode="wait">
+          {conteudo}
+        </AnimatePresence>
 
         {sessao && host && (
           <div

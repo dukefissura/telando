@@ -38,8 +38,9 @@ let transmitindo = false
 const linkNosArgumentos = (argv: string[]) =>
   argv.find((arg) => arg.startsWith('telando://') && arg.length <= LIMITE_LINK) ?? null
 
-// O link que abriu o app fica aqui até o renderer carregar e pedir.
+// Um link fica aqui até o renderer carregar e pedir; depois disso, vai direto por IPC.
 let linkPendente = linkNosArgumentos(process.argv)
+let rendererOuvindo = false
 
 const preferencias = new Store<{
   transmissao: unknown
@@ -91,7 +92,9 @@ function mostrarJanela() {
 function abrirLink(argv: string[]) {
   const link = linkNosArgumentos(argv)
   mostrarJanela()
-  if (link) janela?.webContents.send(CANAIS.abrirLink, link)
+  if (!link) return
+  if (janela && rendererOuvindo) janela.webContents.send(CANAIS.abrirLink, link)
+  else linkPendente = link
 }
 
 function pedirParada() {
@@ -163,6 +166,11 @@ function criarJanela() {
   })
   janela.on('closed', () => {
     janela = null
+    rendererOuvindo = false
+  })
+  // Página recarregando: os ouvintes antigos somem, e o link espera o novo renderer pedir.
+  janela.webContents.on('did-start-loading', () => {
+    rendererOuvindo = false
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -223,8 +231,10 @@ function registrarIpc() {
     if (!ehLinkFixo(link)) throw new Error('Link fixo inválido')
     preferencias.set('linkFixo', link)
   })
+  // O renderer pede o pendente e, na mesma hora, passa a ouvir os próximos.
   ipcMain.handle(CANAIS.linkPendente, (evento) => {
     exigirOrigem(evento)
+    rendererOuvindo = true
     const link = linkPendente
     linkPendente = null
     return link

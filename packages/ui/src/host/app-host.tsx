@@ -99,10 +99,13 @@ export function AppHost({
   plataforma,
   aoEntrarComLink,
   avisoLink,
+  aoMudarOcupado,
 }: {
   plataforma: Plataforma
   aoEntrarComLink: (texto: string) => void
   avisoLink: string | null
+  /** Preparando, começando ou no ar: enquanto isso, um link não pode tirar o painel da tela. */
+  aoMudarOcupado: (ocupado: boolean) => void
 }) {
   const [config, mudarConfig] = useConfigSalva(plataforma.preferencias)
   const controle = useTransmissao({ api: plataforma.api, usoDeCpu: plataforma.usoDeCpu })
@@ -148,6 +151,9 @@ export function AppHost({
 
   const aoVivo = estado.fase === 'ao-vivo'
   useEffect(() => plataforma.aoMudarTransmissao(aoVivo), [plataforma, aoVivo])
+
+  const ocupado = aoVivo || preparando || estado.fase === 'iniciando'
+  useEffect(() => aoMudarOcupado(ocupado), [aoMudarOcupado, ocupado])
 
   if (!config) return null
   if (estado.fase === 'ao-vivo') {
