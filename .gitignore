@@ -11,3 +11,6 @@ test-results
 data/
 .livekit/
 *.log
+
+# Anotações de operação (servidor, publicação): ficam só na máquina de quem mantém.
+docs/privado/
