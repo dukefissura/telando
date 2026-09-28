@@ -14,6 +14,7 @@ export const envDeTeste: Env = {
   LIVEKIT_API_SECRET: 'segredo-de-teste-com-32-caracteres!!',
   TRUST_PROXY: '0',
   DATA_DIR: 'data',
+  SESSOES_POR_MINUTO: 10,
 }
 
 /** Registro de links num diretório temporário, um por teste. */

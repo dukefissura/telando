@@ -1,30 +1,5 @@
-import { type Browser, expect, type Page, test } from '@playwright/test'
-import { recebeVideoEAudio } from './apoio.ts'
-
-async function novaAba(browser: Browser): Promise<Page> {
-  const contexto = await browser.newContext()
-  await contexto.addInitScript(() => {
-    navigator.mediaDevices.getDisplayMedia = () =>
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-  })
-  return contexto.newPage()
-}
-
-async function transmitir(browser: Browser) {
-  const host = await novaAba(browser)
-  await host.goto('/')
-  await host.getByRole('button', { name: 'Compartilhar tela' }).click()
-  await host.getByRole('button', { name: 'Iniciar' }).click()
-  return { host, link: await host.locator('#link').inputValue() }
-}
-
-async function assistir(browser: Browser, link: string, apelido: string) {
-  const espectador = await novaAba(browser)
-  await espectador.goto(link)
-  await espectador.getByLabel('Seu apelido').fill(apelido)
-  await espectador.getByRole('button', { name: 'Assistir' }).click()
-  return espectador
-}
+import { expect, test } from '@playwright/test'
+import { assistir, recebeVideoEAudio, transmitir } from './apoio.ts'
 
 test('chat e reações vão e voltam entre host e espectador', async ({ browser }) => {
   const { host, link } = await transmitir(browser)

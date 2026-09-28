@@ -11,7 +11,7 @@ import {
   VideoTrack,
 } from '@livekit/components-react'
 import { lerSessaoMetadata } from '@telando/core'
-import { useChatSala } from '@telando/core/cliente'
+import { type AvisoRevezamento, useChatSala } from '@telando/core/cliente'
 import { ColunaDeReacoes, PainelChat, useAtalhosDaJanela } from '@telando/ui'
 import {
   ConnectionState,
@@ -23,6 +23,7 @@ import {
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { Aviso } from './aviso.tsx'
 import { BarraDeControles, type Qualidade } from './barra-de-controles.tsx'
+import { BotaoRevezamento, EscolherOQueCompartilhar, useRevezamento } from './revezamento.tsx'
 
 const OCIOSO_APOS_MS = 3000
 
@@ -112,10 +113,22 @@ export function Palco() {
   const { metadata } = useRoomInfo()
   const sessao = lerSessaoMetadata(metadata)
   const host = useRemoteParticipant(sessao?.hostIdentity ?? '')
-  const [tela] = useTracks([Track.Source.ScreenShare], { onlySubscribed: true })
+  const apresentador = useRemoteParticipant(sessao?.presenterIdentity ?? '')
+  // Quem está na tela agora: o amigo que recebeu a vez, ou o host.
+  const alvo = sessao?.presenterIdentity ?? sessao?.hostIdentity
+  const telas = useTracks([Track.Source.ScreenShare], { onlySubscribed: true })
+  const tela = telas.find((t) => t.participant.identity === alvo)
   const conexao = useConnectionState(room)
   const { canPlayAudio, startAudio } = useAudioPlayback(room)
-  const chat = useChatSala(room)
+  // O chat entrega os avisos do revezamento; o revezamento usa o chat para avisar o host.
+  const aoAvisoDoRevezamento = useRef<(aviso: AvisoRevezamento) => void>(() => undefined)
+  const chat = useChatSala(room, (aviso) => aoAvisoDoRevezamento.current(aviso))
+  const revezamento = useRevezamento(room, sessao, chat.avisar)
+  aoAvisoDoRevezamento.current = revezamento.aoAviso
+  const souEuNaTela = alvo === room.localParticipant.identity
+  const nomeNaTela = sessao?.presenterIdentity
+    ? (apresentador?.name ?? 'alguém da sala')
+    : sessao?.hostNome
 
   const [volume, setVolume] = useState(1)
   const [mudo, setMudo] = useState(false)
@@ -174,7 +187,17 @@ export function Palco() {
       : null
 
   let conteudo = null
-  if (!host) {
+  if (souEuNaTela) {
+    conteudo =
+      revezamento.fase === 'aprovado' ? (
+        <EscolherOQueCompartilhar revezamento={revezamento} />
+      ) : (
+        <Aviso
+          titulo="Você está mostrando a sua tela"
+          texto="Todo mundo na sessão está vendo. Quando terminar, devolva a vez."
+        />
+      )
+  } else if (!host) {
     conteudo = jaViuOHost ? (
       <Aviso
         titulo="O host perdeu a conexão"
@@ -196,9 +219,14 @@ export function Palco() {
 
         {sessao && tela && (
           <p
-            className={`absolute top-4 left-4 rounded-md bg-fundo/80 px-2.5 py-1 text-sm transition-opacity duration-200 ${ativo ? 'opacity-100' : 'opacity-0'}`}
+            aria-live="polite"
+            className={`absolute top-4 left-4 rounded-md bg-fundo/80 px-2.5 py-1 text-sm transition-opacity duration-200 ${ativo || sessao.presenterIdentity ? 'opacity-100' : 'opacity-0'}`}
           >
-            {sessao.hostNome ? `Tela de ${sessao.hostNome}` : 'Tela compartilhada'}
+            {sessao.presenterIdentity
+              ? `Agora: tela de ${nomeNaTela}`
+              : nomeNaTela
+                ? `Tela de ${nomeNaTela}`
+                : 'Tela compartilhada'}
           </p>
         )}
 
@@ -244,6 +272,7 @@ export function Palco() {
             telaCheia={telaCheia}
             aoAlternarTelaCheia={alternarTelaCheia}
             aoAlternarPip={alternarPip}
+            revezamento={<BotaoRevezamento revezamento={revezamento} />}
           />
         </div>
       </main>

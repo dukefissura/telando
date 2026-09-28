@@ -1,6 +1,7 @@
 export {
   CapturaCancelada,
   codecsDoHost,
+  compartilharComoConvidado,
   type Espectador,
   type EventosTransmissao,
   type LinkFixo,

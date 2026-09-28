@@ -28,7 +28,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
     .post(
       '/',
       limitarPorIp(deps, {
-        limite: 10,
+        limite: env.SESSOES_POR_MINUTO,
         janelaMs: MINUTO,
         codigo: 'muitas_sessoes',
         mensagem: 'Você criou sessões demais em pouco tempo. Espere um minuto.',

@@ -426,3 +426,58 @@ function encerrarNoServer(api: ClienteApi, sessao: SessaoCriada) {
     // Se o pedido não chegar, a sala some sozinha pelo emptyTimeout do LiveKit.
   })
 }
+
+const ESPERA_PELA_PERMISSAO_MS = 5000
+
+/** A aprovação chega pelos metadados um pouco antes da permissão; publicar antes falha. */
+function esperarPermissaoDeTela(room: Room): Promise<void> {
+  if (room.localParticipant.permissions?.canPublish) return Promise.resolve()
+  return new Promise((resolver, rejeitar) => {
+    const aoMudar = () => {
+      if (!room.localParticipant.permissions?.canPublish) return
+      clearTimeout(timer)
+      room.off(RoomEvent.ParticipantPermissionsChanged, aoMudar)
+      resolver()
+    }
+    const timer = setTimeout(() => {
+      room.off(RoomEvent.ParticipantPermissionsChanged, aoMudar)
+      rejeitar(new Error('O host aprovou, mas a permissão para compartilhar não chegou.'))
+    }, ESPERA_PELA_PERMISSAO_MS)
+    room.on(RoomEvent.ParticipantPermissionsChanged, aoMudar)
+  })
+}
+
+/**
+ * Quem assiste e foi aprovado pelo host compartilha a própria tela na mesma sala. Versão enxuta da
+ * transmissão do host: sem ajustes ao vivo, volume ou microfone.
+ */
+export async function compartilharComoConvidado(
+  room: Room,
+  config: ConfigTransmissao,
+  aoPerderCaptura: () => void,
+) {
+  const captura = await capturarTela(config)
+  try {
+    await esperarPermissaoDeTela(room)
+    const resolvida = resolverTransmissao(config, captura.fonte, codecsDoHost())
+    await prepararVideo(captura.video, resolvida)
+    const opcoes = opcoesDePublicacao(resolvida)
+    await publicar(room, captura.video, opcoes.video)
+    if (captura.audio) await publicar(room, captura.audio, opcoes.audio)
+  } catch (erro) {
+    pararCaptura(captura)
+    throw erro
+  }
+  captura.video.addEventListener('ended', aoPerderCaptura, { once: true })
+
+  return {
+    async parar() {
+      captura.video.removeEventListener('ended', aoPerderCaptura)
+      for (const trilha of [captura.video, captura.audio]) {
+        // Se o host já retomou a vez, o LiveKit despublicou sozinho; aí só sobra parar a captura.
+        if (trilha) await room.localParticipant.unpublishTrack(trilha).catch(() => undefined)
+      }
+      pararCaptura(captura)
+    },
+  }
+}

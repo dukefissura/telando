@@ -1,4 +1,5 @@
 export { useAtalhosDaJanela } from './atalhos.ts'
+export { Alternador, Botao, Segmentado } from './controles.tsx'
 export { AppHost } from './host/app-host.tsx'
 export type { FonteDeCaptura, MeuLinkFixo, Plataforma } from './plataforma.ts'
 export { PainelChat } from './sala/painel-chat.tsx'
