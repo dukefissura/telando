@@ -1,0 +1,65 @@
+# Produção numa VPS Linux: LiveKit, server (API e site) e Caddy com HTTPS.
+# Tudo em network_mode host: o LiveKit precisa de uma faixa grande de portas UDP, e assim o
+# firewall da máquina (ufw) vale para todos. Portas a liberar estão no README.
+services:
+  livekit:
+    image: livekit/livekit-server:v1.13.7
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      # O LiveKit aceita a configuração inteira numa variável; assim as chaves vêm do .env.
+      LIVEKIT_CONFIG: |
+        port: 7880
+        rtc:
+          tcp_port: 7881
+          port_range_start: 50000
+          port_range_end: 60000
+          use_external_ip: true
+        turn:
+          enabled: true
+          domain: ${LIVEKIT_DOMINIO:?defina LIVEKIT_DOMINIO no .env}
+          udp_port: 3478
+        keys:
+          ${LIVEKIT_API_KEY:?defina LIVEKIT_API_KEY no .env}: ${LIVEKIT_API_SECRET:?defina LIVEKIT_API_SECRET no .env}
+        room:
+          auto_create: false
+        webhook:
+          api_key: ${LIVEKIT_API_KEY}
+          urls:
+            - http://localhost:8787/api/livekit/webhook
+        logging:
+          level: info
+
+  server:
+    build:
+      context: ../..
+      dockerfile: infra/producao/server.Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      PORT: 8787
+      PUBLIC_BASE_URL: https://${TELANDO_DOMINIO:?defina TELANDO_DOMINIO no .env}
+      LIVEKIT_URL: wss://${LIVEKIT_DOMINIO}
+      LIVEKIT_API_URL: http://localhost:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      TRUST_PROXY: 1
+      DATA_DIR: /data
+      WEB_DIST: /app/apps/web/dist
+    volumes:
+      - dados:/data
+
+  caddy:
+    image: caddy:2
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      TELANDO_DOMINIO: ${TELANDO_DOMINIO}
+      LIVEKIT_DOMINIO: ${LIVEKIT_DOMINIO}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+
+volumes:
+  dados:
+  caddy:
