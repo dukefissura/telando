@@ -3,6 +3,7 @@ export {
   codecsDoHost,
   type Espectador,
   type EventosTransmissao,
+  type LinkFixo,
   TransmissaoAoVivo,
 } from './transmissao-ao-vivo.ts'
 export {

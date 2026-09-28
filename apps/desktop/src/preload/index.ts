@@ -8,6 +8,9 @@ const telando: TelandoDesktop = {
   lerPreferencias: () => ipcRenderer.invoke(CANAIS.lerPreferencias),
   gravarPreferencias: (config) => ipcRenderer.invoke(CANAIS.gravarPreferencias, config),
   avisarTransmitindo: (transmitindo) => ipcRenderer.send(CANAIS.transmitindo, transmitindo),
+  segredoDoLink: () => ipcRenderer.invoke(CANAIS.segredoDoLink),
+  lerLinkFixo: () => ipcRenderer.invoke(CANAIS.lerLinkFixo),
+  gravarLinkFixo: (link) => ipcRenderer.invoke(CANAIS.gravarLinkFixo, link),
   aoAtalhoParar: (callback) => {
     const ouvinte = () => callback()
     ipcRenderer.on(CANAIS.atalhoParar, ouvinte)

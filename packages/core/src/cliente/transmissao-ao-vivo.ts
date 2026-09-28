@@ -8,6 +8,7 @@ import {
 } from 'livekit-client'
 import type { criarClienteApi, SessaoCriada } from '../api.ts'
 import { type AmostraEnvio, type EstatisticasEnvio, resumirEnvio } from '../estatisticas.ts'
+import { lerSessaoMetadata } from '../sessao.ts'
 import {
   type ConfigTransmissao,
   constraintsDoAudioSistema,
@@ -27,7 +28,11 @@ export type EventosTransmissao = {
   aoCair: () => void
   /** O "Parar compartilhamento" do navegador (ou a janela capturada fechou). */
   aoPerderCaptura: () => void
+  /** Outra pessoa passou a apresentar (ou a vez voltou para o host, com `null`). */
+  aoMudarApresentador: (identity: string | null) => void
 }
+
+export type LinkFixo = { slug: string; segredo: string }
 
 type Captura = { video: MediaStreamTrack; audio: MediaStreamTrack | null; fonte: Dimensoes }
 
@@ -85,6 +90,17 @@ export class TransmissaoAoVivo {
   private fila: Promise<void> = Promise.resolve()
   // Trilhas republicadas nascem ligadas; isto guarda o que o host desligou para reaplicar.
   private readonly desligado = { video: false, audio: false, microfone: false }
+  /** Quem está apresentando no lugar do host; enquanto isso, a tela do host fica pausada. */
+  private apresentador: string | null = null
+  private linkFixo: LinkFixo | null = null
+
+  private get videoParado() {
+    return this.desligado.video || this.apresentador !== null
+  }
+
+  private get audioParado() {
+    return this.desligado.audio || this.apresentador !== null
+  }
 
   private constructor(
     private readonly api: ClienteApi,
@@ -133,6 +149,7 @@ export class TransmissaoAoVivo {
     api: ClienteApi,
     config: ConfigTransmissao,
     eventos: EventosTransmissao,
+    linkFixo?: LinkFixo,
   ): Promise<TransmissaoAoVivo> {
     // O seletor de tela e a criação da sala correm juntos para o link sair mais rápido.
     const [captura, sessao] = await Promise.allSettled([capturarTela(config), api.criarSessao()])
@@ -167,6 +184,10 @@ export class TransmissaoAoVivo {
       await transmissao.sincronizarAudioSistema(opcoes.audio)
       await transmissao.sincronizarMicrofone(null)
       transmissao.escutar()
+      if (linkFixo) {
+        await api.apontarLink(linkFixo.slug, linkFixo.segredo, sessao.value)
+        transmissao.linkFixo = linkFixo
+      }
       return transmissao
     } catch (erro) {
       if (transmissao) {
@@ -184,6 +205,13 @@ export class TransmissaoAoVivo {
     this.room.on(RoomEvent.ParticipantConnected, contar)
     this.room.on(RoomEvent.ParticipantDisconnected, contar)
     this.room.on(RoomEvent.Disconnected, () => this.eventos.aoCair())
+    this.room.on(RoomEvent.RoomMetadataChanged, (metadata) => {
+      const apresentador = lerSessaoMetadata(metadata)?.presenterIdentity ?? null
+      if (apresentador === this.apresentador) return
+      this.apresentador = apresentador
+      void this.aplicarPausas()
+      this.eventos.aoMudarApresentador(apresentador)
+    })
     this.vigiarCaptura()
   }
 
@@ -211,7 +239,7 @@ export class TransmissaoAoVivo {
       const volume = criarAudioComVolume(audio, this._resolvida.audio.estereo)
       const trilha = await publicar(this.room, volume.trilha, opcoes)
       this.audioSistema = { volume, trilha }
-      if (this.desligado.audio) await trilha.mute()
+      if (this.audioParado) await trilha.mute()
     }
     this.audioSistema.volume.definirGanho(this._config.volumeAudio)
   }
@@ -283,7 +311,7 @@ export class TransmissaoAoVivo {
     if (precisaRepublicarVideo(anterior, resolvida)) {
       await this.room.localParticipant.unpublishTrack(this.video, false)
       this.video = comoVideo(await publicar(this.room, this.captura.video, opcoes.video))
-      if (this.desligado.video) await this.video.mute()
+      if (this.videoParado) await this.video.mute()
     } else {
       await ajustarEncodings(this.video.sender, resolvida)
     }
@@ -316,15 +344,25 @@ export class TransmissaoAoVivo {
     this.vigiarCaptura()
   }
 
+  private async aplicarPausas() {
+    await (this.videoParado ? this.video.mute() : this.video.unmute())
+    const audio = this.audioSistema?.trilha
+    if (audio) await (this.audioParado ? audio.mute() : audio.unmute())
+  }
+
   async pausarVideo(pausar: boolean) {
     this.desligado.video = pausar
-    await (pausar ? this.video.mute() : this.video.unmute())
+    await this.aplicarPausas()
   }
 
   async mutarAudioSistema(mutar: boolean) {
     this.desligado.audio = mutar
-    if (!this.audioSistema) return
-    await (mutar ? this.audioSistema.trilha.mute() : this.audioSistema.trilha.unmute())
+    await this.aplicarPausas()
+  }
+
+  /** Passa a vez para um espectador, ou de volta para o host com `null`. */
+  passarVez(identity: string | null) {
+    return this.api.passarVez(this.sessao.id, this.sessao.hostToken, identity)
   }
 
   async mutarMicrofone(mutar: boolean) {
@@ -351,9 +389,19 @@ export class TransmissaoAoVivo {
   async encerrar() {
     // O DELETE sai antes de qualquer await: no pagehide a página pode morrer no primeiro await.
     const noServer = encerrarNoServer(this.api, this.sessao)
+    const semLinkFixo = this.linkFixo
+      ? this.api.desapontarLink(this.linkFixo.slug, this.linkFixo.segredo).catch(() => {
+          // O server também tira o link do ar quando a sessão acaba.
+        })
+      : undefined
     this.room.removeAllListeners()
     pararCaptura(this.captura)
-    await Promise.all([this.room.disconnect(), this.audioSistema?.volume.fechar(), noServer])
+    await Promise.all([
+      this.room.disconnect(),
+      this.audioSistema?.volume.fechar(),
+      noServer,
+      semLinkFixo,
+    ])
   }
 }
 

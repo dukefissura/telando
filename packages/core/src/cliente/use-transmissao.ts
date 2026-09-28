@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { type criarClienteApi, mensagemDoErro } from '../api.ts'
 import type { EstatisticasEnvio } from '../estatisticas.ts'
 import type { ConfigTransmissao, TransmissaoResolvida } from '../transmissao.ts'
-import { CapturaCancelada, type Espectador, TransmissaoAoVivo } from './transmissao-ao-vivo.ts'
+import {
+  CapturaCancelada,
+  type Espectador,
+  type LinkFixo,
+  TransmissaoAoVivo,
+} from './transmissao-ao-vivo.ts'
 
 export type EstadoTransmissao =
   | { fase: 'parada' }
@@ -11,6 +16,10 @@ export type EstadoTransmissao =
   | {
       fase: 'ao-vivo'
       link: string
+      /** Endereço do link fixo, quando esta transmissão usa um. */
+      linkFixo: string | null
+      /** Quem está apresentando no lugar do host. */
+      apresentador: string | null
       copiado: boolean
       espectadores: Espectador[]
       trancada: boolean
@@ -70,25 +79,35 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
   }, [])
 
   const iniciar = useCallback(
-    async (config: ConfigTransmissao) => {
+    async (config: ConfigTransmissao, linkFixo?: LinkFixo & { url: string }) => {
       setEstado({ fase: 'iniciando' })
       try {
-        const transmissao = await TransmissaoAoVivo.iniciar(api, config, {
-          aoMudarEspectadores: (espectadores) => atualizarAoVivo({ espectadores }),
-          aoCair: async () => {
-            await parar()
-            setEstado({
-              fase: 'erro',
-              mensagem: 'A conexão com o servidor caiu e a transmissão parou. Comece de novo.',
-            })
+        const transmissao = await TransmissaoAoVivo.iniciar(
+          api,
+          config,
+          {
+            aoMudarEspectadores: (espectadores) => atualizarAoVivo({ espectadores }),
+            aoCair: async () => {
+              await parar()
+              setEstado({
+                fase: 'erro',
+                mensagem: 'A conexão com o servidor caiu e a transmissão parou. Comece de novo.',
+              })
+            },
+            aoPerderCaptura: () => void parar(),
+            aoMudarApresentador: (apresentador) => atualizarAoVivo({ apresentador }),
           },
-          aoPerderCaptura: () => void parar(),
-        })
+          linkFixo,
+        )
         ativa.current = transmissao
+        // Com link fixo, é ele que os amigos salvam; é o que vai para a área de transferência.
+        const principal = linkFixo?.url ?? transmissao.sessao.url
         setEstado({
           fase: 'ao-vivo',
           link: transmissao.sessao.url,
-          copiado: await copiar(transmissao.sessao.url),
+          linkFixo: linkFixo?.url ?? null,
+          apresentador: null,
+          copiado: await copiar(principal),
           espectadores: transmissao.espectadores,
           trancada: false,
           config: transmissao.config,
@@ -141,6 +160,17 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     [mudarTransmissao],
   )
 
+  const passarVez = useCallback(
+    (identity: string | null) =>
+      mudarTransmissao(
+        (transmissao) => transmissao.passarVez(identity),
+        identity
+          ? 'Não consegui passar a vez. A pessoa pode ter saído da sessão.'
+          : 'Não consegui retomar a sua tela. Tente de novo.',
+      ),
+    [mudarTransmissao],
+  )
+
   const trocarFonte = useCallback(
     () =>
       mudarTransmissao(
@@ -175,10 +205,10 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     [atualizarAoVivo],
   )
 
-  const copiarLink = useCallback(async () => {
-    const link = ativa.current?.sessao.url
-    if (link) atualizarAoVivo({ copiado: await copiar(link) })
-  }, [atualizarAoVivo])
+  const copiarLink = useCallback(
+    async (link: string) => atualizarAoVivo({ copiado: await copiar(link) }),
+    [atualizarAoVivo],
+  )
 
   const alternar = useCallback(
     (campo: 'pausado' | 'audioMudo' | 'microfoneMudo') => async () => {
@@ -225,6 +255,7 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     ajustar,
     trocarFonte,
     copiarLink,
+    passarVez,
     trancar,
     remover,
     sala: estado.fase === 'ao-vivo' ? (ativa.current?.sala ?? null) : null,

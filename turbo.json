@@ -9,7 +9,11 @@
       "cache": false,
       "persistent": true
     },
-    "typecheck": {},
-    "test": {}
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    }
   }
 }

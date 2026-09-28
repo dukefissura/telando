@@ -2,6 +2,7 @@ import { type ConfigTransmissao, formatarMbps, uploadNecessarioKbps } from '@tel
 import {
   codecsDoHost,
   type Estatisticas,
+  type Remetente,
   useChatSala,
   type useTransmissao,
 } from '@telando/core/cliente'
@@ -47,6 +48,55 @@ function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | nul
   )
 }
 
+function CampoLink({
+  id,
+  rotulo,
+  url,
+  destaque,
+  aoCopiar,
+}: {
+  id: string
+  rotulo: string
+  url: string
+  destaque: boolean
+  aoCopiar: (url: string) => void
+}) {
+  return (
+    <div className="grid gap-1">
+      <label htmlFor={id} className="text-texto-suave text-xs">
+        {rotulo}
+      </label>
+      <div className="flex gap-2">
+        <input
+          id={id}
+          readOnly
+          value={url}
+          onFocus={(e) => e.currentTarget.select()}
+          className={`min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 font-mono ${destaque ? 'py-2.5 text-base' : 'py-1.5 text-sm'}`}
+        />
+        <Botao onClick={() => aoCopiar(url)}>Copiar</Botao>
+      </div>
+    </div>
+  )
+}
+
+/** Dois bipes curtos e baixos: dá para notar sem assustar ninguém em call. */
+function tocarAvisoDePedido() {
+  const contexto = new AudioContext()
+  const volume = contexto.createGain()
+  volume.gain.value = 0.05
+  volume.connect(contexto.destination)
+  for (const [indice, frequencia] of [660, 880].entries()) {
+    const oscilador = contexto.createOscillator()
+    oscilador.frequency.value = frequencia
+    oscilador.connect(volume)
+    const inicio = contexto.currentTime + indice * 0.15
+    oscilador.start(inicio)
+    oscilador.stop(inicio + 0.1)
+  }
+  setTimeout(() => void contexto.close(), 500)
+}
+
 export function TelaCompartilhando({
   plataforma,
   controle,
@@ -65,7 +115,20 @@ export function TelaCompartilhando({
   const fontes = useFontes(painel === 'fonte' ? plataforma.fontes : undefined)
   const configAtual = rascunho ?? (estado.fase === 'ao-vivo' ? estado.config : null)
   const microfones = useMicrofones(configAtual?.microfone.ativo ?? false)
-  const chat = useChatSala(controle.sala)
+  const [pedidos, setPedidos] = useState<Remetente[]>([])
+  const apresentador = estado.fase === 'ao-vivo' ? estado.apresentador : null
+  const chat = useChatSala(controle.sala, (aviso, de) => {
+    if (aviso.t === 'pedido-tela') {
+      setPedidos((atuais) =>
+        atuais.some((p) => p.identity === de.identity) ? atuais : [...atuais, de],
+      )
+      tocarAvisoDePedido()
+    } else if (aviso.t === 'pedido-cancelado') {
+      setPedidos((atuais) => atuais.filter((p) => p.identity !== de.identity))
+    } else if (aviso.t === 'devolver-tela' && de.identity === apresentador) {
+      void controle.passarVez(null)
+    }
+  })
 
   useAtalhosDaJanela({
     p: controle.alternarPausa,
@@ -77,6 +140,24 @@ export function TelaCompartilhando({
   const { resolvida } = estado
   const config = configAtual
   const aviso = estado.aviso ?? avisoFonte
+  const nomeDe = (identity: string) =>
+    estado.espectadores.find((e) => e.identity === identity)?.nome ?? 'Alguém'
+  // Quem pediu e saiu da sala some da lista.
+  const pedidosAtivos = pedidos.filter((p) =>
+    estado.espectadores.some((e) => e.identity === p.identity),
+  )
+
+  const aprovar = async (pedido: Remetente) => {
+    setPedidos((atuais) => atuais.filter((p) => p.identity !== pedido.identity))
+    await controle.passarVez(pedido.identity)
+  }
+
+  const recusar = async (pedido: Remetente) => {
+    setPedidos((atuais) => atuais.filter((p) => p.identity !== pedido.identity))
+    await chat.avisar({ t: 'pedido-recusado' }, pedido.identity).catch(() => {
+      // Se o aviso não chegar, a pessoa só continua esperando; pode pedir de novo.
+    })
+  }
 
   const ajustar = async (nova: ConfigTransmissao) => {
     setRascunho(nova)
@@ -112,22 +193,56 @@ export function TelaCompartilhando({
         {estado.pausado && <span className="ml-auto text-aviso">Vídeo pausado</span>}
       </div>
 
-      <div className="grid gap-2">
-        <label htmlFor="link" className="text-sm text-texto-suave">
+      {pedidosAtivos.map((pedido) => (
+        <section
+          key={pedido.identity}
+          aria-label={`Pedido de ${pedido.nome}`}
+          className="flex items-center justify-between gap-3 rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
+        >
+          <span>{pedido.nome} quer mostrar a tela</span>
+          <span className="flex gap-2">
+            <Botao variante="primario" onClick={() => void aprovar(pedido)}>
+              Aprovar
+            </Botao>
+            <Botao variante="fantasma" onClick={() => void recusar(pedido)}>
+              Recusar
+            </Botao>
+          </span>
+        </section>
+      ))}
+
+      {apresentador && (
+        <section
+          aria-live="polite"
+          className="flex items-center justify-between gap-3 rounded-lg border border-borda px-3 py-2 text-sm"
+        >
+          <span>Agora: tela de {nomeDe(apresentador)}. A sua está pausada para quem assiste.</span>
+          <Botao onClick={() => void controle.passarVez(null)}>Retomar minha tela</Botao>
+        </section>
+      )}
+
+      <div className="grid gap-3">
+        <p className="text-sm text-texto-suave">
           {estado.copiado
             ? 'Link copiado. É só mandar para quem vai assistir.'
-            : 'Mande este link para quem vai assistir.'}
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="link"
-            readOnly
-            value={estado.link}
-            onFocus={(e) => e.currentTarget.select()}
-            className="min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 py-2 font-mono text-sm"
+            : 'Mande o link para quem vai assistir.'}
+        </p>
+        {estado.linkFixo && (
+          <CampoLink
+            id="link-fixo"
+            rotulo="Seu link fixo"
+            url={estado.linkFixo}
+            destaque
+            aoCopiar={controle.copiarLink}
           />
-          <Botao onClick={controle.copiarLink}>Copiar</Botao>
-        </div>
+        )}
+        <CampoLink
+          id="link"
+          rotulo={estado.linkFixo ? 'Link só desta transmissão' : 'Link da transmissão'}
+          url={estado.link}
+          destaque={!estado.linkFixo}
+          aoCopiar={controle.copiarLink}
+        />
         <p className="font-mono text-texto-suave text-xs">{resolvida.resumo}</p>
       </div>
 

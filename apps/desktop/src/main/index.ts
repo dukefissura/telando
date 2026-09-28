@@ -1,5 +1,7 @@
+import { randomBytes } from 'node:crypto'
 import { cpus } from 'node:os'
 import { join } from 'node:path'
+import type { MeuLinkFixo } from '@telando/ui'
 import {
   app,
   BrowserWindow,
@@ -9,6 +11,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  safeStorage,
   session,
   shell,
   Tray,
@@ -26,10 +29,41 @@ let janela: BrowserWindow | null = null
 let bandeja: Tray | null = null
 let transmitindo = false
 
-const preferencias = new Store<{ transmissao: unknown }>({
+const preferencias = new Store<{
+  transmissao: unknown
+  linkFixo: MeuLinkFixo | null
+  /** Segredo do link fixo, cifrado com safeStorage (DPAPI da conta do Windows). */
+  segredoLinkCifrado: string | null
+}>({
   name: 'preferencias',
-  defaults: { transmissao: null },
+  defaults: { transmissao: null, linkFixo: null, segredoLinkCifrado: null },
 })
+
+/** O segredo é gerado aqui na primeira vez e é o que prova que o link fixo é deste computador. */
+function segredoDoLink(): string {
+  const cifrado = preferencias.get('segredoLinkCifrado')
+  if (cifrado) return safeStorage.decryptString(Buffer.from(cifrado, 'base64'))
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('O Windows não liberou a criptografia para guardar o segredo do link.')
+  }
+  const novo = randomBytes(32).toString('base64url')
+  preferencias.set('segredoLinkCifrado', safeStorage.encryptString(novo).toString('base64'))
+  return novo
+}
+
+function ehLinkFixo(valor: unknown): valor is MeuLinkFixo {
+  if (typeof valor !== 'object' || valor === null) return false
+  const { slug, nome, url } = valor as Record<string, unknown>
+  return (
+    typeof slug === 'string' &&
+    /^[a-z0-9-]{3,20}$/.test(slug) &&
+    typeof nome === 'string' &&
+    nome.length <= 32 &&
+    typeof url === 'string' &&
+    /^https?:\/\//.test(url) &&
+    url.length <= 200
+  )
+}
 const seletor = criarSeletorDeFontes(() => (janela ? [janela.getMediaSourceId()] : []))
 const recurso = (nome: string) => join(app.getAppPath(), 'resources', nome)
 
@@ -144,6 +178,19 @@ function registrarIpc() {
     if (JSON.stringify(config).length > LIMITE_PREFERENCIAS)
       throw new Error('Preferências grandes demais')
     preferencias.set('transmissao', config)
+  })
+  ipcMain.handle(CANAIS.segredoDoLink, (evento) => {
+    exigirOrigem(evento)
+    return segredoDoLink()
+  })
+  ipcMain.handle(CANAIS.lerLinkFixo, (evento) => {
+    exigirOrigem(evento)
+    return preferencias.get('linkFixo')
+  })
+  ipcMain.handle(CANAIS.gravarLinkFixo, (evento, link: unknown) => {
+    exigirOrigem(evento)
+    if (!ehLinkFixo(link)) throw new Error('Link fixo inválido')
+    preferencias.set('linkFixo', link)
   })
   ipcMain.on(CANAIS.transmitindo, (evento, estado: unknown) => {
     exigirOrigem(evento)
