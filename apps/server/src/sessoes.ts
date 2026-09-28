@@ -48,7 +48,11 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         }
 
         await salas.criar(id, metadata)
-        sessoes.adicionar(id, { hostTokenHash: hashDoHostToken(hostToken), metadata })
+        sessoes.adicionar(id, {
+          hostTokenHash: hashDoHostToken(hostToken),
+          metadata,
+          conexoes: new Map(),
+        })
 
         return c.json(
           {

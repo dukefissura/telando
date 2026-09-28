@@ -8,8 +8,8 @@ export type Sessao = {
   metadata: SessaoMetadata
   /** Timer que encerra a sessão se o host caiu e não voltou. */
   quedaDoHost?: ReturnType<typeof setTimeout>
-  /** Conexão atual do host no LiveKit, para ignorar eventos atrasados de conexões antigas. */
-  hostSid?: string | undefined
+  /** Conexão atual (sid) de cada participante, para ignorar eventos atrasados de conexões antigas. */
+  conexoes: Map<string, string>
 }
 
 export const hashDoHostToken = (hostToken: string) =>

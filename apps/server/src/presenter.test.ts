@@ -67,11 +67,20 @@ it('devolver a vez revoga e volta para o host', async () => {
 
 it('a vez volta ao host se quem apresentava cair', async () => {
   await passarVez('v_a')
-  const corpo = JSON.stringify({
-    event: 'participant_left',
-    room: { name: id },
-    participant: { identity: 'v_a', sid: 'PA_a' },
-  })
+  await evento('participant_left', 'v_a', 'PA_a')
+  expect(apresentador()).toBeNull()
+})
+
+it('a saída atrasada de uma conexão antiga de quem apresenta não tira a vez', async () => {
+  await passarVez('v_a')
+  await evento('participant_joined', 'v_a', 'PA_antiga')
+  await evento('participant_joined', 'v_a', 'PA_nova')
+  await evento('participant_left', 'v_a', 'PA_antiga')
+  expect(apresentador()).toBe('v_a')
+})
+
+async function evento(nome: string, identity: string, sid: string) {
+  const corpo = JSON.stringify({ event: nome, room: { name: id }, participant: { identity, sid } })
   const token = new AccessToken(envDeTeste.LIVEKIT_API_KEY, envDeTeste.LIVEKIT_API_SECRET)
   token.sha256 = createHash('sha256').update(corpo).digest('base64')
   const res = await app.request('/api/livekit/webhook', {
@@ -80,5 +89,4 @@ it('a vez volta ao host se quem apresentava cair', async () => {
     body: corpo,
   })
   expect(res.status).toBe(200)
-  expect(apresentador()).toBeNull()
-})
+}

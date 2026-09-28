@@ -17,10 +17,6 @@ type LinkGuardado = z.infer<typeof linkGuardadoSchema>
 export type EstadoLink = { nome: string; aoVivo: boolean; sessionId?: string }
 type Ouvinte = (estado: EstadoLink) => void
 
-async function hashDe(segredo: string, salt: Buffer) {
-  return derivar(segredo, salt, 32)
-}
-
 // Map, e não objeto: um slug como "constructor" não pode esbarrar no protótipo do JavaScript.
 async function lerArquivo(arquivo: string): Promise<Map<string, LinkGuardado>> {
   try {
@@ -39,17 +35,28 @@ export async function criarRegistroLinks(arquivo: string) {
   const links = await lerArquivo(arquivo)
   const aoVivo = new Map<string, string>()
   const ouvintes = new Map<string, Set<Ouvinte>>()
-  let gravacao = Promise.resolve()
+  // Reservas rodam uma por vez: duas pessoas pedindo o mesmo link livre não podem ambas levar.
+  let fila: Promise<unknown> = Promise.resolve()
 
   // Grava num temporário e renomeia: um crash no meio nunca deixa o arquivo pela metade.
-  function gravar() {
-    gravacao = gravacao.then(async () => {
-      await mkdir(dirname(arquivo), { recursive: true })
-      const temporario = `${arquivo}.${process.pid}.tmp`
-      await writeFile(temporario, JSON.stringify(Object.fromEntries(links), null, 2))
-      await rename(temporario, arquivo)
-    })
-    return gravacao
+  async function gravar() {
+    await mkdir(dirname(arquivo), { recursive: true })
+    const temporario = `${arquivo}.${process.pid}.tmp`
+    await writeFile(temporario, JSON.stringify(Object.fromEntries(links), null, 2))
+    await rename(temporario, arquivo)
+  }
+
+  /** Muda a memória e grava; se a gravação falhar, a memória volta como estava. */
+  async function guardar(slug: string, novo: LinkGuardado) {
+    const anterior = links.get(slug)
+    links.set(slug, novo)
+    try {
+      await gravar()
+    } catch (erro) {
+      if (anterior) links.set(slug, anterior)
+      else links.delete(slug)
+      throw erro
+    }
   }
 
   function estado(slug: string): EstadoLink | null {
@@ -70,30 +77,33 @@ export async function criarRegistroLinks(arquivo: string) {
     const link = links.get(slug)
     if (!link) return false
     const esperado = Buffer.from(link.hash, 'base64')
-    return timingSafeEqual(await hashDe(segredo, Buffer.from(link.salt, 'base64')), esperado)
+    return timingSafeEqual(await derivar(segredo, Buffer.from(link.salt, 'base64'), 32), esperado)
+  }
+
+  async function reservarAgora(slug: string, segredo: string, nome: string) {
+    const existente = links.get(slug)
+    if (existente) {
+      if (!(await confere(slug, segredo))) return 'ocupado' as const
+      await guardar(slug, { ...existente, nome })
+      avisar(slug)
+      return 'atualizado' as const
+    }
+    const salt = randomBytes(16)
+    const hash = await derivar(segredo, salt, 32)
+    await guardar(slug, { nome, salt: salt.toString('base64'), hash: hash.toString('base64') })
+    return 'criado' as const
   }
 
   return {
     estado,
 
     /** 'criado' na primeira vez, 'atualizado' se o segredo é do mesmo dono, 'ocupado' se não. */
-    async reservar(slug: string, segredo: string, nome: string) {
-      const existente = links.get(slug)
-      if (existente) {
-        if (!(await confere(slug, segredo))) return 'ocupado' as const
-        links.set(slug, { ...existente, nome })
-        await gravar()
-        avisar(slug)
-        return 'atualizado' as const
-      }
-      const salt = randomBytes(16)
-      links.set(slug, {
-        nome,
-        salt: salt.toString('base64'),
-        hash: (await hashDe(segredo, salt)).toString('base64'),
+    reservar(slug: string, segredo: string, nome: string) {
+      const reserva = fila.then(() => reservarAgora(slug, segredo, nome))
+      fila = reserva.catch(() => {
+        // O erro já chegou a quem pediu esta reserva; a fila segue para a próxima.
       })
-      await gravar()
-      return 'criado' as const
+      return reserva
     },
 
     confere,

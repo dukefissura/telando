@@ -1,4 +1,4 @@
-import { mkdtemp, readFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -169,5 +169,25 @@ describe('ao vivo', () => {
     await json('POST', '/api/links/luan/live', { segredo: SEGREDO, sessionId: id }, hostToken)
     expect(await proximo()).toContain(`"sessionId":"${id}"`)
     await leitor?.cancel()
+  })
+})
+
+describe('registro em disco', () => {
+  it('duas reservas simultâneas do mesmo link: só uma leva', async () => {
+    const [a, b] = await Promise.all([reservar('corrida'), reservar('corrida', OUTRO, 'Outro')])
+    expect([a.status, b.status].sort()).toEqual([201, 409])
+  })
+
+  it('uma gravação que falha não derruba as próximas nem deixa reserva fantasma', async () => {
+    // Um diretório no lugar do arquivo temporário faz a gravação falhar uma vez.
+    const temporario = `${arquivo}.${process.pid}.tmp`
+    await mkdir(temporario, { recursive: true })
+    expect((await reservar('primeiro')).status).toBe(500)
+    expect((await app.request('/api/links/primeiro')).status).toBe(404)
+
+    await rm(temporario, { recursive: true })
+    expect((await reservar('segundo')).status).toBe(201)
+    await montar()
+    expect((await app.request('/api/links/segundo')).status).toBe(200)
   })
 })
