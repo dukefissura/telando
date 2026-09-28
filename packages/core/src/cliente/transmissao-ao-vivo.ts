@@ -103,16 +103,34 @@ export class TransmissaoAoVivo {
     return this.desligado.audio || this.apresentador !== null
   }
 
-  private constructor(
-    private readonly api: ClienteApi,
-    readonly sessao: SessaoCriada,
-    private readonly room: Room,
-    private readonly eventos: EventosTransmissao,
-    private captura: Captura,
-    private video: LocalVideoTrack,
-    private _config: ConfigTransmissao,
-    private _resolvida: TransmissaoResolvida,
-  ) {}
+  private readonly api: ClienteApi
+  readonly sessao: SessaoCriada
+  private readonly room: Room
+  private readonly eventos: EventosTransmissao
+  private captura: Captura
+  private video: LocalVideoTrack
+  private _config: ConfigTransmissao
+  private _resolvida: TransmissaoResolvida
+
+  private constructor(partes: {
+    api: ClienteApi
+    sessao: SessaoCriada
+    room: Room
+    eventos: EventosTransmissao
+    captura: Captura
+    video: LocalVideoTrack
+    config: ConfigTransmissao
+    resolvida: TransmissaoResolvida
+  }) {
+    this.api = partes.api
+    this.sessao = partes.sessao
+    this.room = partes.room
+    this.eventos = partes.eventos
+    this.captura = partes.captura
+    this.video = partes.video
+    this._config = partes.config
+    this._resolvida = partes.resolvida
+  }
 
   get config() {
     return this._config
@@ -175,16 +193,16 @@ export class TransmissaoAoVivo {
       const opcoes = opcoesDePublicacao(resolvida)
       const video = comoVideo(await publicar(room, captura.value.video, opcoes.video))
 
-      transmissao = new TransmissaoAoVivo(
+      transmissao = new TransmissaoAoVivo({
         api,
-        sessao.value,
+        sessao: sessao.value,
         room,
         eventos,
-        captura.value,
+        captura: captura.value,
         video,
         config,
         resolvida,
-      )
+      })
       await transmissao.sincronizarAudioSistema(opcoes.audio)
       await transmissao.sincronizarMicrofone(null)
       transmissao.escutar()

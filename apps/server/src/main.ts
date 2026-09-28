@@ -8,6 +8,7 @@ import { criarApp } from './app.ts'
 import { lerEnv } from './env.ts'
 import { criarRegistroLinks } from './links.ts'
 import { criarSalaGateway } from './salas.ts'
+import { criarSite } from './site.ts'
 
 const arquivoEnv = fileURLToPath(new URL('../../../.env', import.meta.url))
 if (existsSync(arquivoEnv)) process.loadEnvFile(arquivoEnv)
@@ -33,6 +34,11 @@ await salas.apagarTodas().catch((erro: unknown) => {
   )
 })
 
-serve({ fetch: criarApp({ env, salas, links, ipDoCliente }).fetch, port: env.PORT }, ({ port }) => {
-  console.log(`server em http://localhost:${port}`)
+const api = criarApp({ env, salas, links, ipDoCliente })
+const app = env.WEB_DIST
+  ? criarSite(api, { dist: resolve(env.WEB_DIST), livekitUrl: env.LIVEKIT_URL })
+  : api
+
+serve({ fetch: app.fetch, port: env.PORT }, ({ port }) => {
+  console.log(`server em http://localhost:${port}${env.WEB_DIST ? ' (API e site)' : ' (só API)'}`)
 })

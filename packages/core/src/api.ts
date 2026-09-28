@@ -31,13 +31,14 @@ export type EstadoLink = z.infer<typeof estadoLinkSchema>
 type Entrada = z.infer<typeof entradaSchema>
 
 export class ErroApi extends Error {
-  constructor(
-    readonly status: number,
-    readonly codigo: string,
-    mensagem: string,
-  ) {
+  readonly status: number
+  readonly codigo: string
+
+  constructor(status: number, codigo: string, mensagem: string) {
     super(mensagem)
     this.name = 'ErroApi'
+    this.status = status
+    this.codigo = codigo
   }
 }
 

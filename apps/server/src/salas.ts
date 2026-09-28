@@ -21,7 +21,7 @@ function ignorarSeNaoExiste(erro: unknown) {
 
 export function criarSalaGateway(env: Env): SalaGateway {
   const cliente = new RoomServiceClient(
-    env.LIVEKIT_URL.replace(/^ws/, 'http'),
+    (env.LIVEKIT_API_URL ?? env.LIVEKIT_URL).replace(/^ws/, 'http'),
     env.LIVEKIT_API_KEY,
     env.LIVEKIT_API_SECRET,
   )
