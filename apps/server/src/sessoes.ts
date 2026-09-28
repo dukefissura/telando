@@ -1,5 +1,10 @@
 import { randomBytes } from 'node:crypto'
-import { apelidoAleatorio, type SessaoMetadata } from '@telando/core'
+import {
+  ALFABETO_ID_SESSAO,
+  apelidoAleatorio,
+  type SessaoMetadata,
+  TAMANHO_ID_SESSAO,
+} from '@telando/core'
 import { Hono } from 'hono'
 import { customAlphabet, nanoid } from 'nanoid'
 import { z } from 'zod'
@@ -9,8 +14,7 @@ import { limitarPorIp } from './limite.ts'
 import { hashDoHostToken, type RegistroSessoes } from './registro-sessoes.ts'
 import { emitirLivekitToken } from './tokens.ts'
 
-// Sem 0/O, 1/l/I: o link às vezes é ditado ou copiado à mão.
-const novoIdSessao = customAlphabet('23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', 12)
+const novoIdSessao = customAlphabet(ALFABETO_ID_SESSAO, TAMANHO_ID_SESSAO)
 
 const nomeSchema = z.string().trim().max(32)
 const criarSchema = z.object({ nome: nomeSchema.optional() })

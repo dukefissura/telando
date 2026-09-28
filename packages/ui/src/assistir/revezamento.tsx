@@ -7,10 +7,14 @@ import {
   type SessaoMetadata,
 } from '@telando/core'
 import { type AvisoRevezamento, compartilharComoConvidado } from '@telando/core/cliente'
-import { Alternador, Botao, Segmentado } from '@telando/ui'
 import type { Room } from 'livekit-client'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Alternador, Botao, Segmentado } from '../controles.tsx'
+import { PainelFonte, useFontes } from '../host/painel-fonte.tsx'
+import { ENTRADA } from '../movimento.ts'
+import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
+import { classeBotaoDaBarra } from './barra-de-controles.tsx'
 
 type Pedido = 'livre' | 'pedido' | 'recusado'
 type Compartilhamento = Awaited<ReturnType<typeof compartilharComoConvidado>>
@@ -21,6 +25,7 @@ export function useRevezamento(
   room: Room,
   sessao: SessaoMetadata | null,
   avisar: (aviso: AvisoRevezamento, para: string) => Promise<void>,
+  fontes: Plataforma['fontes'],
 ) {
   const [pedido, setPedido] = useState<Pedido>('livre')
   const [compartilhando, setCompartilhando] = useState(false)
@@ -72,9 +77,10 @@ export function useRevezamento(
       setPedido('livre')
       if (host) await avisar({ t: 'pedido-cancelado' }, host)
     },
-    async compartilhar(preset: PresetId, comAudio: boolean) {
+    async compartilhar(preset: PresetId, comAudio: boolean, fonte: FonteDeCaptura) {
       setErro(null)
       try {
+        await fontes.escolher(fonte.id)
         const config = { ...aplicarPreset(configPadrao(), preset), audioSistema: comAudio }
         const compartilhamento = await compartilharComoConvidado(
           room,
@@ -98,20 +104,29 @@ export function useRevezamento(
 
 export type Revezamento = ReturnType<typeof useRevezamento>
 
-/** O que aparece para quem foi aprovado pelo host: presets e áudio, sem o resto das configurações. */
-export function EscolherOQueCompartilhar({ revezamento }: { revezamento: Revezamento }) {
+/** O que aparece para quem foi aprovado pelo host: a fonte, os presets e o som, sem o resto. */
+export function EscolherOQueCompartilhar({
+  revezamento,
+  fontes,
+}: {
+  revezamento: Revezamento
+  fontes: Plataforma['fontes']
+}) {
   const [preset, setPreset] = useState<PresetId>('texto')
   const [comAudio, setComAudio] = useState(true)
+  const [fonte, setFonte] = useState<FonteDeCaptura | null>(null)
+  const lista = useFontes(fontes)
 
   return (
     <motion.section
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={ENTRADA}
       aria-label="Você foi aprovado"
-      className="grid w-[30rem] max-w-[calc(100vw-2rem)] gap-5 rounded-xl border border-borda bg-fundo p-5"
+      className="grid max-h-[calc(100dvh-8rem)] w-[44rem] max-w-[calc(100vw-2rem)] gap-5 overflow-y-auto rounded-xl border border-borda bg-fundo p-5"
     >
       <h2 className="font-semibold">Você foi aprovado, escolha o que compartilhar</h2>
+      <PainelFonte lista={lista} escolhida={fonte?.id ?? null} aoEscolher={setFonte} />
       <Segmentado
         rotulo="Tipo de conteúdo"
         opcoes={(Object.keys(PRESETS) as PresetId[]).map((id) => ({
@@ -121,10 +136,18 @@ export function EscolherOQueCompartilhar({ revezamento }: { revezamento: Revezam
         valor={preset}
         aoMudar={setPreset}
       />
-      <Alternador rotulo="Compartilhar o áudio" ligado={comAudio} aoMudar={setComAudio} />
+      <Alternador
+        rotulo="Compartilhar o som do computador"
+        ligado={comAudio}
+        aoMudar={setComAudio}
+      />
       <div className="flex gap-2">
-        <Botao variante="primario" onClick={() => void revezamento.compartilhar(preset, comAudio)}>
-          Compartilhar
+        <Botao
+          variante="primario"
+          disabled={!fonte}
+          onClick={() => fonte && void revezamento.compartilhar(preset, comAudio, fonte)}
+        >
+          {fonte ? 'Compartilhar' : 'Escolha uma tela ou janela'}
         </Botao>
         <Botao variante="fantasma" onClick={() => void revezamento.devolver()}>
           Agora não
@@ -141,14 +164,14 @@ export function EscolherOQueCompartilhar({ revezamento }: { revezamento: Revezam
 
 /** Botão do revezamento na barra de controles; muda conforme a fase. */
 export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) {
-  // Navegador sem captura de tela (raro no PC) não mostra a opção.
-  if (!navigator.mediaDevices?.getDisplayMedia) return null
-  const classe = 'rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10'
-
   switch (revezamento.fase) {
     case 'livre':
       return (
-        <button type="button" className={classe} onClick={() => void revezamento.pedir()}>
+        <button
+          type="button"
+          className={classeBotaoDaBarra}
+          onClick={() => void revezamento.pedir()}
+        >
           Pedir para compartilhar
         </button>
       )
@@ -156,7 +179,7 @@ export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) 
       return (
         <button
           type="button"
-          className={`${classe} text-texto-suave`}
+          className={`${classeBotaoDaBarra} text-texto-suave`}
           onClick={() => void revezamento.cancelar()}
         >
           Pedido enviado · cancelar
@@ -170,7 +193,11 @@ export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) 
       )
     case 'compartilhando':
       return (
-        <button type="button" className={classe} onClick={() => void revezamento.devolver()}>
+        <button
+          type="button"
+          className={classeBotaoDaBarra}
+          onClick={() => void revezamento.devolver()}
+        >
           Devolver a vez
         </button>
       )

@@ -16,6 +16,12 @@ const telando: TelandoDesktop = {
     ipcRenderer.on(CANAIS.atalhoParar, ouvinte)
     return () => ipcRenderer.off(CANAIS.atalhoParar, ouvinte)
   },
+  linkPendente: () => ipcRenderer.invoke(CANAIS.linkPendente),
+  aoChegarLink: (callback) => {
+    const ouvinte = () => callback()
+    ipcRenderer.on(CANAIS.chegouLink, ouvinte)
+    return () => ipcRenderer.off(CANAIS.chegouLink, ouvinte)
+  },
 }
 
 contextBridge.exposeInMainWorld('telando', telando)

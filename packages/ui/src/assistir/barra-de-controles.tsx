@@ -1,5 +1,4 @@
 import type { Reacao } from '@telando/core'
-import { BotoesDeReacao } from '@telando/ui'
 import type { RemoteVideoTrack } from 'livekit-client'
 import {
   Maximize,
@@ -10,9 +9,13 @@ import {
   VolumeX,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { BotoesDeReacao } from '../sala/reacoes.tsx'
 import { IndicadorConexao } from './indicador-conexao.tsx'
 
 export type Qualidade = 'auto' | 'alta' | 'media' | 'baixa'
+
+/** Botões de texto da barra (Sair, pedir a vez). */
+export const classeBotaoDaBarra = 'rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10'
 
 function BotaoIcone({
   rotulo,
@@ -58,6 +61,7 @@ export function BarraDeControles({
   aoAlternarTelaCheia,
   aoAlternarPip,
   revezamento,
+  aoSair,
 }: {
   volume: number
   mudo: boolean
@@ -75,6 +79,7 @@ export function BarraDeControles({
   aoAlternarPip: (() => void) | null
   /** Pedir, cancelar ou devolver a vez de compartilhar. */
   revezamento: ReactNode
+  aoSair: () => void
 }) {
   const icone = { size: 18, strokeWidth: 1.5, 'aria-hidden': true } as const
   return (
@@ -138,6 +143,11 @@ export function BarraDeControles({
       >
         {telaCheia ? <Minimize {...icone} /> : <Maximize {...icone} />}
       </BotaoIcone>
+
+      <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
+      <button type="button" onClick={aoSair} className={`${classeBotaoDaBarra} text-texto-suave`}>
+        Sair
+      </button>
     </div>
   )
 }

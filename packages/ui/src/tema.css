@@ -63,6 +63,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* A troca de tema anima só o círculo (BotaoTema); o crossfade padrão ficaria por cima dele. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 :focus-visible {
   outline: 2px solid var(--destaque);
   outline-offset: 2px;

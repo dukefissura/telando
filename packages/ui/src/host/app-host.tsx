@@ -1,7 +1,7 @@
 import { type ConfigTransmissao, lerConfigSalva, mensagemDoErro } from '@telando/core'
 import { useTransmissao } from '@telando/core/cliente'
-import { useCallback, useEffect, useState } from 'react'
-import { Botao } from '../controles.tsx'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { Botao, classeCampo } from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { BotaoTema } from '../tema.tsx'
 import { TelaCompartilhando } from './tela-compartilhando.tsx'
@@ -27,11 +27,21 @@ function TelaInicio({
   meuLink,
   aoCompartilhar,
   aoAbrirLinkFixo,
+  aoEntrarComLink,
+  avisoLink,
 }: {
   meuLink: MeuLinkFixo | null
   aoCompartilhar: () => void
-  aoAbrirLinkFixo: (() => void) | null
+  aoAbrirLinkFixo: () => void
+  aoEntrarComLink: (texto: string) => void
+  avisoLink: string | null
 }) {
+  const entrar = (evento: FormEvent<HTMLFormElement>) => {
+    evento.preventDefault()
+    const campo = new FormData(evento.currentTarget).get('link')
+    if (typeof campo === 'string') aoEntrarComLink(campo)
+  }
+
   return (
     <main className="relative grid min-h-dvh content-center px-8 py-16">
       <div className="absolute top-4 right-4">
@@ -47,32 +57,58 @@ function TelaInicio({
           Compartilhar tela
         </Botao>
 
-        {aoAbrirLinkFixo && (
-          <div className="flex items-center justify-between gap-4 border-borda border-t pt-5">
-            {meuLink ? (
-              <p className="min-w-0 truncate font-mono text-sm">
-                <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
-                <span className="text-destaque">{meuLink.slug}</span>
-              </p>
-            ) : (
-              <p className="text-sm text-texto-suave">Um endereço que seus amigos salvam.</p>
-            )}
-            <Botao variante="fantasma" onClick={aoAbrirLinkFixo}>
-              {meuLink ? 'Editar link fixo' : 'Criar link fixo'}
-            </Botao>
+        <div className="flex items-center justify-between gap-4 border-borda border-t pt-5">
+          {meuLink ? (
+            <p className="min-w-0 truncate font-mono text-sm">
+              <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
+              <span className="text-destaque">{meuLink.slug}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-texto-suave">Um endereço que seus amigos salvam.</p>
+          )}
+          <Botao variante="fantasma" onClick={aoAbrirLinkFixo}>
+            {meuLink ? 'Editar link fixo' : 'Criar link fixo'}
+          </Botao>
+        </div>
+
+        <form className="grid gap-2 border-borda border-t pt-5" onSubmit={entrar}>
+          <label htmlFor="entrar-link" className="text-sm text-texto-suave">
+            Entrar com um link
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="entrar-link"
+              name="link"
+              placeholder="Cole aqui o link que te mandaram"
+              className={`${classeCampo} min-w-0 flex-1`}
+            />
+            <Botao type="submit">Entrar</Botao>
           </div>
-        )}
+          {avisoLink && (
+            <p role="alert" className="text-parar text-sm">
+              {avisoLink}
+            </p>
+          )}
+        </form>
       </div>
     </main>
   )
 }
 
-export function AppHost({ plataforma }: { plataforma: Plataforma }) {
+export function AppHost({
+  plataforma,
+  aoEntrarComLink,
+  avisoLink,
+  aoMudarOcupado,
+}: {
+  plataforma: Plataforma
+  aoEntrarComLink: (texto: string) => void
+  avisoLink: string | null
+  /** Preparando, começando ou no ar: enquanto isso, um link não pode tirar o painel da tela. */
+  aoMudarOcupado: (ocupado: boolean) => void
+}) {
   const [config, mudarConfig] = useConfigSalva(plataforma.preferencias)
-  const controle = useTransmissao({
-    api: plataforma.api,
-    ...(plataforma.usoDeCpu && { usoDeCpu: plataforma.usoDeCpu }),
-  })
+  const controle = useTransmissao({ api: plataforma.api, usoDeCpu: plataforma.usoDeCpu })
   const [tela, setTela] = useState<'inicio' | 'configurando' | 'link-fixo'>('inicio')
   const [meuLink, setMeuLink] = useState<MeuLinkFixo | null>(null)
   const [usarLinkFixo, setUsarLinkFixo] = useState(true)
@@ -82,7 +118,7 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
   const { linkFixo } = plataforma
 
   useEffect(() => {
-    void linkFixo?.ler().then(setMeuLink)
+    void linkFixo.ler().then(setMeuLink)
   }, [linkFixo])
 
   useEffect(() => {
@@ -94,7 +130,7 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
     setPreparando(true)
     setErroAoPreparar(null)
     try {
-      const comLink = linkFixo && meuLink && usarLinkFixo
+      const comLink = meuLink && usarLinkFixo
       const segredo = comLink ? await linkFixo.segredo() : null
       await controle.iniciar(
         config,
@@ -111,21 +147,29 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
     }
   }
 
-  useEffect(() => plataforma.aoAtalhoParar?.(() => void parar()), [plataforma, parar])
+  useEffect(() => plataforma.aoAtalhoParar(() => void parar()), [plataforma, parar])
 
   const aoVivo = estado.fase === 'ao-vivo'
-  useEffect(() => plataforma.aoMudarTransmissao?.(aoVivo), [plataforma, aoVivo])
+  useEffect(() => plataforma.aoMudarTransmissao(aoVivo), [plataforma, aoVivo])
+
+  const ocupado = aoVivo || preparando || estado.fase === 'iniciando'
+  useEffect(() => aoMudarOcupado(ocupado), [aoMudarOcupado, ocupado])
 
   if (!config) return null
   if (estado.fase === 'ao-vivo') {
     return (
-      <TelaCompartilhando plataforma={plataforma} controle={controle} aoMudarConfig={mudarConfig} />
+      <TelaCompartilhando
+        plataforma={plataforma}
+        controle={controle}
+        aoMudarConfig={mudarConfig}
+        avisoLink={avisoLink}
+      />
     )
   }
-  if (tela === 'link-fixo' && linkFixo) {
+  if (tela === 'link-fixo') {
     return (
       <TelaLinkFixo
-        plataforma={{ ...plataforma, linkFixo }}
+        plataforma={plataforma}
         atual={meuLink}
         aoSalvar={(link) => {
           setMeuLink(link)
@@ -155,7 +199,9 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
     <TelaInicio
       meuLink={meuLink}
       aoCompartilhar={() => setTela('configurando')}
-      aoAbrirLinkFixo={linkFixo ? () => setTela('link-fixo') : null}
+      aoAbrirLinkFixo={() => setTela('link-fixo')}
+      aoEntrarComLink={aoEntrarComLink}
+      avisoLink={avisoLink}
     />
   )
 }

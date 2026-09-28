@@ -1,7 +1,6 @@
 import {
   RoomAudioRenderer,
   type TrackReference,
-  useAudioPlayback,
   useConnectionState,
   useIsMuted,
   useRemoteParticipant,
@@ -12,7 +11,6 @@ import {
 } from '@livekit/components-react'
 import { lerSessaoMetadata } from '@telando/core'
 import { type AvisoRevezamento, useChatSala } from '@telando/core/cliente'
-import { ColunaDeReacoes, PainelChat, useAtalhosDaJanela } from '@telando/ui'
 import {
   ConnectionState,
   RemoteTrackPublication,
@@ -21,7 +19,12 @@ import {
   VideoQuality,
 } from 'livekit-client'
 import { AnimatePresence, motion } from 'motion/react'
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { useAtalhosDaJanela } from '../atalhos.ts'
+import { ENTRADA, MOLA_SUAVE, SAIDA, TRANSICAO_SELO } from '../movimento.ts'
+import type { Plataforma } from '../plataforma.ts'
+import { PainelChat } from '../sala/painel-chat.tsx'
+import { ColunaDeReacoes } from '../sala/reacoes.tsx'
 import { Aviso } from './aviso.tsx'
 import { BarraDeControles, type Qualidade } from './barra-de-controles.tsx'
 import { BotaoRevezamento, EscolherOQueCompartilhar, useRevezamento } from './revezamento.tsx'
@@ -86,6 +89,16 @@ function useQualidade(
   }, [publicacao, qualidade, refVideo])
 }
 
+/** Cada estado do palco ocupa a área toda; assim o que sai e o que entra podem se sobrepor. */
+function Camada({ children }: { children: ReactNode }) {
+  return (
+    <motion.div className="absolute inset-0 grid place-items-center" exit={SAIDA}>
+      {children}
+    </motion.div>
+  )
+}
+
+/** O vídeo liga como uma TV de tubo: uma linha de luz que abre até a imagem. */
 function VideoDaTela({
   tela,
   refVideo,
@@ -96,7 +109,21 @@ function VideoDaTela({
   const pausado = useIsMuted(tela)
   return (
     <>
-      <VideoTrack trackRef={tela} ref={refVideo} className="h-full w-full object-contain" />
+      <motion.div
+        className="absolute inset-0 origin-center"
+        initial={{ scaleX: 0, scaleY: 0.004, opacity: 0, filter: 'brightness(3)' }}
+        animate={{
+          scaleX: [0, 1, 1],
+          scaleY: [0.004, 0.004, 1],
+          opacity: [0, 1, 1],
+          filter: ['brightness(3)', 'brightness(3)', 'brightness(1)'],
+          // Um filter que fica no ancestral do vídeo tira ele do overlay de hardware.
+          transitionEnd: { filter: 'none' },
+        }}
+        transition={{ duration: 0.42, times: [0, 0.43, 1], ease: MOLA_SUAVE }}
+      >
+        <VideoTrack trackRef={tela} ref={refVideo} className="h-full w-full object-contain" />
+      </motion.div>
       {pausado && (
         <div className="absolute inset-0 grid place-items-center bg-black/80">
           <Aviso
@@ -109,7 +136,7 @@ function VideoDaTela({
   )
 }
 
-export function Palco() {
+export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair: () => void }) {
   const room = useRoomContext()
   const { metadata } = useRoomInfo()
   const sessao = lerSessaoMetadata(metadata)
@@ -120,11 +147,10 @@ export function Palco() {
   const telas = useTracks([Track.Source.ScreenShare], { onlySubscribed: true })
   const tela = telas.find((t) => t.participant.identity === alvo)
   const conexao = useConnectionState(room)
-  const { canPlayAudio, startAudio } = useAudioPlayback(room)
   // O chat entrega os avisos do revezamento; o revezamento usa o chat para avisar o host.
   const aoAvisoDoRevezamento = useRef<(aviso: AvisoRevezamento) => void>(() => undefined)
   const chat = useChatSala(room, (aviso) => aoAvisoDoRevezamento.current(aviso))
-  const revezamento = useRevezamento(room, sessao, chat.avisar)
+  const revezamento = useRevezamento(room, sessao, chat.avisar, fontes)
   aoAvisoDoRevezamento.current = revezamento.aoAviso
   const souEuNaTela = alvo === room.localParticipant.identity
   const nomeNaTela = sessao?.presenterIdentity
@@ -191,44 +217,80 @@ export function Palco() {
   if (souEuNaTela) {
     conteudo =
       revezamento.fase === 'aprovado' ? (
-        <EscolherOQueCompartilhar revezamento={revezamento} />
+        <Camada key="aprovado">
+          <EscolherOQueCompartilhar revezamento={revezamento} fontes={fontes} />
+        </Camada>
       ) : (
-        <Aviso
-          titulo="Você está mostrando a sua tela"
-          texto="Todo mundo na sessão está vendo. Quando terminar, devolva a vez."
-        />
+        <Camada key="mostrando">
+          <Aviso
+            titulo="Você está mostrando a sua tela"
+            texto="Todo mundo na sessão está vendo. Quando terminar, devolva a vez."
+          />
+        </Camada>
       )
-  } else if (!host) {
-    conteudo = jaViuOHost ? (
-      <Aviso
-        titulo="O host perdeu a conexão"
-        texto="Esperando ele voltar. Se não voltar em um minuto, a sessão acaba."
-      />
-    ) : (
-      <Aviso titulo="Aguardando o host começar" texto="A tela aparece aqui sozinha." />
+  } else if (!host && jaViuOHost) {
+    conteudo = (
+      <Camada key="host-caiu">
+        <Aviso
+          titulo="O host perdeu a conexão"
+          texto="Esperando ele voltar. Se não voltar em um minuto, a sessão acaba."
+        />
+      </Camada>
     )
-  } else if (!tela) {
-    conteudo = <Aviso titulo="Aguardando o host começar" texto="A tela aparece aqui sozinha." />
+  } else if (!host || !tela) {
+    conteudo = (
+      <Camada key="aguardando">
+        <Aviso titulo="Aguardando o host começar" texto="A tela aparece aqui sozinha." />
+      </Camada>
+    )
   } else {
-    conteudo = <VideoDaTela tela={tela} refVideo={refVideo} />
+    // Por quem está na tela, não pela trilha: a TV liga de novo quando a vez muda, não ao reconectar.
+    conteudo = (
+      <Camada key={`video-${alvo}`}>
+        <VideoDaTela tela={tela} refVideo={refVideo} />
+      </Camada>
+    )
   }
+  const textoSelo = sessao?.presenterIdentity
+    ? `Agora: tela de ${nomeNaTela}`
+    : nomeNaTela
+      ? `Tela de ${nomeNaTela}`
+      : 'Tela compartilhada'
 
   return (
     <div ref={refPalco} className={`flex h-dvh bg-black ${ativo ? '' : 'cursor-none'}`}>
-      <main className="relative grid min-w-0 flex-1 place-items-center">
-        {conteudo}
+      <main className="relative min-w-0 flex-1">
+        {/* "wait": o que sai termina antes do novo entrar; os vídeos de dois apresentadores
+            dividem a refVideo, e a saída atrasada do antigo apagaria a do novo. */}
+        <AnimatePresence initial={false} mode="wait">
+          {conteudo}
+        </AnimatePresence>
 
-        {sessao && tela && (
-          <p
-            aria-live="polite"
-            className={`absolute top-4 left-4 rounded-md bg-fundo/80 px-2.5 py-1 text-sm transition-opacity duration-200 ${ativo || sessao.presenterIdentity ? 'opacity-100' : 'opacity-0'}`}
+        {sessao && host && (
+          <div
+            className={`absolute top-4 left-4 transition-opacity duration-200 ${ativo || sessao.presenterIdentity ? 'opacity-100' : 'opacity-0'}`}
           >
-            {sessao.presenterIdentity
-              ? `Agora: tela de ${nomeNaTela}`
-              : nomeNaTela
-                ? `Tela de ${nomeNaTela}`
-                : 'Tela compartilhada'}
-          </p>
+            {/* O mesmo layoutId do endereço na espera do link fixo: ele voa até aqui ao entrar. */}
+            <motion.p
+              layoutId="selo-tela"
+              aria-live="polite"
+              className="overflow-hidden rounded-md bg-fundo/80 px-2.5 py-1 text-sm"
+              transition={TRANSICAO_SELO}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={textoSelo}
+                  className="block"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={ENTRADA}
+                >
+                  {textoSelo}
+                </motion.span>
+              </AnimatePresence>
+            </motion.p>
+          </div>
         )}
 
         {conexao === ConnectionState.Reconnecting && (
@@ -240,20 +302,11 @@ export function Palco() {
           </p>
         )}
 
-        {!canPlayAudio && (
-          <button
-            type="button"
-            onClick={() => void startAudio()}
-            className="absolute top-14 left-1/2 -translate-x-1/2 rounded-lg bg-texto px-4 py-2 font-medium text-fundo text-sm"
-          >
-            Clique para ativar o som
-          </button>
-        )}
-
         <ColunaDeReacoes reacoes={chat.reacoes} />
 
+        {/* Ao ficar ocioso a barra afunda 8px enquanto some; volta mais rápido do que sai. */}
         <div
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-opacity duration-200 ${ativo ? 'opacity-100' : 'opacity-0 focus-within:opacity-100 hover:opacity-100'}`}
+          className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-[opacity,translate] ${ativo ? 'translate-y-0 opacity-100 duration-150 ease-out' : 'translate-y-2 opacity-0 duration-200 ease-in focus-within:translate-y-0 focus-within:opacity-100 hover:translate-y-0 hover:opacity-100'}`}
         >
           <BarraDeControles
             volume={volume}
@@ -274,6 +327,7 @@ export function Palco() {
             aoAlternarTelaCheia={alternarTelaCheia}
             aoAlternarPip={alternarPip}
             revezamento={<BotaoRevezamento revezamento={revezamento} />}
+            aoSair={aoSair}
           />
         </div>
       </main>
@@ -284,7 +338,7 @@ export function Palco() {
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={ENTRADA}
             className="flex shrink-0 flex-col overflow-hidden border-borda border-l bg-fundo"
           >
             <PainelChat
