@@ -6,12 +6,14 @@ import {
   useChatSala,
   type useTransmissao,
 } from '@telando/core/cliente'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
 import { Alternador, Botao, Secao } from '../controles.tsx'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
 import { PainelChat } from '../sala/painel-chat.tsx'
 import { BotoesDeReacao, ColunaDeReacoes } from '../sala/reacoes.tsx'
+import { Link } from './link.tsx'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
 import { useMicrofones } from './use-microfones.ts'
@@ -45,38 +47,6 @@ function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | nul
         </div>
       ))}
     </dl>
-  )
-}
-
-function CampoLink({
-  id,
-  rotulo,
-  url,
-  destaque,
-  aoCopiar,
-}: {
-  id: string
-  rotulo: string
-  url: string
-  destaque: boolean
-  aoCopiar: (url: string) => void
-}) {
-  return (
-    <div className="grid gap-1">
-      <label htmlFor={id} className="text-texto-suave text-xs">
-        {rotulo}
-      </label>
-      <div className="flex gap-2">
-        <input
-          id={id}
-          readOnly
-          value={url}
-          onFocus={(e) => e.currentTarget.select()}
-          className={`min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 font-mono ${destaque ? 'py-2.5 text-base' : 'py-1.5 text-sm'}`}
-        />
-        <Botao onClick={() => aoCopiar(url)}>Copiar</Botao>
-      </div>
-    </div>
   )
 }
 
@@ -181,11 +151,15 @@ export function TelaCompartilhando({
 
   return (
     <main className="relative mx-auto grid max-w-xl gap-5 p-6">
-      <div className="flex items-center gap-2 text-sm">
-        <span className="size-2 rounded-full bg-ao-vivo" aria-hidden />
-        <span className="font-medium text-ao-vivo tracking-wide">AO VIVO</span>
-        <span className="text-texto-suave" data-testid="espectadores">
-          ·{' '}
+      <div className="flex items-center gap-3 text-sm">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ao-vivo/10 px-2.5 py-1 font-medium text-ao-vivo text-xs tracking-wider">
+          <span
+            className="size-1.5 animate-pulse rounded-full bg-ao-vivo motion-reduce:animate-none"
+            aria-hidden
+          />
+          AO VIVO
+        </span>
+        <span className="text-texto-suave tabular-nums" data-testid="espectadores">
           {estado.espectadores.length === 1
             ? '1 pessoa assistindo'
             : `${estado.espectadores.length} pessoas assistindo`}
@@ -193,23 +167,31 @@ export function TelaCompartilhando({
         {estado.pausado && <span className="ml-auto text-aviso">Vídeo pausado</span>}
       </div>
 
-      {pedidosAtivos.map((pedido) => (
-        <section
-          key={pedido.identity}
-          aria-label={`Pedido de ${pedido.nome}`}
-          className="flex items-center justify-between gap-3 rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
-        >
-          <span>{pedido.nome} quer mostrar a tela</span>
-          <span className="flex gap-2">
-            <Botao variante="primario" onClick={() => void aprovar(pedido)}>
-              Aprovar
-            </Botao>
-            <Botao variante="fantasma" onClick={() => void recusar(pedido)}>
-              Recusar
-            </Botao>
-          </span>
-        </section>
-      ))}
+      <AnimatePresence initial={false}>
+        {pedidosAtivos.map((pedido) => (
+          <motion.section
+            key={pedido.identity}
+            aria-label={`Pedido de ${pedido.nome}`}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex items-center justify-between gap-3 rounded-xl border border-borda bg-superficie py-2 pr-2 pl-4 text-sm"
+          >
+            <span>
+              <span className="font-medium">{pedido.nome}</span> quer mostrar a tela
+            </span>
+            <span className="flex gap-1">
+              <Botao variante="primario" onClick={() => void aprovar(pedido)}>
+                Aprovar
+              </Botao>
+              <Botao variante="fantasma" onClick={() => void recusar(pedido)}>
+                Recusar
+              </Botao>
+            </span>
+          </motion.section>
+        ))}
+      </AnimatePresence>
 
       {apresentador && (
         <section
@@ -221,29 +203,31 @@ export function TelaCompartilhando({
         </section>
       )}
 
-      <div className="grid gap-3">
-        <p className="text-sm text-texto-suave">
+      <div className="grid gap-4">
+        <p className="text-sm text-texto-suave" aria-live="polite">
           {estado.copiado
             ? 'Link copiado. É só mandar para quem vai assistir.'
             : 'Mande o link para quem vai assistir.'}
         </p>
         {estado.linkFixo && (
-          <CampoLink
+          <Link
             id="link-fixo"
             rotulo="Seu link fixo"
             url={estado.linkFixo}
-            destaque
+            grande
+            destacarFinal
             aoCopiar={controle.copiarLink}
           />
         )}
-        <CampoLink
+        <Link
           id="link"
           rotulo={estado.linkFixo ? 'Link só desta transmissão' : 'Link da transmissão'}
           url={estado.link}
-          destaque={!estado.linkFixo}
+          grande={!estado.linkFixo}
+          destacarFinal={false}
           aoCopiar={controle.copiarLink}
         />
-        <p className="font-mono text-texto-suave text-xs">{resolvida.resumo}</p>
+        <p className="font-mono text-texto-suave text-xs tabular-nums">{resolvida.resumo}</p>
       </div>
 
       {config.audioSistema && !estado.comAudio && (
@@ -277,10 +261,15 @@ export function TelaCompartilhando({
             {estado.microfoneMudo ? 'Ligar microfone' : 'Mutar microfone'}
           </Botao>
         )}
-        <Botao onClick={() => (plataforma.fontes ? setPainel('fonte') : void trocarFonte())}>
+        <span className="mx-1 w-px self-stretch bg-borda" aria-hidden />
+        <Botao
+          variante="fantasma"
+          onClick={() => (plataforma.fontes ? setPainel('fonte') : void trocarFonte())}
+        >
           Trocar tela/janela
         </Botao>
         <Botao
+          variante="fantasma"
           onClick={() => setPainel(painel === 'ajustes' ? 'nenhum' : 'ajustes')}
           aria-expanded={painel === 'ajustes'}
         >

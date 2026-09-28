@@ -32,7 +32,8 @@ export type EventosTransmissao = {
   aoMudarApresentador: (identity: string | null) => void
 }
 
-export type LinkFixo = { slug: string; segredo: string }
+/** O nome é o que o dono escolheu para aparecer ("Luan está compartilhando"). */
+export type LinkFixo = { slug: string; segredo: string; nome: string }
 
 type Captura = { video: MediaStreamTrack; audio: MediaStreamTrack | null; fonte: Dimensoes }
 
@@ -152,7 +153,10 @@ export class TransmissaoAoVivo {
     linkFixo?: LinkFixo,
   ): Promise<TransmissaoAoVivo> {
     // O seletor de tela e a criação da sala correm juntos para o link sair mais rápido.
-    const [captura, sessao] = await Promise.allSettled([capturarTela(config), api.criarSessao()])
+    const [captura, sessao] = await Promise.allSettled([
+      capturarTela(config),
+      api.criarSessao(linkFixo?.nome),
+    ])
     if (captura.status === 'rejected') {
       if (sessao.status === 'fulfilled') await encerrarNoServer(api, sessao.value)
       throw captura.reason

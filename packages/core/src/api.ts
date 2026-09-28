@@ -17,6 +17,8 @@ const erroApiSchema = z.object({ erro: z.string(), mensagem: z.string() })
 
 const linkReservadoSchema = z.object({ url: z.string() })
 
+const infoSessaoSchema = z.object({ hostNome: z.string(), trancada: z.boolean() })
+
 export const estadoLinkSchema = z.object({
   nome: z.string(),
   aoVivo: z.boolean(),
@@ -108,6 +110,9 @@ export function criarClienteApi(base: string, fetcher: Fetcher = fetch) {
     async removerParticipante(id: string, hostToken: string, identity: string): Promise<void> {
       const caminho = `/sessions/${encodeURIComponent(id)}/participantes/${encodeURIComponent(identity)}`
       await chamar(caminho, { method: 'DELETE', headers: { authorization: `Bearer ${hostToken}` } })
+    },
+    async infoDaSessao(id: string) {
+      return infoSessaoSchema.parse(await chamar(`/sessions/${encodeURIComponent(id)}`, {}))
     },
     async passarVez(id: string, hostToken: string, identity: string | null): Promise<void> {
       await chamar(`/sessions/${encodeURIComponent(id)}/presenter`, {

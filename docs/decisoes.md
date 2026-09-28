@@ -51,3 +51,12 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **O sid de cada conexão decide se uma saída vale.** Vale para o host (timer de queda) e para quem apresenta (a vez volta ao host).
 - **Limite de sessões por IP configurável** (`SESSOES_POR_MINUTO`, padrão 10). Os testes E2E sobem o server com um valor alto.
 - **Cache do Turborepo por dependência.** `typecheck` e `test` dependem das mesmas tarefas dos pacotes internos; antes, mudar o `core` não invalidava o cache da `ui` e escondia erros.
+
+## Fase 4
+
+- **Direção visual em `docs/design.md`**, com o que foi aproveitado de cada referência. Destaque azul-sinal (`#3B9EFF` / `#0B6BDB`), usado só na ação principal, no anel de foco e no endereço do link fixo.
+- **Tema claro de verdade**, com tokens próprios e contraste conferido; o escuro continua padrão. A escolha fica no `localStorage` do navegador (e do app), e o tema aplicado na página é a fonte da verdade do botão.
+- **Fontes Geist pelo Fontsource**, empacotadas com o app: nada de fonte vinda de CDN, o que também respeita a CSP do desktop.
+- **Sem QR code nem tela de permissão do macOS**, pela decisão de ser só PC.
+- **A página de entrar pergunta ao server antes** (`GET /api/sessions/:id`): mostra quem está compartilhando, e um link morto ou uma sessão trancada aparecem sem clique.
+- **Aviso de queda de qualidade só depois de 5 segundos seguidos.** No começo de toda transmissão o WebRTC relata limitação de banda enquanto estima a conexão.

@@ -20,6 +20,7 @@ import {
   Track,
   VideoQuality,
 } from 'livekit-client'
+import { AnimatePresence, motion } from 'motion/react'
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { Aviso } from './aviso.tsx'
 import { BarraDeControles, type Qualidade } from './barra-de-controles.tsx'
@@ -277,11 +278,23 @@ export function Palco() {
         </div>
       </main>
 
-      {chatAberto && (
-        <aside className="flex w-80 flex-col border-borda border-l bg-fundo">
-          <PainelChat mensagens={chat.mensagens} aoEnviar={chat.enviarChat} className="flex-1" />
-        </aside>
-      )}
+      <AnimatePresence initial={false}>
+        {chatAberto && (
+          <motion.aside
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex shrink-0 flex-col overflow-hidden border-borda border-l bg-fundo"
+          >
+            <PainelChat
+              mensagens={chat.mensagens}
+              aoEnviar={chat.enviarChat}
+              className="w-80 flex-1"
+            />
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       <RoomAudioRenderer volume={volume} muted={mudo} />
     </div>

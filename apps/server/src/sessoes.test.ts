@@ -89,6 +89,19 @@ describe('POST /api/sessions', () => {
   })
 })
 
+describe('GET /api/sessions/:id', () => {
+  it('diz quem está compartilhando antes de entrar', async () => {
+    const { id } = await criarSessao('Luan')
+    const res = await app.request(`/api/sessions/${id}`)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ hostNome: 'Luan', trancada: false })
+  })
+
+  it('responde 404 para sessão que não existe', async () => {
+    expect((await app.request('/api/sessions/naoexiste123')).status).toBe(404)
+  })
+})
+
 describe('POST /api/sessions/:id/join', () => {
   it('dá ao espectador um token que só assiste e conversa', async () => {
     const { id } = await criarSessao()

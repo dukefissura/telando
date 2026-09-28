@@ -8,7 +8,7 @@ import {
   type Resolucao,
 } from '@telando/core'
 import { useEffect, useState } from 'react'
-import { Alternador, Segmentado } from '../controles.tsx'
+import { Alternador, classeCampo, Segmentado } from '../controles.tsx'
 
 type PropsPainel = {
   config: ConfigTransmissao
@@ -131,7 +131,7 @@ export function PainelVideo({
         <select
           value={config.codec}
           onChange={(e) => mudar({ codec: e.target.value as Codec })}
-          className="rounded-lg border border-borda bg-superficie px-3 py-2"
+          className={classeCampo}
         >
           <option value="auto">Automático</option>
           {codecs.map((codec) => (
@@ -231,7 +231,7 @@ export function PainelAudio({
             aria-label="Microfone"
             value={config.microfone.deviceId ?? ''}
             onChange={(e) => mudarMicrofone({ deviceId: e.target.value || null })}
-            className="rounded-lg border border-borda bg-superficie px-3 py-2 text-sm"
+            className={classeCampo}
           >
             <option value="">Microfone padrão do sistema</option>
             {microfones.map((mic) => (
