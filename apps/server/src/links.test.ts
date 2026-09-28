@@ -52,6 +52,11 @@ describe('reservar', () => {
     }
   })
 
+  it('trata nomes que existem em todo objeto JavaScript como slugs comuns', async () => {
+    expect((await app.request('/api/links/constructor')).status).toBe(404)
+    expect((await reservar('constructor')).status).toBe(201)
+  })
+
   it('recusa segredo curto', async () => {
     expect((await reservar('luan', 'curto')).status).toBe(400)
   })
