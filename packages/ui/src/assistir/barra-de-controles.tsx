@@ -1,21 +1,13 @@
-import type { Reacao } from '@telando/core'
 import type { RemoteVideoTrack } from 'livekit-client'
-import {
-  Maximize,
-  MessageSquare,
-  Minimize,
-  PictureInPicture2,
-  Volume2,
-  VolumeX,
-} from 'lucide-react'
+import { Maximize, Minimize, PictureInPicture2, Volume2, VolumeX } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { BotoesDeReacao } from '../sala/reacoes.tsx'
+import { animacaoBotao } from '../controles.tsx'
 import { IndicadorConexao } from './indicador-conexao.tsx'
 
 export type Qualidade = 'auto' | 'alta' | 'media' | 'baixa'
 
 /** Botões de texto da barra (Sair, pedir a vez). */
-export const classeBotaoDaBarra = 'rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10'
+export const classeBotaoDaBarra = `whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10 ${animacaoBotao}`
 
 function BotaoIcone({
   rotulo,
@@ -38,7 +30,7 @@ function BotaoIcone({
       title={atalho ? `${rotulo} (${atalho})` : rotulo}
       aria-keyshortcuts={atalho}
       aria-pressed={ativo}
-      className={`relative rounded-md p-2 hover:bg-white/10 ${ativo ? 'text-texto' : 'text-texto-suave'}`}
+      className={`relative rounded-md p-2 hover:bg-white/10 ${animacaoBotao} ${ativo ? 'text-texto' : 'text-texto-suave'}`}
     >
       {children}
     </button>
@@ -53,10 +45,6 @@ export function BarraDeControles({
   qualidade,
   aoMudarQualidade,
   trilha,
-  aoReagir,
-  chatAberto,
-  naoLidas,
-  aoAlternarChat,
   telaCheia,
   aoAlternarTelaCheia,
   aoAlternarPip,
@@ -70,10 +58,6 @@ export function BarraDeControles({
   qualidade: Qualidade
   aoMudarQualidade: (qualidade: Qualidade) => void
   trilha: RemoteVideoTrack | undefined
-  aoReagir: (emoji: Reacao) => void
-  chatAberto: boolean
-  naoLidas: number
-  aoAlternarChat: () => void
   telaCheia: boolean
   aoAlternarTelaCheia: () => void
   aoAlternarPip: (() => void) | null
@@ -112,25 +96,9 @@ export function BarraDeControles({
       <IndicadorConexao trilha={trilha} />
 
       <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
-      <BotoesDeReacao aoReagir={aoReagir} />
-
-      <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
       {revezamento}
 
       <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
-      <BotaoIcone
-        rotulo={chatAberto ? 'Fechar o chat' : 'Abrir o chat'}
-        atalho="C"
-        ativo={chatAberto}
-        onClick={aoAlternarChat}
-      >
-        <MessageSquare {...icone} />
-        {naoLidas > 0 && !chatAberto && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-texto px-1 font-mono text-[10px] text-fundo">
-            {naoLidas > 9 ? '9+' : naoLidas}
-          </span>
-        )}
-      </BotaoIcone>
       {aoAlternarPip && (
         <BotaoIcone rotulo="Janela flutuante" onClick={aoAlternarPip}>
           <PictureInPicture2 {...icone} />

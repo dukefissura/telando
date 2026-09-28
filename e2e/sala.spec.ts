@@ -4,26 +4,6 @@ import { abrirLink, assistir, fecharTodos, recebeVideoEAudio, transmitir } from 
 test.skip(process.platform !== 'win32', 'O app só existe para Windows')
 test.afterEach(fecharTodos)
 
-test('chat e reações vão e voltam entre host e espectador', async () => {
-  const { host, link } = await transmitir()
-  const { janela: espectador } = await assistir(link, 'Capivara Azul')
-  await recebeVideoEAudio(espectador)
-
-  await host.locator('summary', { hasText: 'Chat' }).click()
-  await host.getByLabel('Mensagem para a sala').fill('dá pra ver?')
-  await host.getByLabel('Mensagem para a sala').press('Enter')
-
-  await espectador.getByRole('button', { name: 'Abrir o chat' }).click()
-  await expect(espectador.getByText('dá pra ver?')).toBeVisible()
-
-  await espectador.getByLabel('Mensagem para a sala').fill('tudo certo')
-  await espectador.getByLabel('Mensagem para a sala').press('Enter')
-  await expect(host.getByText('Capivara Azul tudo certo')).toBeVisible()
-
-  await espectador.getByRole('button', { name: 'Reagir com 👏' }).click()
-  await expect(host.getByText('👏', { exact: true }).last()).toBeVisible()
-})
-
 test('host remove um espectador', async () => {
   const { host, link } = await transmitir()
   const { janela: espectador } = await assistir(link, 'Tatu Verde')

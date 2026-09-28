@@ -1,5 +1,11 @@
 # Novidades
 
+## 0.3.0
+
+- **Sem chat e sem reações.** A sala fica só com a tela: quem assiste tem volume, qualidade, tela cheia, janela flutuante e pedir a vez.
+- **Botões com resposta ao toque.** Sobem de leve sob o mouse e afundam ao apertar.
+- **Pasta de instalação com o nome certo** (`Programs\telando`). As preferências do app instalado recomeçam do zero nesta versão.
+
 ## 0.2.1
 
 - **Preview ao vivo.** A tela ou janela escolhida aparece em movimento nas configurações, na taxa do monitor (até 60 fps), em vez de uma miniatura por segundo.

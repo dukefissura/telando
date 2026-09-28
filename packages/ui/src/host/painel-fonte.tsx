@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { animacaoBotao } from '../controles.tsx'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
 
 type Fontes = Plataforma['fontes']
@@ -37,7 +38,7 @@ function CartaoFonte({
       type="button"
       onClick={aoEscolher}
       aria-pressed={escolhida}
-      className={`grid gap-1.5 rounded-lg border p-1.5 text-left transition-colors ${
+      className={`grid gap-1.5 rounded-lg border p-1.5 text-left ${animacaoBotao} ${
         escolhida ? 'border-texto bg-superficie-2' : 'border-borda hover:bg-superficie'
       }`}
     >

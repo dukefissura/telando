@@ -1,5 +1,8 @@
 appId: app.telando.desktop
 productName: Telando
+# O nome do pacote no monorepo (@telando/desktop) virava a pasta de instalação "@telandodesktop".
+extraMetadata:
+  name: telando
 directories:
   output: release
   buildResources: build
