@@ -1,30 +1,20 @@
 import { expect, test } from '@playwright/test'
-import {
-  abrirApp,
-  assistir,
-  fecharTodos,
-  lerLink,
-  manterTelaMexendo,
-  recebeVideoEAudio,
-} from './apoio.ts'
+import { assistir, fecharTodos, recebeVideoEAudio, transmitir } from './apoio.ts'
 
 test.skip(process.platform !== 'win32', 'O app só existe para Windows')
 test.afterEach(fecharTodos)
 
 test('o app compartilha a tela com áudio do sistema e troca resolução ao vivo', async () => {
-  const hostApp = await abrirApp()
-  await manterTelaMexendo(hostApp)
-  const { janela } = hostApp
-  await janela.getByRole('button', { name: 'Compartilhar tela' }).click()
-  await janela.getByRole('button', { name: /^Tela 1/ }).click()
-  await janela.getByText('Filme/vídeo', { exact: true }).click()
-  // Com uma camada só, a resolução nas estatísticas é a escolhida; com simulcast, o dynacast
-  // pode mandar só a camada menor para um espectador de janela pequena.
-  await janela.locator('summary', { hasText: 'Vídeo' }).click()
-  await janela.getByRole('switch', { name: 'Várias qualidades para quem assiste' }).uncheck()
-  await janela.screenshot({ path: 'test-results/desktop-configuracoes.png' })
-  await janela.getByRole('button', { name: 'Iniciar' }).click()
-  const link = await lerLink(janela)
+  const { host: janela, link } = await transmitir({
+    antesDeIniciar: async (janela) => {
+      await janela.getByText('Filme/vídeo', { exact: true }).click()
+      // Com uma camada só, a resolução nas estatísticas é a escolhida; com simulcast, o dynacast
+      // pode mandar só a camada menor para um espectador de janela pequena.
+      await janela.locator('summary', { hasText: 'Vídeo' }).click()
+      await janela.getByRole('switch', { name: 'Várias qualidades para quem assiste' }).uncheck()
+      await janela.screenshot({ path: 'test-results/desktop-configuracoes.png' })
+    },
+  })
 
   const { janela: espectador } = await assistir(link, 'Capivara Azul')
   await recebeVideoEAudio(espectador)

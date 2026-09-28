@@ -10,22 +10,12 @@ export default defineConfig({
     // E2E_BASE_URL aponta para o server de produção (API e site juntos) quando se quer testar o build.
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
     trace: 'retain-on-failure',
-    // Os testes leem estados finais; animação só atrasaria.
-    contextOptions: { reducedMotion: 'reduce' },
   },
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: [
-            '--use-fake-ui-for-media-stream',
-            '--use-fake-device-for-media-stream',
-            '--autoplay-policy=no-user-gesture-required',
-          ],
-        },
-      },
+      // Só a página do site roda no Chromium; os apps são abertos pelos próprios testes.
+      use: devices['Desktop Chrome'],
     },
   ],
   webServer: [

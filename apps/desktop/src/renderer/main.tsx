@@ -20,7 +20,7 @@ const plataformaDesktop: Plataforma = {
   aoMudarTransmissao: telando.avisarTransmitindo,
   aoAtalhoParar: telando.aoAtalhoParar,
   linkPendente: telando.linkPendente,
-  aoAbrirLink: telando.aoAbrirLink,
+  aoChegarLink: telando.aoChegarLink,
 }
 
 aplicarTemaSalvo()

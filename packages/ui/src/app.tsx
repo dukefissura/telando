@@ -5,6 +5,7 @@ import { Assistir } from './assistir/assistir.tsx'
 import { EsperarLinkFixo } from './assistir/esperar-link-fixo.tsx'
 import { Botao } from './controles.tsx'
 import { AppHost } from './host/app-host.tsx'
+import { ENTRADA, SAIDA } from './movimento.ts'
 import type { Plataforma } from './plataforma.ts'
 
 /** Um link chegou com uma sessão aberta: trocar só se a pessoa quiser. */
@@ -15,8 +16,8 @@ function PerguntaDeTroca({ aoAbrir, aoIgnorar }: { aoAbrir: () => void; aoIgnora
       aria-label="Abrir outro link"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      exit={SAIDA}
+      transition={ENTRADA}
       className="fixed top-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-borda bg-fundo py-2 pr-2 pl-4 text-sm"
     >
       Chegou outro link. Sair desta transmissão e abrir?
@@ -44,6 +45,8 @@ export function App({ plataforma }: { plataforma: Plataforma }) {
 
   const aoMudarOcupado = useCallback((ocupado: boolean) => {
     painelOcupado.current = ocupado
+    // Parou de transmitir: o "Pare a sua transmissão" não vale mais.
+    if (!ocupado) setAvisoLink(null)
   }, [])
 
   const abrir = useCallback((texto: string) => {
@@ -66,9 +69,11 @@ export function App({ plataforma }: { plataforma: Plataforma }) {
     setDestino(lido)
   }, [])
 
+  // O main guarda o link e só avisa que chegou um; ler é sempre pedir o pendente.
   useEffect(() => {
-    void plataforma.linkPendente().then((texto) => texto && abrir(texto))
-    return plataforma.aoAbrirLink(abrir)
+    const lerPendente = () => void plataforma.linkPendente().then((texto) => texto && abrir(texto))
+    lerPendente()
+    return plataforma.aoChegarLink(lerPendente)
   }, [plataforma, abrir])
 
   const voltar = () => setDestino(null)

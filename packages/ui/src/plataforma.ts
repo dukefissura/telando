@@ -37,8 +37,8 @@ export type Plataforma = {
   aoMudarTransmissao: (aoVivo: boolean) => void
   /** Atalho global do sistema para parar; devolve a função que remove o ouvinte. */
   aoAtalhoParar: (callback: () => void) => () => void
-  /** Link telando:// com que o app foi aberto, se ainda não foi lido. */
+  /** O último link telando:// recebido, se ainda não foi lido (e o apaga). */
   linkPendente(): Promise<string | null>
-  /** Links que chegam com o app já aberto; devolve a função que remove o ouvinte. */
-  aoAbrirLink(callback: (texto: string) => void): () => void
+  /** Avisa que chegou um link com o app aberto; devolve a função que remove o ouvinte. */
+  aoChegarLink(callback: () => void): () => void
 }

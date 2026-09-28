@@ -1,30 +1,16 @@
-import { spawn } from 'node:child_process'
-import { once } from 'node:events'
 import { expect, test } from '@playwright/test'
 import {
   abrirApp,
   abrirLink,
-  ambiente,
   assistir,
-  executavel,
+  entregarLink,
   fecharTodos,
-  lerLink,
-  manterTelaMexendo,
-  pastaDesktop,
   recebeVideoEAudio,
   transmitir,
 } from './apoio.ts'
 
 test.skip(process.platform !== 'win32', 'O app só existe para Windows')
 test.afterEach(fecharTodos)
-
-/** O Windows abre uma segunda instância com o link; ela entrega o link à primeira e fecha. */
-async function entregarLink(perfil: string, link: string) {
-  const segunda = spawn(executavel, [pastaDesktop, link], {
-    env: { ...ambiente, TELANDO_PERFIL: perfil },
-  })
-  await once(segunda, 'exit')
-}
 
 test('host compartilha, dois amigos assistem no app com áudio e veem a sessão encerrar', async () => {
   const { host, link } = await transmitir()
@@ -105,26 +91,24 @@ test('um link que chega durante a transmissão não derruba o host', async () =>
 })
 
 test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura', async () => {
-  const hostApp = await abrirApp()
-  await manterTelaMexendo(hostApp)
-  const host = hostApp.janela
-  // Conta as capturas: ajustar fps e áudio muda a trilha, não pede a tela de novo.
-  await host.evaluate(() => {
-    const janela = window as Window & { capturas?: number }
-    const original = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices)
-    janela.capturas = 0
-    navigator.mediaDevices.getDisplayMedia = (opcoes) => {
-      janela.capturas = (janela.capturas ?? 0) + 1
-      return original(opcoes)
-    }
+  const { host, link } = await transmitir({
+    antesDeIniciar: async (host) => {
+      // Conta as capturas: ajustar fps e áudio muda a trilha, não pede a tela de novo.
+      await host.evaluate(() => {
+        const janela = window as Window & { capturas?: number }
+        const original = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices)
+        janela.capturas = 0
+        navigator.mediaDevices.getDisplayMedia = (opcoes) => {
+          janela.capturas = (janela.capturas ?? 0) + 1
+          return original(opcoes)
+        }
+      })
+      await host.getByText('Jogo', { exact: true }).click()
+      await expect(host.getByTestId('resumo')).toContainText('60 fps · até 8 Mbps · áudio Música')
+    },
   })
-  await host.getByRole('button', { name: 'Compartilhar tela' }).click()
-  await host.getByRole('button', { name: /^Tela 1/ }).click()
-  await host.getByText('Jogo', { exact: true }).click()
-  await expect(host.getByTestId('resumo')).toContainText('60 fps · até 8 Mbps · áudio Música')
-  await host.getByRole('button', { name: 'Iniciar' }).click()
 
-  const { janela: espectador } = await assistir(await lerLink(host), 'Quati Verde')
+  const { janela: espectador } = await assistir(link, 'Quati Verde')
   await recebeVideoEAudio(espectador)
 
   await host.getByRole('button', { name: 'Ajustes' }).click()

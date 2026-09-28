@@ -2,6 +2,7 @@ import { apelidoAleatorio, ErroApi, estadoLinkSchema, mensagemDoErro } from '@te
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Botao, classeCampo } from '../controles.tsx'
+import { SAIDA, TRANSICAO_SELO } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { Assistir } from './assistir.tsx'
 import { Aviso, Centro } from './aviso.tsx'
@@ -72,7 +73,7 @@ function Canal({ dominio, slug }: { dominio: string | null; slug: string }) {
     <motion.p
       layoutId="selo-tela"
       className="justify-self-center font-mono text-[22px] tracking-tight"
-      transition={{ duration: 0.35, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
+      transition={TRANSICAO_SELO}
     >
       {dominio && <span className="text-texto-suave">{dominio}/</span>}
       <span className="text-destaque">{slug}</span>
@@ -91,9 +92,10 @@ function Varredura() {
       style={{
         background: 'linear-gradient(180deg, transparent, rgb(255 255 255 / 0.025), transparent)',
       }}
-      initial={{ y: -60 }}
-      animate={{ y: '100dvh' }}
-      exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+      // "transform" inteiro (e não y) vai para o compositor: a espera pode durar horas.
+      initial={{ transform: 'translateY(-60px)' }}
+      animate={{ transform: 'translateY(100dvh)' }}
+      exit={SAIDA}
       transition={{ duration: 5, ease: 'linear', repeat: Number.POSITIVE_INFINITY }}
     />
   )
@@ -118,13 +120,15 @@ export function EsperarLinkFixo({
         key={estado.sessionId}
         plataforma={plataforma}
         id={estado.sessionId}
-        entrarComApelido={apelido.trim()}
         aoVoltar={aoVoltar}
-        enquantoEntra={
-          <Centro>
-            <Canal dominio={dominio} slug={slug} />
-          </Centro>
-        }
+        autoEntrar={{
+          apelido: apelido.trim(),
+          enquanto: (
+            <Centro>
+              <Canal dominio={dominio} slug={slug} />
+            </Centro>
+          ),
+        }}
       />
     )
   }

@@ -1,3 +1,4 @@
+import { SLUG_LINK_FIXO } from '@telando/core'
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { z } from 'zod'
@@ -21,7 +22,7 @@ const PROIBIDOS = new Set([
 
 const slugSchema = z
   .string()
-  .regex(/^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/)
+  .regex(SLUG_LINK_FIXO)
   .refine((slug) => !PROIBIDOS.has(slug))
 const segredoSchema = z.string().min(43).max(200)
 const reservarSchema = z.object({ segredo: segredoSchema, nome: z.string().trim().min(1).max(32) })

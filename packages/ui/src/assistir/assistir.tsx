@@ -36,30 +36,27 @@ function usePrevia(api: Plataforma['api'], id: string, pular: boolean) {
 }
 
 /**
- * Entra numa sessão. Com `entrarComApelido`, pula o formulário: é o caso do link fixo, em que a
- * pessoa já escolheu o apelido enquanto esperava o dono começar.
+ * Entra numa sessão. Com `autoEntrar`, pula o formulário e mostra `enquanto` até conectar: é o
+ * caso do link fixo, em que a pessoa já escolheu o apelido enquanto esperava o dono começar.
  */
 export function Assistir({
   plataforma,
   id,
-  entrarComApelido,
   aoVoltar,
-  enquantoEntra,
+  autoEntrar,
 }: {
   plataforma: Pick<Plataforma, 'api' | 'fontes'>
   id: string
-  entrarComApelido?: string
   aoVoltar: () => void
-  /** O que mostrar enquanto conecta sozinho, no lugar do formulário (a espera do link fixo). */
-  enquantoEntra?: ReactNode
+  autoEntrar?: { apelido: string; enquanto: ReactNode }
 }) {
   const { sala, entrar } = useSalaEspectador(plataforma.api, id)
-  const [apelido, setApelido] = useState(() => entrarComApelido ?? apelidoAleatorio())
-  const { previa, recarregar } = usePrevia(plataforma.api, id, entrarComApelido !== undefined)
+  const [apelido, setApelido] = useState(() => autoEntrar?.apelido ?? apelidoAleatorio())
+  const { previa, recarregar } = usePrevia(plataforma.api, id, autoEntrar !== undefined)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: entra uma vez, ao montar
   useEffect(() => {
-    if (entrarComApelido !== undefined) void entrar(entrarComApelido)
+    if (autoEntrar) void entrar(autoEntrar.apelido)
   }, [])
 
   const voltar = <Botao onClick={aoVoltar}>Voltar ao início</Botao>
@@ -131,8 +128,8 @@ export function Assistir({
     return null
   })()
   if (aviso) return <Centro>{aviso}</Centro>
-  if (enquantoEntra && (sala.fase === 'formulario' || sala.fase === 'entrando')) {
-    return enquantoEntra
+  if (autoEntrar && (sala.fase === 'formulario' || sala.fase === 'entrando')) {
+    return autoEntrar.enquanto
   }
 
   const enviar = (evento: FormEvent) => {

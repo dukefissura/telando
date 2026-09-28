@@ -12,7 +12,9 @@ import { motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alternador, Botao, Segmentado } from '../controles.tsx'
 import { PainelFonte, useFontes } from '../host/painel-fonte.tsx'
+import { ENTRADA } from '../movimento.ts'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
+import { classeBotaoDaBarra } from './barra-de-controles.tsx'
 
 type Pedido = 'livre' | 'pedido' | 'recusado'
 type Compartilhamento = Awaited<ReturnType<typeof compartilharComoConvidado>>
@@ -119,7 +121,7 @@ export function EscolherOQueCompartilhar({
     <motion.section
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={ENTRADA}
       aria-label="Você foi aprovado"
       className="grid max-h-[calc(100dvh-8rem)] w-[44rem] max-w-[calc(100vw-2rem)] gap-5 overflow-y-auto rounded-xl border border-borda bg-fundo p-5"
     >
@@ -162,12 +164,14 @@ export function EscolherOQueCompartilhar({
 
 /** Botão do revezamento na barra de controles; muda conforme a fase. */
 export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) {
-  const classe = 'rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10'
-
   switch (revezamento.fase) {
     case 'livre':
       return (
-        <button type="button" className={classe} onClick={() => void revezamento.pedir()}>
+        <button
+          type="button"
+          className={classeBotaoDaBarra}
+          onClick={() => void revezamento.pedir()}
+        >
           Pedir para compartilhar
         </button>
       )
@@ -175,7 +179,7 @@ export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) 
       return (
         <button
           type="button"
-          className={`${classe} text-texto-suave`}
+          className={`${classeBotaoDaBarra} text-texto-suave`}
           onClick={() => void revezamento.cancelar()}
         >
           Pedido enviado · cancelar
@@ -189,7 +193,11 @@ export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) 
       )
     case 'compartilhando':
       return (
-        <button type="button" className={classe} onClick={() => void revezamento.devolver()}>
+        <button
+          type="button"
+          className={classeBotaoDaBarra}
+          onClick={() => void revezamento.devolver()}
+        >
           Devolver a vez
         </button>
       )

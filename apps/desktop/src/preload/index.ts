@@ -1,4 +1,4 @@
-import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { CANAIS, type TelandoDesktop } from '../compartilhado/ipc.ts'
 
 const telando: TelandoDesktop = {
@@ -17,12 +17,10 @@ const telando: TelandoDesktop = {
     return () => ipcRenderer.off(CANAIS.atalhoParar, ouvinte)
   },
   linkPendente: () => ipcRenderer.invoke(CANAIS.linkPendente),
-  aoAbrirLink: (callback) => {
-    const ouvinte = (_evento: IpcRendererEvent, texto: unknown) => {
-      if (typeof texto === 'string') callback(texto)
-    }
-    ipcRenderer.on(CANAIS.abrirLink, ouvinte)
-    return () => ipcRenderer.off(CANAIS.abrirLink, ouvinte)
+  aoChegarLink: (callback) => {
+    const ouvinte = () => callback()
+    ipcRenderer.on(CANAIS.chegouLink, ouvinte)
+    return () => ipcRenderer.off(CANAIS.chegouLink, ouvinte)
   },
 }
 

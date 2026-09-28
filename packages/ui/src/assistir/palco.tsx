@@ -21,6 +21,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
+import { ENTRADA, MOLA_SUAVE, SAIDA, TRANSICAO_SELO } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { PainelChat } from '../sala/painel-chat.tsx'
 import { ColunaDeReacoes } from '../sala/reacoes.tsx'
@@ -88,15 +89,10 @@ function useQualidade(
   }, [publicacao, qualidade, refVideo])
 }
 
-const MOLA_SUAVE = [0.2, 0.8, 0.2, 1] as const
-
 /** Cada estado do palco ocupa a área toda; assim o que sai e o que entra podem se sobrepor. */
 function Camada({ children }: { children: ReactNode }) {
   return (
-    <motion.div
-      className="absolute inset-0 grid place-items-center"
-      exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-    >
+    <motion.div className="absolute inset-0 grid place-items-center" exit={SAIDA}>
       {children}
     </motion.div>
   )
@@ -121,6 +117,8 @@ function VideoDaTela({
           scaleY: [0.004, 0.004, 1],
           opacity: [0, 1, 1],
           filter: ['brightness(3)', 'brightness(3)', 'brightness(1)'],
+          // Um filter que fica no ancestral do vídeo tira ele do overlay de hardware.
+          transitionEnd: { filter: 'none' },
         }}
         transition={{ duration: 0.42, times: [0, 0.43, 1], ease: MOLA_SUAVE }}
       >
@@ -277,7 +275,7 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
               layoutId="selo-tela"
               aria-live="polite"
               className="overflow-hidden rounded-md bg-fundo/80 px-2.5 py-1 text-sm"
-              transition={{ duration: 0.35, delay: 0.1, ease: MOLA_SUAVE }}
+              transition={TRANSICAO_SELO}
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
@@ -286,7 +284,7 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  transition={ENTRADA}
                 >
                   {textoSelo}
                 </motion.span>
@@ -340,7 +338,7 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={ENTRADA}
             className="flex shrink-0 flex-col overflow-hidden border-borda border-l bg-fundo"
           >
             <PainelChat

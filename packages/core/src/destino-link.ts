@@ -1,6 +1,9 @@
-// Os mesmos formatos que o server gera e aceita (sessoes.ts e rotas-links.ts).
-const ID_SESSAO = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz]{12}$/
-const SLUG = /^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/
+// Sem 0/O, 1/l/I: o link às vezes é ditado ou copiado à mão. O server gera ids com este alfabeto.
+export const ALFABETO_ID_SESSAO = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz'
+export const TAMANHO_ID_SESSAO = 12
+const ID_SESSAO = new RegExp(`^[${ALFABETO_ID_SESSAO}]{${TAMANHO_ID_SESSAO}}$`)
+/** Formato do link fixo (luan, bia-2); o server recusa outros. */
+export const SLUG_LINK_FIXO = /^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/
 
 export type Destino = { tipo: 'sessao'; id: string } | { tipo: 'linkFixo'; slug: string }
 
@@ -26,6 +29,7 @@ export function destinoDoLink(texto: string): Destino | null {
   const [primeira, segunda, ...resto] = partes.filter(Boolean)
   if (resto.length > 0) return null
   if (primeira === 's' && segunda && ID_SESSAO.test(segunda)) return { tipo: 'sessao', id: segunda }
-  if (primeira && !segunda && SLUG.test(primeira)) return { tipo: 'linkFixo', slug: primeira }
+  if (primeira && !segunda && SLUG_LINK_FIXO.test(primeira))
+    return { tipo: 'linkFixo', slug: primeira }
   return null
 }

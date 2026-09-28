@@ -14,6 +14,9 @@ import { IndicadorConexao } from './indicador-conexao.tsx'
 
 export type Qualidade = 'auto' | 'alta' | 'media' | 'baixa'
 
+/** Botões de texto da barra (Sair, pedir a vez). */
+export const classeBotaoDaBarra = 'rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10'
+
 function BotaoIcone({
   rotulo,
   atalho,
@@ -142,11 +145,7 @@ export function BarraDeControles({
       </BotaoIcone>
 
       <span className="mx-1 h-5 w-px bg-borda" aria-hidden />
-      <button
-        type="button"
-        onClick={aoSair}
-        className="rounded-md px-2.5 py-1.5 text-sm text-texto-suave hover:bg-white/10"
-      >
+      <button type="button" onClick={aoSair} className={`${classeBotaoDaBarra} text-texto-suave`}>
         Sair
       </button>
     </div>

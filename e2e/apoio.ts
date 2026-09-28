@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process'
+import { once } from 'node:events'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -10,14 +12,14 @@ import {
 } from '@playwright/test'
 
 // Roda o build de verdade (apps/desktop/out), capturando a tela real do Windows.
-export const pastaDesktop = fileURLToPath(new URL('../apps/desktop', import.meta.url))
-export const executavel = fileURLToPath(
+const pastaDesktop = fileURLToPath(new URL('../apps/desktop', import.meta.url))
+const executavel = fileURLToPath(
   new URL('../apps/desktop/node_modules/electron/dist/electron.exe', import.meta.url),
 )
 
 // Processos filhos do VS Code herdam ELECTRON_RUN_AS_NODE=1, que faz o Electron rodar como Node puro.
 const { ELECTRON_RUN_AS_NODE: _, ...ambienteHerdado } = process.env
-export const ambiente = ambienteHerdado as Record<string, string>
+const ambiente = ambienteHerdado as Record<string, string>
 
 export type AppAberto = { app: ElectronApplication; janela: Page; perfil: string }
 const abertos: AppAberto[] = []
@@ -72,7 +74,7 @@ const PAGINA_ANIMADA = `data:text/html,${encodeURIComponent(
     '</script></body>',
 )}`
 
-export async function manterTelaMexendo(aberto: AppAberto) {
+async function manterTelaMexendo(aberto: AppAberto) {
   await aberto.app.evaluate(({ BrowserWindow }, pagina) => {
     const janela = new BrowserWindow({
       width: 120,
@@ -88,13 +90,25 @@ export async function manterTelaMexendo(aberto: AppAberto) {
   }, PAGINA_ANIMADA)
 }
 
-/** Começa a transmitir a Tela 1 num app e devolve o link e a sessão criada (com o hostToken). */
-export async function transmitir(hostApp?: AppAberto) {
-  const aberto = hostApp ?? (await abrirApp())
+/** O Windows abre uma segunda instância com o link; ela entrega o link à primeira e fecha. */
+export async function entregarLink(perfil: string, link: string) {
+  const segunda = spawn(executavel, [pastaDesktop, link], {
+    env: { ...ambiente, TELANDO_PERFIL: perfil },
+  })
+  await once(segunda, 'exit')
+}
+
+/**
+ * Abre um app, escolhe a Tela 1 e começa a transmitir. `antesDeIniciar` mexe nas configurações
+ * (ou na página) antes do "Iniciar". Devolve o link e a sessão criada (com o hostToken).
+ */
+export async function transmitir(opcoes: { antesDeIniciar?: (host: Page) => Promise<void> } = {}) {
+  const aberto = await abrirApp()
   await manterTelaMexendo(aberto)
   const host = aberto.janela
   await host.getByRole('button', { name: 'Compartilhar tela' }).click()
   await host.getByRole('button', { name: /^Tela 1/ }).click()
+  await opcoes.antesDeIniciar?.(host)
   const resposta = host.waitForResponse(
     (r) => r.url().endsWith('/api/sessions') && r.request().method() === 'POST',
   )

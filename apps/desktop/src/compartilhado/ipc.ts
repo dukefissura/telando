@@ -13,7 +13,7 @@ export type TelandoDesktop = {
   gravarLinkFixo(link: MeuLinkFixo): Promise<void>
   aoAtalhoParar(callback: () => void): () => void
   linkPendente(): Promise<string | null>
-  aoAbrirLink(callback: (texto: string) => void): () => void
+  aoChegarLink(callback: () => void): () => void
 }
 
 export const CANAIS = {
@@ -28,5 +28,5 @@ export const CANAIS = {
   lerLinkFixo: 'link:ler',
   gravarLinkFixo: 'link:gravar',
   linkPendente: 'link:pendente',
-  abrirLink: 'link:abrir',
+  chegouLink: 'link:chegou',
 } as const

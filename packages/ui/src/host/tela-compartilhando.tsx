@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
 import { Alternador, Botao, Secao } from '../controles.tsx'
+import { ENTRADA, MOLA_SUAVE, SAIDA } from '../movimento.ts'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
 import { PainelChat } from '../sala/painel-chat.tsx'
 import { BotoesDeReacao, ColunaDeReacoes } from '../sala/reacoes.tsx'
@@ -50,7 +51,6 @@ function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | nul
   )
 }
 
-const MOLA_SUAVE = [0.2, 0.8, 0.2, 1] as const
 const ALTURA_DIGITO = 20
 const ALGARISMOS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -90,7 +90,7 @@ function AbreEspaco({ children }: { children: ReactNode }) {
       initial={{ gridTemplateRows: '0fr', opacity: 0 }}
       animate={{ gridTemplateRows: '1fr', opacity: 1 }}
       exit={{ gridTemplateRows: '0fr', opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={ENTRADA}
     >
       <div className="min-h-0 overflow-hidden">
         <div className="pt-5">{children}</div>
@@ -169,7 +169,7 @@ export function TelaCompartilhando({
   if (estado.fase !== 'ao-vivo' || !configAtual) return null
   const { resolvida } = estado
   const config = configAtual
-  const aviso = estado.aviso ?? avisoFonte
+  const aviso = estado.aviso ?? avisoFonte ?? avisoLink
   const nomeDe = (identity: string) =>
     estado.espectadores.find((e) => e.identity === identity)?.nome ?? 'Alguém'
   // Quem pediu e saiu da sala some da lista.
@@ -289,7 +289,7 @@ export function TelaCompartilhando({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={ENTRADA}
               >
                 {estado.copiado
                   ? 'Link copiado. É só mandar para quem vai assistir.'
@@ -322,14 +322,6 @@ export function TelaCompartilhando({
           <p className="text-sm text-texto-suave">
             Sem áudio: a captura não trouxe o som do computador. Troque para a tela inteira e tente
             de novo.
-          </p>
-        )}
-        {avisoLink && (
-          <p
-            role="alert"
-            className="rounded-lg border border-parar/40 px-3 py-2 text-parar text-sm"
-          >
-            {avisoLink}
           </p>
         )}
         {aviso && (
@@ -443,8 +435,8 @@ export function TelaCompartilhando({
                     key={espectador.identity}
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    exit={SAIDA}
+                    transition={ENTRADA}
                     className="flex items-center justify-between text-sm"
                   >
                     {espectador.nome}

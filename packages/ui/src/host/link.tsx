@@ -2,6 +2,7 @@ import { Check, Copy } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Botao } from '../controles.tsx'
+import { ESTALO } from '../movimento.ts'
 
 /** Separa "telando.app/s/" de "k7Qm2xPa9L" para o final do link ganhar destaque. */
 function partesDo(url: string) {
@@ -16,7 +17,6 @@ const CARACTERES = 'abcdefghijklmnopqrstuvwxyz0123456789'
 const TROCA_MS = 45
 const FIXA_PRIMEIRO_MS = 220
 const FIXA_CADA_MS = 110
-const ESTALO = [0.3, 1.6, 0.5, 1] as const
 
 /**
  * O final do link sintoniza como um canal: cada caractere gira até fixar no valor certo, da
@@ -29,22 +29,25 @@ function useSintonia(final: string, ligada: boolean) {
   useEffect(() => {
     if (!ligada) return
     const inicio = performance.now()
+    // Quando o último caractere fixa, todos já fixaram.
+    const fim = FIXA_PRIMEIRO_MS + (final.length - 1) * FIXA_CADA_MS
     const intervalo = setInterval(() => {
       const passou = performance.now() - inicio
-      const fixos = final
-        .split('')
-        .map((certo, i) =>
-          passou >= FIXA_PRIMEIRO_MS + i * FIXA_CADA_MS
-            ? certo
-            : (CARACTERES[Math.floor(Math.random() * CARACTERES.length)] ?? certo),
-        )
-        .join('')
-      if (fixos === final && passou >= FIXA_PRIMEIRO_MS + (final.length - 1) * FIXA_CADA_MS) {
+      if (passou >= fim) {
         clearInterval(intervalo)
         setTexto(null)
-      } else {
-        setTexto(fixos)
+        return
       }
+      setTexto(
+        final
+          .split('')
+          .map((certo, i) =>
+            passou >= FIXA_PRIMEIRO_MS + i * FIXA_CADA_MS
+              ? certo
+              : (CARACTERES[Math.floor(Math.random() * CARACTERES.length)] ?? certo),
+          )
+          .join(''),
+      )
     }, TROCA_MS)
     return () => clearInterval(intervalo)
   }, [])
@@ -139,29 +142,20 @@ export function Link({
         >
           <span className="relative grid size-4 place-items-center">
             <AnimatePresence initial={false}>
-              {copiado ? (
-                <motion.span
-                  key="check"
-                  className="absolute"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0, transition: { duration: 0.15 } }}
-                  transition={{ duration: 0.2, ease: ESTALO }}
-                >
+              <motion.span
+                key={copiado ? 'check' : 'copy'}
+                className="absolute"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+                transition={{ duration: 0.2, ease: ESTALO }}
+              >
+                {copiado ? (
                   <Check size={16} strokeWidth={1.5} aria-hidden />
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="copy"
-                  className="absolute"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-                  transition={{ duration: 0.2, ease: ESTALO }}
-                >
+                ) : (
                   <Copy size={16} strokeWidth={1.5} aria-hidden />
-                </motion.span>
-              )}
+                )}
+              </motion.span>
             </AnimatePresence>
           </span>
           {copiado ? 'Copiado' : copia === 'falhou' ? 'Selecione e copie' : 'Copiar'}

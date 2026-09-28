@@ -11,9 +11,10 @@ import {
   uploadNecessarioKbps,
 } from '@telando/core'
 import { codecsDoHost } from '@telando/core/cliente'
-import { animate, motion, useReducedMotion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
+import { useEffect, useState } from 'react'
 import { Alternador, Botao, Secao, Segmentado } from '../controles.tsx'
+import { ENTRADA } from '../movimento.ts'
 import type { FonteDeCaptura, MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
@@ -62,34 +63,33 @@ function ResultadoDoTeste({
   )
 }
 
-const EASE_OUT_CUBICO = (p: number) => 1 - (1 - p) ** 3
+// A régua vai até 10 Mbps, como no handoff; uma configuração que pede mais fica com a marca no fim.
+const ESCALA_KBPS = 10_000
+// easeOutCubic: 1 - (1 - p)^3.
+const ASSENTAR = [0.33, 1, 0.68, 1] as const
 
 /**
  * O upload medido numa régua, com uma marca no que a configuração pede. Enquanto mede, o número
- * "respira" subindo; quando o valor chega, os dois assentam nele.
+ * "respira" subindo; quando o valor chega, os dois assentam nele. O valor anima fora do React.
  */
 function ReguaDeUpload({ teste, necessarioKbps }: { teste: Teste; necessarioKbps: number }) {
   const reduzir = useReducedMotion()
-  const [exibido, setExibido] = useState<number | null>(null)
-  const atual = useRef(0)
-  const escala = Math.max(10_000, necessarioKbps * 1.25)
+  const kbps = useMotionValue(0)
+  const texto = useTransform(kbps, (valor) => formatarMbps(Math.round(valor)))
+  const preenchimento = useTransform(kbps, (valor) => Math.min(1, valor / ESCALA_KBPS))
 
   useEffect(() => {
-    const mostrar = (kbps: number) => {
-      atual.current = kbps
-      setExibido(kbps)
-    }
     if (teste.fase === 'medindo') {
       if (reduzir) return
       // O valor real só chega no fim; até lá sobe até ~70% de um palpite, com um ruído que acalma.
-      const palpite = escala / 2
+      const palpite = ESCALA_KBPS / 2
       const inicio = performance.now()
       let quadro = 0
       const passo = (agora: number) => {
         const segundos = (agora - inicio) / 1000
         const subida = 0.7 * palpite * (1 - Math.exp(-segundos * 1.5))
         const ruido = (Math.random() * 2 - 1) * 150 * Math.exp(-segundos / 2)
-        mostrar(Math.max(0, subida + ruido))
+        kbps.set(Math.max(0, subida + ruido))
         quadro = requestAnimationFrame(passo)
       }
       quadro = requestAnimationFrame(passo)
@@ -97,41 +97,36 @@ function ReguaDeUpload({ teste, necessarioKbps }: { teste: Teste; necessarioKbps
     }
     if (teste.fase === 'medido') {
       if (reduzir) {
-        mostrar(teste.uploadKbps)
+        kbps.set(teste.uploadKbps)
         return
       }
-      const animacao = animate(atual.current, teste.uploadKbps, {
-        duration: 0.6,
-        ease: EASE_OUT_CUBICO,
-        onUpdate: mostrar,
-      })
+      const animacao = animate(kbps, teste.uploadKbps, { duration: 0.6, ease: ASSENTAR })
       return () => animacao.stop()
     }
-    atual.current = 0
-    setExibido(null)
-  }, [teste, reduzir, escala])
+    kbps.set(0)
+  }, [teste, reduzir, kbps])
 
+  const temValor = teste.fase === 'medido' || (teste.fase === 'medindo' && !reduzir)
   const cor =
     teste.fase !== 'medido'
       ? 'text-texto-suave'
       : teste.uploadKbps >= necessarioKbps
         ? 'text-destaque'
         : 'text-aviso'
-  const preenchimento = Math.min(1, (exibido ?? 0) / escala)
-  const marca = Math.min(100, (necessarioKbps / escala) * 100)
+  const marca = Math.min(100, (necessarioKbps / ESCALA_KBPS) * 100)
 
   return (
     <div className={`grid gap-2 transition-colors duration-200 ${cor}`}>
       <div className="flex items-baseline justify-between">
         <span className="text-texto-suave text-xs">Upload</span>
         <span className="font-mono text-xl tabular-nums">
-          {exibido === null ? '—' : formatarMbps(Math.round(exibido))}
+          {temValor ? <motion.span>{texto}</motion.span> : '—'}
         </span>
       </div>
       <div className="relative h-1.5 rounded-full bg-superficie-2">
-        <div
+        <motion.div
           className="absolute inset-0 origin-left rounded-full bg-current"
-          style={{ transform: `scaleX(${preenchimento})` }}
+          style={{ scaleX: preenchimento }}
         />
         <span
           aria-hidden
@@ -286,7 +281,7 @@ export function TelaConfiguracoes({
                 key={teste.fase}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={ENTRADA}
               >
                 <ResultadoDoTeste
                   teste={teste}
