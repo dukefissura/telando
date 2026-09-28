@@ -1,5 +1,9 @@
 # Novidades
 
+## 0.3.1
+
+- **Fechar a janela deixa o Telando na bandeja.** A transmissão continua; o ícone traz a janela de volta, e "Sair" no menu dele fecha de vez. Na primeira vez o Windows avisa.
+
 ## 0.3.0
 
 - **Sem chat e sem reações.** A sala fica só com a tela: quem assiste tem volume, qualidade, tela cheia, janela flutuante e pedir a vez.
