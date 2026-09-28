@@ -2,13 +2,16 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: '.',
-  timeout: 60_000,
+  // Cada teste abre dois ou três apps Electron.
+  timeout: 90_000,
   fullyParallel: false,
   reporter: 'list',
   use: {
     // E2E_BASE_URL aponta para o server de produção (API e site juntos) quando se quer testar o build.
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
     trace: 'retain-on-failure',
+    // Os testes leem estados finais; animação só atrasaria.
+    contextOptions: { reducedMotion: 'reduce' },
   },
   projects: [
     {
