@@ -1,5 +1,12 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
+/**
+ * Resposta ao toque de todo botão: sobe 1px sob o mouse e afunda ao apertar, mais rápido na
+ * descida. Só translate e scale (docs/design.md); o reduced-motion do tema.css zera a transição.
+ */
+export const animacaoBotao =
+  'transition-[color,background-color,border-color,opacity,translate,scale] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] active:duration-75'
+
 const VARIANTES = {
   primario: 'bg-destaque text-sobre-destaque hover:bg-destaque/90',
   secundario: 'border border-borda bg-superficie hover:bg-superficie-2',
@@ -25,7 +32,7 @@ export function Botao({
   return (
     <button
       type="button"
-      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 ${VARIANTES[variante]} ${TAMANHOS[tamanho]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium ${animacaoBotao} disabled:pointer-events-none disabled:opacity-50 ${VARIANTES[variante]} ${TAMANHOS[tamanho]} ${className}`}
       {...props}
     />
   )
@@ -82,7 +89,7 @@ export function Segmentado<T extends string | number>({
           <label
             key={String(opcao.valor)}
             title={opcao.dica}
-            className={`flex-1 cursor-pointer whitespace-nowrap rounded-md px-2.5 py-1.5 text-center text-sm transition-colors duration-150 has-focus-visible:outline-2 has-focus-visible:outline-destaque ${
+            className={`flex-1 cursor-pointer whitespace-nowrap rounded-md px-2.5 py-1.5 text-center text-sm ${animacaoBotao} has-focus-visible:outline-2 has-focus-visible:outline-destaque ${
               opcao.valor === valor
                 ? 'bg-superficie-2 font-medium text-texto ring-1 ring-borda'
                 : 'text-texto-suave hover:text-texto'

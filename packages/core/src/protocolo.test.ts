@@ -1,43 +1,23 @@
 import { expect, it } from 'vitest'
-import { codificarMensagem, lerMensagem, REACOES } from './protocolo.ts'
+import { codificarAviso, lerAviso } from './protocolo.ts'
 
-it('ida e volta de chat e reação', () => {
-  const chat = { t: 'chat', texto: 'olá, pessoal' } as const
-  const reacao = { t: 'reacao', emoji: REACOES[0] } as const
-  expect(lerMensagem(codificarMensagem(chat))).toEqual(chat)
-  expect(lerMensagem(codificarMensagem(reacao))).toEqual(reacao)
-})
-
-it('apara o chat e recusa mensagem vazia ou longa demais', () => {
-  expect(lerMensagem(texto({ t: 'chat', texto: '  oi  ' }))).toEqual({ t: 'chat', texto: 'oi' })
-  expect(lerMensagem(texto({ t: 'chat', texto: '   ' }))).toBeNull()
-  expect(lerMensagem(texto({ t: 'chat', texto: 'a'.repeat(501) }))).toBeNull()
-})
-
-it('recusa reação fora da lista e lixo', () => {
-  expect(lerMensagem(texto({ t: 'reacao', emoji: '💩' }))).toBeNull()
-  expect(lerMensagem(texto({ t: 'aprovado' }))).toBeNull()
-  expect(lerMensagem('{')).toBeNull()
-})
-
-it('ignora campos a mais, como um remetente forjado', () => {
-  expect(lerMensagem(texto({ t: 'chat', texto: 'oi', de: 'host' }))).toEqual({
-    t: 'chat',
-    texto: 'oi',
-  })
-})
-
-function texto(valor: unknown) {
-  return JSON.stringify(valor)
-}
-
-it('pedidos de revezamento vão e voltam', () => {
+it('avisos de revezamento vão e voltam', () => {
   for (const t of [
     'pedido-tela',
     'pedido-cancelado',
     'pedido-recusado',
     'devolver-tela',
   ] as const) {
-    expect(lerMensagem(codificarMensagem({ t }))).toEqual({ t })
+    expect(lerAviso(codificarAviso({ t }))).toEqual({ t })
   }
+})
+
+it('recusa o que não é aviso, inclusive o chat antigo, e lixo', () => {
+  expect(lerAviso(JSON.stringify({ t: 'aprovado' }))).toBeNull()
+  expect(lerAviso(JSON.stringify({ t: 'chat', texto: 'oi' }))).toBeNull()
+  expect(lerAviso('{')).toBeNull()
+})
+
+it('ignora campos a mais, como um remetente forjado', () => {
+  expect(lerAviso(JSON.stringify({ t: 'pedido-tela', de: 'host' }))).toEqual({ t: 'pedido-tela' })
 })

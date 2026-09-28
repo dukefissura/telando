@@ -24,11 +24,9 @@ export {
 } from './estatisticas.ts'
 export { lerConfigSalva, presetQueCabe, uploadNecessarioKbps } from './preferencias.ts'
 export {
-  codificarMensagem,
-  lerMensagem,
-  type MensagemSala,
-  REACOES,
-  type Reacao,
+  type AvisoRevezamento,
+  codificarAviso,
+  lerAviso,
   TOPICO,
 } from './protocolo.ts'
 export { lerSessaoMetadata, type SessaoMetadata } from './sessao.ts'

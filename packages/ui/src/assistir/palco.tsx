@@ -9,8 +9,8 @@ import {
   useTracks,
   VideoTrack,
 } from '@livekit/components-react'
-import { lerSessaoMetadata } from '@telando/core'
-import { type AvisoRevezamento, useChatSala } from '@telando/core/cliente'
+import { type AvisoRevezamento, lerSessaoMetadata } from '@telando/core'
+import { useAvisosSala } from '@telando/core/cliente'
 import {
   ConnectionState,
   RemoteTrackPublication,
@@ -23,8 +23,6 @@ import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useStat
 import { useAtalhosDaJanela } from '../atalhos.ts'
 import { ENTRADA, MOLA_SUAVE, SAIDA, TRANSICAO_SELO } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
-import { PainelChat } from '../sala/painel-chat.tsx'
-import { ColunaDeReacoes } from '../sala/reacoes.tsx'
 import { Aviso } from './aviso.tsx'
 import { BarraDeControles, type Qualidade } from './barra-de-controles.tsx'
 import { BotaoRevezamento, EscolherOQueCompartilhar, useRevezamento } from './revezamento.tsx'
@@ -32,13 +30,9 @@ import { BotaoRevezamento, EscolherOQueCompartilhar, useRevezamento } from './re
 const OCIOSO_APOS_MS = 3000
 
 /** Fica falso depois de alguns segundos sem mexer o mouse ou o teclado. */
-function useAtividade(fixar: boolean) {
+function useAtividade() {
   const [ativo, setAtivo] = useState(true)
   useEffect(() => {
-    if (fixar) {
-      setAtivo(true)
-      return
-    }
     let timer = setTimeout(() => setAtivo(false), OCIOSO_APOS_MS)
     const mexeu = () => {
       setAtivo(true)
@@ -51,7 +45,7 @@ function useAtividade(fixar: boolean) {
       clearTimeout(timer)
       for (const evento of eventos) window.removeEventListener(evento, mexeu)
     }
-  }, [fixar])
+  }, [])
   return ativo
 }
 
@@ -147,10 +141,10 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
   const telas = useTracks([Track.Source.ScreenShare], { onlySubscribed: true })
   const tela = telas.find((t) => t.participant.identity === alvo)
   const conexao = useConnectionState(room)
-  // O chat entrega os avisos do revezamento; o revezamento usa o chat para avisar o host.
+  // Os avisos da sala chegam ao revezamento, e o revezamento os usa para falar com o host.
   const aoAvisoDoRevezamento = useRef<(aviso: AvisoRevezamento) => void>(() => undefined)
-  const chat = useChatSala(room, (aviso) => aoAvisoDoRevezamento.current(aviso))
-  const revezamento = useRevezamento(room, sessao, chat.avisar, fontes)
+  const avisar = useAvisosSala(room, (aviso) => aoAvisoDoRevezamento.current(aviso))
+  const revezamento = useRevezamento(room, sessao, avisar, fontes)
   aoAvisoDoRevezamento.current = revezamento.aoAviso
   const souEuNaTela = alvo === room.localParticipant.identity
   const nomeNaTela = sessao?.presenterIdentity
@@ -160,19 +154,15 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
   const [volume, setVolume] = useState(1)
   const [mudo, setMudo] = useState(false)
   const [qualidade, setQualidade] = useState<Qualidade>('auto')
-  const [chatAberto, setChatAberto] = useState(false)
-  const [ultimaLida, setUltimaLida] = useState(-1)
   const [telaCheia, setTelaCheia] = useState(false)
   const [jaViuOHost, setJaViuOHost] = useState(false)
   const refPalco = useRef<HTMLDivElement>(null)
   const refVideo = useRef<HTMLVideoElement>(null)
-  const ativo = useAtividade(chatAberto)
+  const ativo = useAtividade()
 
   const publicacao =
     tela?.publication instanceof RemoteTrackPublication ? tela.publication : undefined
   const trilha = publicacao?.track instanceof RemoteVideoTrack ? publicacao.track : undefined
-  // Por id, não por contagem: a lista guarda só as últimas 100 mensagens.
-  const naoLidas = chatAberto ? 0 : chat.mensagens.filter((m) => !m.meu && m.id > ultimaLida).length
 
   useEffect(() => {
     if (host) setJaViuOHost(true)
@@ -186,8 +176,6 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
     return () => document.removeEventListener('fullscreenchange', aoMudar)
   }, [])
 
-  const alternarChat = useCallback(() => setChatAberto((aberto) => !aberto), [])
-
   const alternarTelaCheia = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen()
     else void refPalco.current?.requestFullscreen()
@@ -196,14 +184,7 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
   useAtalhosDaJanela({
     f: alternarTelaCheia,
     m: () => setMudo((atual) => !atual),
-    c: alternarChat,
   })
-
-  // Com o chat aberto, tudo que chega já conta como lido.
-  useEffect(() => {
-    const ultima = chat.mensagens.at(-1)
-    if (chatAberto && ultima) setUltimaLida(ultima.id)
-  }, [chatAberto, chat.mensagens])
 
   const alternarPip =
     document.pictureInPictureEnabled && tela
@@ -302,8 +283,6 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
           </p>
         )}
 
-        <ColunaDeReacoes reacoes={chat.reacoes} />
-
         {/* Ao ficar ocioso a barra afunda 8px enquanto some; volta mais rápido do que sai. */}
         <div
           className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-[opacity,translate] ${ativo ? 'translate-y-0 opacity-100 duration-150 ease-out' : 'translate-y-2 opacity-0 duration-200 ease-in focus-within:translate-y-0 focus-within:opacity-100 hover:translate-y-0 hover:opacity-100'}`}
@@ -319,10 +298,6 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
             qualidade={qualidade}
             aoMudarQualidade={setQualidade}
             trilha={trilha}
-            aoReagir={(emoji) => void chat.reagir(emoji)}
-            chatAberto={chatAberto}
-            naoLidas={Math.max(0, naoLidas)}
-            aoAlternarChat={alternarChat}
             telaCheia={telaCheia}
             aoAlternarTelaCheia={alternarTelaCheia}
             aoAlternarPip={alternarPip}
@@ -331,24 +306,6 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
           />
         </div>
       </main>
-
-      <AnimatePresence initial={false}>
-        {chatAberto && (
-          <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-            transition={ENTRADA}
-            className="flex shrink-0 flex-col overflow-hidden border-borda border-l bg-fundo"
-          >
-            <PainelChat
-              mensagens={chat.mensagens}
-              aoEnviar={chat.enviarChat}
-              className="w-80 flex-1"
-            />
-          </motion.aside>
-        )}
-      </AnimatePresence>
 
       <RoomAudioRenderer volume={volume} muted={mudo} />
     </div>

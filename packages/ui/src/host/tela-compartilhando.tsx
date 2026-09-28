@@ -3,7 +3,7 @@ import {
   codecsDoHost,
   type Estatisticas,
   type Remetente,
-  useChatSala,
+  useAvisosSala,
   type useTransmissao,
 } from '@telando/core/cliente'
 import { AnimatePresence, motion } from 'motion/react'
@@ -12,8 +12,6 @@ import { useAtalhosDaJanela } from '../atalhos.ts'
 import { Alternador, Botao, Secao } from '../controles.tsx'
 import { ENTRADA, MOLA_SUAVE, SAIDA } from '../movimento.ts'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
-import { PainelChat } from '../sala/painel-chat.tsx'
-import { BotoesDeReacao, ColunaDeReacoes } from '../sala/reacoes.tsx'
 import { Link } from './link.tsx'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
@@ -139,7 +137,7 @@ export function TelaCompartilhando({
   const microfones = useMicrofones(configAtual?.microfone.ativo ?? false)
   const [pedidos, setPedidos] = useState<Remetente[]>([])
   const apresentador = estado.fase === 'ao-vivo' ? estado.apresentador : null
-  const chat = useChatSala(controle.sala, (aviso, de) => {
+  const avisar = useAvisosSala(controle.sala, (aviso, de) => {
     if (aviso.t === 'pedido-tela') {
       setPedidos((atuais) =>
         atuais.some((p) => p.identity === de.identity) ? atuais : [...atuais, de],
@@ -184,7 +182,7 @@ export function TelaCompartilhando({
 
   const recusar = async (pedido: Remetente) => {
     setPedidos((atuais) => atuais.filter((p) => p.identity !== pedido.identity))
-    await chat.avisar({ t: 'pedido-recusado' }, pedido.identity).catch(() => {
+    await avisar({ t: 'pedido-recusado' }, pedido.identity).catch(() => {
       // Se o aviso não chegar, a pessoa só continua esperando; pode pedir de novo.
     })
   }
@@ -454,16 +452,7 @@ export function TelaCompartilhando({
             </ul>
           )}
         </Secao>
-        <Secao titulo="Chat">
-          <PainelChat
-            mensagens={chat.mensagens}
-            aoEnviar={chat.enviarChat}
-            className="h-96 rounded-lg border border-borda"
-          />
-          <BotoesDeReacao aoReagir={(emoji) => void chat.reagir(emoji)} />
-        </Secao>
       </aside>
-      <ColunaDeReacoes reacoes={chat.reacoes} />
     </main>
   )
 }

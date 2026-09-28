@@ -1,4 +1,5 @@
 import {
+  type AvisoRevezamento,
   aplicarPreset,
   configPadrao,
   mensagemDoErro,
@@ -6,7 +7,7 @@ import {
   type PresetId,
   type SessaoMetadata,
 } from '@telando/core'
-import { type AvisoRevezamento, compartilharComoConvidado } from '@telando/core/cliente'
+import { compartilharComoConvidado } from '@telando/core/cliente'
 import type { Room } from 'livekit-client'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
