@@ -47,10 +47,21 @@ const preferencias = new Store<{
   /** Segredo do link fixo, cifrado com safeStorage (DPAPI da conta do Windows). */
   segredoLinkCifrado: string | null
   janela: { maximizada: boolean; largura: number; altura: number } | null
+  /** O aviso de que o app continua na bandeja aparece só na primeira vez. */
+  avisouBandeja: boolean
 }>({
   name: 'preferencias',
-  defaults: { transmissao: null, linkFixo: null, segredoLinkCifrado: null, janela: null },
+  defaults: {
+    transmissao: null,
+    linkFixo: null,
+    segredoLinkCifrado: null,
+    janela: null,
+    avisouBandeja: false,
+  },
 })
+
+// Fechar a janela só a esconde; o app sai de verdade pelo "Sair" da bandeja (ou pelo sistema).
+let saindo = false
 
 /** O segredo é gerado aqui na primeira vez e é o que prova que o link fixo é deste computador. */
 function segredoDoLink(): string {
@@ -134,6 +145,16 @@ function atualizarBandeja() {
   )
 }
 
+function avisarQueFicouNaBandeja() {
+  if (!bandeja || preferencias.get('avisouBandeja')) return
+  preferencias.set('avisouBandeja', true)
+  bandeja.displayBalloon({
+    iconType: 'info',
+    title: 'O Telando continua aberto',
+    content: 'Ele fica aqui na bandeja. Para sair de vez, use "Sair" no menu do ícone.',
+  })
+}
+
 function criarJanela() {
   const salva = preferencias.get('janela')
   janela = new BrowserWindow({
@@ -158,10 +179,14 @@ function criarJanela() {
     if (salva?.maximizada ?? true) janela?.maximize()
     janela?.show()
   })
-  janela.on('close', () => {
+  janela.on('close', (evento) => {
     if (!janela) return
     const { width, height } = janela.getNormalBounds()
     preferencias.set('janela', { maximizada: janela.isMaximized(), largura: width, altura: height })
+    if (saindo) return
+    evento.preventDefault()
+    janela.hide()
+    avisarQueFicouNaBandeja()
   })
   janela.on('closed', () => {
     janela = null
@@ -280,6 +305,9 @@ if (!app.requestSingleInstanceLock()) {
     }
   })
 
+  app.on('before-quit', () => {
+    saindo = true
+  })
   app.on('will-quit', () => globalShortcut.unregisterAll())
   app.on('window-all-closed', () => app.quit())
 }

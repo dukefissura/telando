@@ -102,3 +102,7 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Sem chat e sem reações** (pedido do usuário em 2026-09-28). O canal de mensagens da sala continua, só para os avisos do revezamento (pedir, cancelar, recusar, devolver a vez): `useAvisosSala` no lugar do `useChatSala`, e o protocolo aceita só esses quatro avisos.
 - **Animação dos botões** num lugar só (`animacaoBotao`, em `controles.tsx`): sobe 1px sob o mouse e afunda (escala 0,97) ao apertar, em 150ms e 75ms. Só translate e scale, como pede o `docs/design.md`.
 - **Nome do pacote empacotado `telando`** (`extraMetadata` no electron-builder). O nome do monorepo (`@telando/desktop`) virava a pasta de instalação `@telandodesktop`. A pasta de dados do app instalado muda junto; para uma versão de teste, perder as preferências não pesa.
+
+## Fase 9
+
+- **Fechar a janela esconde o app na bandeja** (pedido do usuário em 2026-09-28). Sair de vez é pelo "Sair" da bandeja, pelo desligamento do Windows ou pelo atualizador: todos passam pelo `before-quit`, que libera o fechamento. Uma transmissão continua com a janela escondida. O aviso de que o app ficou na bandeja usa o balão da bandeja (vira notificação no Windows 10/11) e aparece só na primeira vez.
