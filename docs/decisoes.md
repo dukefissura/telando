@@ -84,4 +84,15 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Som sem clique** com `autoplayPolicy: 'no-user-gesture-required'` na janela do app.
 - **Janela maximizada, mínimo 960×600**, lembrando o último estado. Telas de quem compartilha em duas colunas a partir de 1100px.
 - **Movimento do handoff de design (1a–1j).** O texto da espera do link fixo virou "Deixe o Telando aberto: ele entra na transmissão assim que começar.", porque não há mais página. O selo do palco aparece assim que o host está na sala (antes esperava o primeiro quadro), para o endereço do canal ter para onde voar. Os testes rodam com `reducedMotion: 'reduce'`.
-- **E2E com a tela real em movimento.** Com a tela parada o Chromium quase não gera quadros, e quem entra depois esperava o primeiro quadro-chave. Os testes abrem um quadrado que muda de cor num canto (`manterTelaMexendo`). A observar no uso real: um espectador que entra com a tela do host totalmente parada pode demorar até ela mudar. Num teste sem o quadrado a imagem chegou em uns 11s, mas o app de quem assistia estava na mesma tela.
+- **Quem entra com a tela parada vê a imagem na hora.** Suspeitei que, sem quadros novos, quem entra depois esperaria até a tela mudar. Medido na fase 7 com uma janela totalmente parada: a primeira imagem chega em uns 1,2 s. As falhas que levantaram a suspeita eram o tempo curto do teste com três apps abrindo juntos.
+
+## Fase 7
+
+- **Medir antes de otimizar.** `MEDIR=1 pnpm e2e -- desempenho` mede a abertura, a CPU e a memória privada do app (parado, nas configurações, transmitindo, assistindo) e o tempo até a primeira imagem de quem assiste. A memória contada é a privada: o working set repete, em cada processo, as DLLs do Chromium e fazia o app parecer ter o dobro.
+- **Minificar o main e o renderer.** O electron-vite não minifica por padrão: o JS do app caiu de 2,4 MB para 1,1 MB e o main de 920 KB para 252 KB. O `electron-updater`, metade do main, só é carregado no app instalado, depois que a janela abre.
+- **Só o subconjunto latino das fontes.** Cobre todo o português; os outros alfabetos iam no pacote sem uso.
+- **Só as traduções pt-BR e en-US do Chromium** no instalador (`electronLanguages`): instalador de 112 para 103 MB, instalado de 371 para 323 MB.
+- **Miniaturas das fontes em JPEG e ícones em cache.** A grade atualiza a cada segundo; antes eram PNGs e os ícones de todas as janelas a cada volta.
+- **Preview ao vivo** da fonte escolhida, pedido na taxa do monitor. A captura de tela do Chromium entrega no máximo uns 60 quadros por segundo (medido: aceita pedidos até 120, entrega 60, com WGC e com DXGI), então num monitor de 60 Hz o preview é o nativo, e acima disso fica em 60, que também é o teto da transmissão.
+- **Codificação por software.** Mesmo com a GPU liberada (fora dos testes a aceleração de vídeo está ligada), o WebRTC do Electron usou OpenH264, libaom e libvpx em compartilhamento de tela, com e sem simulcast, e com os ajustes de recurso do Chromium testados. Fica como está até haver evidência de um caminho de hardware que funcione.
+- **Os testes E2E rodam sem GPU de vídeo** (o Playwright abre o Electron assim). Números de CPU de codificação dos testes não valem para o uso real; os de abertura e memória valem.

@@ -13,6 +13,10 @@ protocols:
   - name: Telando
     schemes:
       - telando
+# O app só fala português; as outras 53 traduções do Chromium eram 45 MB a mais instalados.
+electronLanguages:
+  - pt-BR
+  - en-US
 win:
   target: nsis
   icon: build/icone.png
