@@ -2,13 +2,9 @@ import { RoomContext } from '@livekit/components-react'
 import { apelidoAleatorio } from '@telando/core'
 import { type FormEvent, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { Aviso } from './aviso.tsx'
+import { Aviso, Centro } from './aviso.tsx'
 import { Palco } from './palco.tsx'
 import { useSalaEspectador } from './use-sala-espectador.ts'
-
-function Centro({ children }: { children: React.ReactNode }) {
-  return <main className="grid min-h-dvh place-items-center">{children}</main>
-}
 
 export function PaginaAssistir() {
   const { id = '' } = useParams()

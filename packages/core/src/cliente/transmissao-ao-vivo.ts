@@ -473,9 +473,11 @@ export async function compartilharComoConvidado(
   return {
     async parar() {
       captura.video.removeEventListener('ended', aoPerderCaptura)
+      // Se o host já retomou a vez, o LiveKit despublicou sozinho; aí só sobra parar a captura.
+      const publicadas = [...room.localParticipant.trackPublications.values()]
       for (const trilha of [captura.video, captura.audio]) {
-        // Se o host já retomou a vez, o LiveKit despublicou sozinho; aí só sobra parar a captura.
-        if (trilha) await room.localParticipant.unpublishTrack(trilha).catch(() => undefined)
+        const aindaPublicada = publicadas.some((p) => p.track?.mediaStreamTrack === trilha)
+        if (trilha && aindaPublicada) await room.localParticipant.unpublishTrack(trilha)
       }
       pararCaptura(captura)
     },

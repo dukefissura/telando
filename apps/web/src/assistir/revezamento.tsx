@@ -26,6 +26,9 @@ export function useRevezamento(
   const [erro, setErro] = useState<string | null>(null)
   const atual = useRef<Compartilhamento | null>(null)
   const souApresentador = sessao?.presenterIdentity === room.localParticipant.identity
+  // Lido depois de awaits: o host pode ter retomado a vez enquanto a captura começava.
+  const aindaSouApresentador = useRef(souApresentador)
+  aindaSouApresentador.current = souApresentador
   const host = sessao?.hostIdentity
 
   const pararCaptura = useCallback(async () => {
@@ -72,7 +75,16 @@ export function useRevezamento(
       setErro(null)
       try {
         const config = { ...aplicarPreset(configPadrao(), preset), audioSistema: comAudio }
-        atual.current = await compartilharComoConvidado(room, config, () => void devolver())
+        const compartilhamento = await compartilharComoConvidado(
+          room,
+          config,
+          () => void devolver(),
+        )
+        if (!aindaSouApresentador.current) {
+          await compartilhamento.parar()
+          return
+        }
+        atual.current = compartilhamento
         setCompartilhando(true)
       } catch (e) {
         if (e instanceof DOMException && e.name === 'NotAllowedError') return

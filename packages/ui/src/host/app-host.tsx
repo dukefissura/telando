@@ -1,4 +1,4 @@
-import { type ConfigTransmissao, lerConfigSalva } from '@telando/core'
+import { type ConfigTransmissao, lerConfigSalva, mensagemDoErro } from '@telando/core'
 import { useTransmissao } from '@telando/core/cliente'
 import { useCallback, useEffect, useState } from 'react'
 import { Botao } from '../controles.tsx'
@@ -60,6 +60,8 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
   const [tela, setTela] = useState<'inicio' | 'configurando' | 'link-fixo'>('inicio')
   const [meuLink, setMeuLink] = useState<MeuLinkFixo | null>(null)
   const [usarLinkFixo, setUsarLinkFixo] = useState(true)
+  const [preparando, setPreparando] = useState(false)
+  const [erroAoPreparar, setErroAoPreparar] = useState<string | null>(null)
   const { estado, parar } = controle
   const { linkFixo } = plataforma
 
@@ -72,12 +74,23 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
   }, [estado.fase])
 
   const iniciar = async (config: ConfigTransmissao) => {
-    const comLink = linkFixo && meuLink && usarLinkFixo
-    const segredo = comLink ? await linkFixo.segredo() : null
-    await controle.iniciar(
-      config,
-      comLink && segredo ? { slug: meuLink.slug, segredo, url: meuLink.url } : undefined,
-    )
+    // Enquanto lê o segredo o botão já fica travado: um clique duplo abriria duas sessões.
+    setPreparando(true)
+    setErroAoPreparar(null)
+    try {
+      const comLink = linkFixo && meuLink && usarLinkFixo
+      const segredo = comLink ? await linkFixo.segredo() : null
+      await controle.iniciar(
+        config,
+        comLink && segredo ? { slug: meuLink.slug, segredo, url: meuLink.url } : undefined,
+      )
+    } catch (erro) {
+      setErroAoPreparar(
+        mensagemDoErro(erro, 'Não consegui ler o seu link fixo. Desligue a opção e tente de novo.'),
+      )
+    } finally {
+      setPreparando(false)
+    }
   }
 
   useEffect(() => plataforma.aoAtalhoParar?.(() => void parar()), [plataforma, parar])
@@ -115,8 +128,8 @@ export function AppHost({ plataforma }: { plataforma: Plataforma }) {
         linkFixo={meuLink}
         usarLinkFixo={usarLinkFixo}
         aoMudarUsarLinkFixo={setUsarLinkFixo}
-        iniciando={estado.fase === 'iniciando'}
-        erro={estado.fase === 'erro' ? estado.mensagem : null}
+        iniciando={preparando || estado.fase === 'iniciando'}
+        erro={erroAoPreparar ?? (estado.fase === 'erro' ? estado.mensagem : null)}
       />
     )
   }

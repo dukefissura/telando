@@ -18,3 +18,8 @@ export function Aviso({
     </div>
   )
 }
+
+/** Centraliza um aviso ou formulário na tela toda, sobre o fundo escuro. */
+export function Centro({ children }: { children: ReactNode }) {
+  return <main className="grid min-h-dvh place-items-center">{children}</main>
+}

@@ -2,7 +2,7 @@ import { apelidoAleatorio, ErroApi, estadoLinkSchema, mensagemDoErro } from '@te
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { api } from '../api.ts'
-import { Aviso } from './aviso.tsx'
+import { Aviso, Centro } from './aviso.tsx'
 import { Assistir } from './pagina-assistir.tsx'
 
 const statusSchema = estadoLinkSchema.omit({ url: true })
@@ -60,10 +60,6 @@ function useLinkFixo(slug: string) {
   }, [slug])
 
   return estado
-}
-
-function Centro({ children }: { children: React.ReactNode }) {
-  return <main className="grid min-h-dvh place-items-center">{children}</main>
 }
 
 export function PaginaLinkFixo() {

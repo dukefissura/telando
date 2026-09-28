@@ -30,6 +30,14 @@ export function useSalaEspectador(id: string) {
   const [sala, setSala] = useState<SalaEspectador>({ fase: 'formulario' })
   // Um clique duplo (ou o StrictMode montando duas vezes) não pode abrir duas conexões.
   const entrando = useRef(false)
+  const montado = useRef(true)
+
+  useEffect(() => {
+    montado.current = true
+    return () => {
+      montado.current = false
+    }
+  }, [])
 
   const entrar = useCallback(
     async (apelido: string) => {
@@ -42,6 +50,12 @@ export function useSalaEspectador(id: string) {
         const entrada = await api.entrarNaSessao(id, apelido)
         room.on(RoomEvent.Disconnected, (motivo) => setSala(faseAoDesconectar(motivo)))
         await room.connect(entrada.livekitUrl, entrada.livekitToken)
+        // A página pode ter fechado (ou trocado de sessão) enquanto conectava.
+        if (!montado.current) {
+          room.removeAllListeners()
+          await room.disconnect()
+          return
+        }
         // Chamado dentro do clique em "Assistir": é o gesto que o navegador exige para tocar som.
         await room.startAudio()
         setSala({ fase: 'conectado', room })
