@@ -38,7 +38,7 @@ export async function transmitir(browser: Browser, host?: Page) {
   )
   await pagina.getByRole('button', { name: 'Iniciar' }).click()
   const sessao = (await (await resposta).json()) as { id: string; hostToken: string }
-  return { host: pagina, link: await pagina.locator('#link').inputValue(), sessao }
+  return { host: pagina, link: await lerLink(pagina), sessao }
 }
 
 export async function assistir(browser: Browser, link: string, apelido: string) {
@@ -47,4 +47,11 @@ export async function assistir(browser: Browser, link: string, apelido: string) 
   await espectador.getByLabel('Seu apelido').fill(apelido)
   await espectador.getByRole('button', { name: 'Assistir' }).click()
   return espectador
+}
+
+/** O link que o host mostra (e copia) na tela "Compartilhando". */
+export async function lerLink(host: Page): Promise<string> {
+  const url = await host.locator('#link').getAttribute('data-url')
+  if (!url) throw new Error('A tela do host não mostrou o link da transmissão.')
+  return url
 }

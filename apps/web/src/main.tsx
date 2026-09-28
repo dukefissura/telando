@@ -1,4 +1,4 @@
-import { AppHost } from '@telando/ui'
+import { AppHost, aplicarTemaSalvo } from '@telando/ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
@@ -12,6 +12,8 @@ const router = createBrowserRouter([
   { path: '/s/:id', element: <PaginaAssistir /> },
   { path: '/:slug', element: <PaginaLinkFixo /> },
 ])
+
+aplicarTemaSalvo()
 
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('index.html sem #root')

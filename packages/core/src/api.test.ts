@@ -100,6 +100,15 @@ describe('criarClienteApi', () => {
     expect(chamadas[1]?.init?.method).toBe('DELETE')
   })
 
+  it('diz quem está compartilhando antes de entrar', async () => {
+    const { chamadas, fetcher } = fetcherFalso(200, { hostNome: 'Luan', trancada: false })
+    expect(await criarClienteApi('', fetcher).infoDaSessao('abc')).toEqual({
+      hostNome: 'Luan',
+      trancada: false,
+    })
+    expect(chamadas[0]?.url).toBe('/api/sessions/abc')
+  })
+
   it('passa a vez de compartilhar', async () => {
     const { chamadas, fetcher } = fetcherFalso(204, undefined)
     await criarClienteApi('', fetcher).passarVez('abc', 'ht', 'v_1')

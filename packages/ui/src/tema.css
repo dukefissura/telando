@@ -1,27 +1,71 @@
-/* Tokens provisórios; a direção visual definitiva sai na Fase 4. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
 @source "./";
 
-@theme {
-  --color-fundo: #0a0a0a;
-  --color-superficie: #141414;
-  --color-superficie-2: #1c1c1c;
-  --color-borda: #262626;
-  --color-texto: #ededed;
-  --color-texto-suave: #a1a1a1;
-  --color-ao-vivo: #22c55e;
-  --color-parar: #ef4444;
-  --color-parar-fundo: #dc2626;
-  --color-parar-fundo-forte: #b91c1c;
-  --color-aviso: #eab308;
+/* Valores e o porquê de cada um estão em docs/design.md. */
+@theme inline {
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-borda: var(--borda);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-destaque: var(--destaque);
+  --color-sobre-destaque: var(--sobre-destaque);
+  --color-ao-vivo: var(--ao-vivo);
+  --color-parar: var(--parar);
+  --color-parar-fundo: var(--parar-fundo);
+  --color-parar-fundo-forte: var(--parar-fundo-forte);
+  --color-aviso: var(--aviso);
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 }
 
 :root {
   color-scheme: dark;
+  --fundo: #0a0a0a;
+  --superficie: #131313;
+  --superficie-2: #1c1c1c;
+  --borda: #262626;
+  --texto: #ededed;
+  --texto-suave: #a1a1a1;
+  --destaque: #3b9eff;
+  --sobre-destaque: #0a0a0a;
+  --ao-vivo: #22c55e;
+  --parar: #f87171;
+  --parar-fundo: #dc2626;
+  --parar-fundo-forte: #b91c1c;
+  --aviso: #e5a50a;
+}
+
+:root[data-tema="claro"] {
+  color-scheme: light;
+  --fundo: #ffffff;
+  --superficie: #f6f6f6;
+  --superficie-2: #ececec;
+  --borda: #e2e2e2;
+  --texto: #0a0a0a;
+  --texto-suave: #5c5c5c;
+  --destaque: #0b6bdb;
+  --sobre-destaque: #ffffff;
+  --ao-vivo: #15803d;
+  --parar: #b91c1c;
+  --parar-fundo: #dc2626;
+  --parar-fundo-forte: #b91c1c;
+  --aviso: #a16207;
 }
 
 body {
-  background: var(--color-fundo);
-  color: var(--color-texto);
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--destaque);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

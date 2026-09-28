@@ -1,6 +1,6 @@
 import { mensagemDoErro } from '@telando/core'
 import { type FormEvent, useState } from 'react'
-import { Botao } from '../controles.tsx'
+import { Botao, classeCampo } from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
 
 export function TelaLinkFixo({
@@ -65,7 +65,7 @@ export function TelaLinkFixo({
             onChange={(e) => setNome(e.target.value)}
             maxLength={32}
             required
-            className="rounded-lg border border-borda bg-superficie px-3 py-2"
+            className={classeCampo}
           />
         </label>
         <label className="grid gap-1.5 text-sm">
@@ -78,7 +78,7 @@ export function TelaLinkFixo({
             minLength={3}
             maxLength={20}
             required
-            className="rounded-lg border border-borda bg-superficie px-3 py-2 font-mono"
+            className={`${classeCampo} font-mono`}
           />
         </label>
         <Botao type="submit" variante="primario" disabled={salvando} className="justify-self-start">

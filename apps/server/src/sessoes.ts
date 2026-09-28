@@ -102,6 +102,10 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         })
       },
     )
+    .get('/:id', (c) => {
+      const { hostNome, trancada } = buscar(c.req.param('id')).metadata
+      return c.json({ hostNome, trancada })
+    })
     .delete('/:id', async (c) => {
       const id = c.req.param('id')
       exigirHost(buscar(id), c.req.header('authorization'))

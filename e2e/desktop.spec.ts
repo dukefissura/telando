@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { _electron as electron, expect, test } from '@playwright/test'
-import { recebeVideoEAudio } from './apoio.ts'
+import { lerLink, recebeVideoEAudio } from './apoio.ts'
 
 // Roda o build de verdade (apps/desktop/out), capturando a tela real do Windows.
 const pastaDesktop = fileURLToPath(new URL('../apps/desktop', import.meta.url))
@@ -32,7 +32,7 @@ test('desktop compartilha a tela com áudio do sistema e troca resolução ao vi
     await janela.getByRole('switch', { name: 'Várias qualidades para quem assiste' }).uncheck()
     await janela.screenshot({ path: 'test-results/desktop-configuracoes.png' })
     await janela.getByRole('button', { name: 'Iniciar' }).click()
-    const link = await janela.locator('#link').inputValue()
+    const link = await lerLink(janela)
 
     const espectador = await (await browser.newContext()).newPage()
     await espectador.goto(link)
