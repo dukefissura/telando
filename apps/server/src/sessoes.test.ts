@@ -1,7 +1,7 @@
 import type { SessaoMetadata } from '@telando/core'
 import { TokenVerifier } from 'livekit-server-sdk'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { envDeTeste as env, gatewayFalso } from './apoio-testes.ts'
+import { envDeTeste as env, gatewayFalso, linksDeTeste } from './apoio-testes.ts'
 import { criarApp } from './app.ts'
 
 const verificador = new TokenVerifier(env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET)
@@ -10,11 +10,16 @@ let salas: Map<string, SessaoMetadata>
 let app: ReturnType<typeof criarApp>
 let ip: string
 
-beforeEach(() => {
+beforeEach(async () => {
   const falso = gatewayFalso()
   salas = falso.salas
   ip = '10.0.0.1'
-  app = criarApp({ env, salas: falso.gateway, ipDoCliente: () => ip })
+  app = criarApp({
+    links: await linksDeTeste(),
+    env,
+    salas: falso.gateway,
+    ipDoCliente: () => ip,
+  })
 })
 
 function post(caminho: string, corpo: unknown) {

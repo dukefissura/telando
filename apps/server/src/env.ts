@@ -7,6 +7,8 @@ const envSchema = z.object({
   LIVEKIT_API_KEY: z.string().min(1),
   LIVEKIT_API_SECRET: z.string().min(1),
   TRUST_PROXY: z.enum(['0', '1']).default('0'),
+  /** Onde fica o links.json com as reservas de link fixo. */
+  DATA_DIR: z.string().default('data'),
 })
 
 export type Env = z.infer<typeof envSchema>

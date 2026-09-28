@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { apelidoAleatorio, type SessaoMetadata } from '@telando/core'
 import { Hono } from 'hono'
 import { customAlphabet, nanoid } from 'nanoid'
@@ -6,22 +6,11 @@ import { z } from 'zod'
 import type { Deps } from './app.ts'
 import { erroApi, lerCorpo } from './http.ts'
 import { limitarPorIp } from './limite.ts'
+import { hashDoHostToken, type RegistroSessoes } from './registro-sessoes.ts'
 import { emitirLivekitToken } from './tokens.ts'
-
-type Sessao = {
-  hostTokenHash: Buffer
-  metadata: SessaoMetadata
-  /** Timer que encerra a sessão se o host caiu e não voltou. */
-  quedaDoHost?: ReturnType<typeof setTimeout>
-  /** Conexão atual do host no LiveKit, para ignorar eventos atrasados de conexões antigas. */
-  hostSid?: string | undefined
-}
-export type RegistroSessoes = Map<string, Sessao>
 
 // Sem 0/O, 1/l/I: o link às vezes é ditado ou copiado à mão.
 const novoIdSessao = customAlphabet('23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', 12)
-
-const hash = (hostToken: string) => createHash('sha256').update(hostToken).digest()
 
 const nomeSchema = z.string().trim().max(32)
 const criarSchema = z.object({ nome: nomeSchema.optional() })
@@ -32,26 +21,7 @@ const MINUTO = 60_000
 
 export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
   const { env, salas } = deps
-
-  function buscar(id: string): Sessao {
-    const sessao = sessoes.get(id)
-    if (!sessao) {
-      throw erroApi(
-        404,
-        'sessao_nao_encontrada',
-        'Esse link não leva a nenhuma sessão. Ela pode ter acabado.',
-      )
-    }
-    return sessao
-  }
-
-  function exigirHost(sessao: Sessao, authorization: string | undefined) {
-    const hostToken = authorization?.match(/^Bearer (.+)$/)?.[1]
-    if (!hostToken) throw erroApi(401, 'sem_token', 'Só quem criou a sessão pode fazer isso.')
-    if (!timingSafeEqual(hash(hostToken), sessao.hostTokenHash)) {
-      throw erroApi(403, 'token_invalido', 'Só quem criou a sessão pode fazer isso.')
-    }
-  }
+  const { buscar, exigirHost } = sessoes
 
   return new Hono()
     .post(
@@ -77,7 +47,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         }
 
         await salas.criar(id, metadata)
-        sessoes.set(id, { hostTokenHash: hash(hostToken), metadata })
+        sessoes.adicionar(id, { hostTokenHash: hashDoHostToken(hostToken), metadata })
 
         return c.json(
           {
@@ -129,11 +99,9 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
     )
     .delete('/:id', async (c) => {
       const id = c.req.param('id')
-      const sessao = buscar(id)
-      exigirHost(sessao, c.req.header('authorization'))
-      clearTimeout(sessao.quedaDoHost)
+      exigirHost(buscar(id), c.req.header('authorization'))
       await salas.apagar(id)
-      sessoes.delete(id)
+      sessoes.encerrar(id)
       return c.body(null, 204)
     })
     .put('/:id/trancada', async (c) => {

@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { envDeTeste, gatewayFalso } from './apoio-testes.ts'
+import { envDeTeste, gatewayFalso, linksDeTeste } from './apoio-testes.ts'
 import { criarApp } from './app.ts'
 
 let app: ReturnType<typeof criarApp>
 let falso: ReturnType<typeof gatewayFalso>
 
-beforeEach(() => {
+beforeEach(async () => {
   falso = gatewayFalso()
-  app = criarApp({ env: envDeTeste, salas: falso.gateway, ipDoCliente: () => '10.0.0.1' })
+  app = criarApp({
+    links: await linksDeTeste(),
+    env: envDeTeste,
+    salas: falso.gateway,
+    ipDoCliente: () => '10.0.0.1',
+  })
 })
 
 async function criarSessao() {

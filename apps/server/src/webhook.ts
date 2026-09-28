@@ -2,18 +2,13 @@ import { Hono } from 'hono'
 import { WebhookReceiver } from 'livekit-server-sdk'
 import type { Deps } from './app.ts'
 import { erroApi } from './http.ts'
-import type { RegistroSessoes } from './sessoes.ts'
+import type { RegistroSessoes } from './registro-sessoes.ts'
 
 // O emptyTimeout do LiveKit não cobre este caso: com espectadores na sala ela nunca fica vazia.
 const ESPERA_PELO_HOST_MS = 60_000
 
 export function rotasWebhook({ env, salas }: Deps, sessoes: RegistroSessoes) {
   const receptor = new WebhookReceiver(env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET)
-
-  function esquecer(id: string) {
-    clearTimeout(sessoes.get(id)?.quedaDoHost)
-    sessoes.delete(id)
-  }
 
   return new Hono().post('/', async (c) => {
     const corpo = await c.req.text()
@@ -22,23 +17,22 @@ export function rotasWebhook({ env, salas }: Deps, sessoes: RegistroSessoes) {
     })
 
     const id = evento.room?.name ?? ''
-    const sessao = sessoes.get(id)
+    const sessao = sessoes.obter(id)
     const doHost = evento.participant?.identity === sessao?.metadata.hostIdentity
-
     // Webhooks podem chegar fora de ordem: a saída de uma conexão antiga do host, depois que ele
     // já reconectou, não pode encerrar a sessão. O sid identifica cada conexão.
     const sid = evento.participant?.sid
     const conexaoAntiga = sessao?.hostSid !== undefined && sid !== sessao.hostSid
 
     if (evento.event === 'room_finished') {
-      esquecer(id)
+      sessoes.encerrar(id)
     } else if (sessao && doHost && evento.event === 'participant_joined') {
       sessao.hostSid = sid
       clearTimeout(sessao.quedaDoHost)
     } else if (sessao && doHost && evento.event === 'participant_left' && !conexaoAntiga) {
       clearTimeout(sessao.quedaDoHost)
       sessao.quedaDoHost = setTimeout(() => {
-        esquecer(id)
+        sessoes.encerrar(id)
         void salas.apagar(id).catch((erro: unknown) => {
           console.error(`Não consegui apagar a sala ${id} depois que o host caiu`, erro)
         })

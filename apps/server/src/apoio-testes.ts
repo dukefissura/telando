@@ -1,5 +1,9 @@
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { SessaoMetadata } from '@telando/core'
 import type { Env } from './env.ts'
+import { criarRegistroLinks } from './links.ts'
 import type { SalaGateway } from './salas.ts'
 
 export const envDeTeste: Env = {
@@ -9,6 +13,12 @@ export const envDeTeste: Env = {
   LIVEKIT_API_KEY: 'devkey',
   LIVEKIT_API_SECRET: 'segredo-de-teste-com-32-caracteres!!',
   TRUST_PROXY: '0',
+  DATA_DIR: 'data',
+}
+
+/** Registro de links num diretório temporário, um por teste. */
+export async function linksDeTeste() {
+  return criarRegistroLinks(join(await mkdtemp(join(tmpdir(), 'telando-')), 'links.json'))
 }
 
 export function gatewayFalso() {

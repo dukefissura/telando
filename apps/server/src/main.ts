@@ -1,10 +1,12 @@
 import { existsSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { serve } from '@hono/node-server'
 import { getConnInfo } from '@hono/node-server/conninfo'
 import type { Context } from 'hono'
 import { criarApp } from './app.ts'
 import { lerEnv } from './env.ts'
+import { criarRegistroLinks } from './links.ts'
 import { criarSalaGateway } from './salas.ts'
 
 const arquivoEnv = fileURLToPath(new URL('../../../.env', import.meta.url))
@@ -12,6 +14,7 @@ if (existsSync(arquivoEnv)) process.loadEnvFile(arquivoEnv)
 
 const env = lerEnv(process.env)
 const salas = criarSalaGateway(env)
+const links = await criarRegistroLinks(join(resolve(env.DATA_DIR), 'links.json'))
 
 // Atrás do Caddy o último X-Forwarded-For é o que o próprio Caddy escreveu; os anteriores o cliente pode forjar.
 function ipDoCliente(c: Context): string {
@@ -30,6 +33,6 @@ await salas.apagarTodas().catch((erro: unknown) => {
   )
 })
 
-serve({ fetch: criarApp({ env, salas, ipDoCliente }).fetch, port: env.PORT }, ({ port }) => {
+serve({ fetch: criarApp({ env, salas, links, ipDoCliente }).fetch, port: env.PORT }, ({ port }) => {
   console.log(`server em http://localhost:${port}`)
 })

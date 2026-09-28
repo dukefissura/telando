@@ -5,13 +5,17 @@ import { HTTPException } from 'hono/http-exception'
 import type { Env } from './env.ts'
 import { erroApi } from './http.ts'
 import { limitarPorIp } from './limite.ts'
+import type { RegistroLinks } from './links.ts'
+import { criarRegistroSessoes } from './registro-sessoes.ts'
+import { rotasLinks } from './rotas-links.ts'
 import type { SalaGateway } from './salas.ts'
-import { type RegistroSessoes, rotasSessoes } from './sessoes.ts'
+import { rotasSessoes } from './sessoes.ts'
 import { rotasWebhook } from './webhook.ts'
 
 export type Deps = {
   env: Env
   salas: SalaGateway
+  links: RegistroLinks
   ipDoCliente: (c: Context) => string
   agora?: () => number
 }
@@ -25,7 +29,8 @@ const limiteDeCorpo = (maxSize: number) =>
   })
 
 export function criarApp(deps: Deps) {
-  const sessoes: RegistroSessoes = new Map()
+  // Quando uma sessão acaba, o link fixo que apontava para ela volta a "offline".
+  const sessoes = criarRegistroSessoes((id) => deps.links.sessaoAcabou(id))
 
   return (
     new Hono()
@@ -36,6 +41,8 @@ export function criarApp(deps: Deps) {
       .get('/health', (c) => c.json({ ok: true }))
       .use('/sessions/*', limiteDeCorpo(4 * 1024))
       .route('/sessions', rotasSessoes(deps, sessoes))
+      .use('/links/*', limiteDeCorpo(4 * 1024))
+      .route('/links', rotasLinks(deps, sessoes))
       .use('/livekit/webhook', limiteDeCorpo(64 * 1024))
       .route('/livekit/webhook', rotasWebhook(deps, sessoes))
       .post(
