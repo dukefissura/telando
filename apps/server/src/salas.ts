@@ -1,10 +1,13 @@
 import type { SessaoMetadata } from '@telando/core'
-import { RoomServiceClient, ServerError } from 'livekit-server-sdk'
+import { RoomServiceClient, ServerError, TrackSource } from 'livekit-server-sdk'
 import type { Env } from './env.ts'
 
 export interface SalaGateway {
   criar(id: string, metadata: SessaoMetadata): Promise<void>
   atualizarMetadata(id: string, metadata: SessaoMetadata): Promise<void>
+  participantes(id: string): Promise<string[]>
+  /** Dá (ou tira) a permissão de publicar só tela e áudio da tela. */
+  permitirTela(id: string, identity: string, permitir: boolean): Promise<void>
   remover(id: string, identity: string): Promise<void>
   apagar(id: string): Promise<void>
   apagarTodas(): Promise<void>
@@ -36,6 +39,23 @@ export function criarSalaGateway(env: Env): SalaGateway {
     },
     async atualizarMetadata(id, metadata) {
       await cliente.updateRoomMetadata(id, JSON.stringify(metadata))
+    },
+    async participantes(id) {
+      return (await cliente.listParticipants(id)).map((participante) => participante.identity)
+    },
+    async permitirTela(id, identity, permitir) {
+      await cliente
+        .updateParticipant(id, identity, {
+          permission: {
+            canSubscribe: true,
+            canPublishData: true,
+            canPublish: permitir,
+            canPublishSources: permitir
+              ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO]
+              : [],
+          },
+        })
+        .catch(ignorarSeNaoExiste)
     },
     async remover(id, identity) {
       await cliente.removeParticipant(id, identity).catch(ignorarSeNaoExiste)

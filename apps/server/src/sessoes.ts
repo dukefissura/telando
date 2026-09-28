@@ -16,6 +16,7 @@ const nomeSchema = z.string().trim().max(32)
 const criarSchema = z.object({ nome: nomeSchema.optional() })
 const entrarSchema = z.object({ apelido: nomeSchema.optional() })
 const trancarSchema = z.object({ trancada: z.boolean() })
+const presenterSchema = z.object({ identity: z.string().min(1).max(64).nullable() })
 
 const MINUTO = 60_000
 
@@ -109,9 +110,7 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
       const sessao = buscar(id)
       exigirHost(sessao, c.req.header('authorization'))
       const { trancada } = await lerCorpo(c, trancarSchema)
-      const metadata = { ...sessao.metadata, trancada }
-      await salas.atualizarMetadata(id, metadata)
-      sessao.metadata = metadata
+      await sessoes.mudarMetadata(id, { trancada })
       return c.body(null, 204)
     })
     .delete('/:id/participantes/:identity', async (c) => {
@@ -122,6 +121,28 @@ export function rotasSessoes(deps: Deps, sessoes: RegistroSessoes) {
         throw erroApi(400, 'remover_host', 'Para sair, pare a transmissão.')
       }
       await salas.remover(id, identity)
+      return c.body(null, 204)
+    })
+    .post('/:id/presenter', async (c) => {
+      const id = c.req.param('id')
+      const sessao = buscar(id)
+      exigirHost(sessao, c.req.header('authorization'))
+      const { identity } = await lerCorpo(c, presenterSchema)
+      if (identity === sessao.metadata.hostIdentity) {
+        throw erroApi(
+          400,
+          'vez_do_host',
+          'Para voltar a mostrar a sua tela, use "Retomar minha tela".',
+        )
+      }
+      if (identity && !(await salas.participantes(id)).includes(identity)) {
+        throw erroApi(404, 'participante_nao_encontrado', 'Essa pessoa não está mais na sessão.')
+      }
+      // Uma tela por vez: quem apresentava perde a permissão antes de a vez mudar.
+      const anterior = sessao.metadata.presenterIdentity
+      if (anterior && anterior !== identity) await salas.permitirTela(id, anterior, false)
+      if (identity) await salas.permitirTela(id, identity, true)
+      await sessoes.mudarMetadata(id, { presenterIdentity: identity })
       return c.body(null, 204)
     })
 }

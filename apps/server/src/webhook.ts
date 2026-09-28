@@ -24,8 +24,14 @@ export function rotasWebhook({ env, salas }: Deps, sessoes: RegistroSessoes) {
     const sid = evento.participant?.sid
     const conexaoAntiga = sessao?.hostSid !== undefined && sid !== sessao.hostSid
 
+    const apresentadorSaiu =
+      evento.event === 'participant_left' &&
+      evento.participant?.identity === sessao?.metadata.presenterIdentity
+
     if (evento.event === 'room_finished') {
       sessoes.encerrar(id)
+    } else if (apresentadorSaiu) {
+      await sessoes.mudarMetadata(id, { presenterIdentity: null })
     } else if (sessao && doHost && evento.event === 'participant_joined') {
       sessao.hostSid = sid
       clearTimeout(sessao.quedaDoHost)

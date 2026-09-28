@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import type { SessaoMetadata } from '@telando/core'
 import { erroApi } from './http.ts'
+import type { SalaGateway } from './salas.ts'
 
 export type Sessao = {
   hostTokenHash: Buffer
@@ -15,7 +16,7 @@ export const hashDoHostToken = (hostToken: string) =>
   createHash('sha256').update(hostToken).digest()
 
 /** Sessões vivas em memória. `aoEncerrar` roda sempre que uma sessão deixa de existir. */
-export function criarRegistroSessoes(aoEncerrar: (id: string) => void) {
+export function criarRegistroSessoes(salas: SalaGateway, aoEncerrar: (id: string) => void) {
   const sessoes = new Map<string, Sessao>()
 
   return {
@@ -45,6 +46,15 @@ export function criarRegistroSessoes(aoEncerrar: (id: string) => void) {
       if (!timingSafeEqual(hashDoHostToken(hostToken), sessao.hostTokenHash)) {
         throw erroApi(403, 'token_invalido', 'Só quem criou a sessão pode fazer isso.')
       }
+    },
+
+    /** Grava no LiveKit primeiro: se falhar, a memória não fica dizendo algo que a sala não sabe. */
+    async mudarMetadata(id: string, mudanca: Partial<SessaoMetadata>) {
+      const sessao = sessoes.get(id)
+      if (!sessao) return
+      const metadata = { ...sessao.metadata, ...mudanca }
+      await salas.atualizarMetadata(id, metadata)
+      sessao.metadata = metadata
     },
 
     encerrar(id: string) {

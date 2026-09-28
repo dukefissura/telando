@@ -24,12 +24,25 @@ export async function linksDeTeste() {
 export function gatewayFalso() {
   const salas = new Map<string, SessaoMetadata>()
   const removidos: Array<{ sala: string; identity: string }> = []
+  /** Quem está em cada sala, para os testes montarem o cenário. */
+  const presentes = new Map<string, Set<string>>()
+  /** Quem pode publicar tela agora, por sala. */
+  const podeCompartilhar = new Map<string, Set<string>>()
   const gateway: SalaGateway = {
     async criar(id, metadata) {
       salas.set(id, metadata)
     },
     async atualizarMetadata(id, metadata) {
       salas.set(id, metadata)
+    },
+    async participantes(sala) {
+      return [...(presentes.get(sala) ?? [])]
+    },
+    async permitirTela(sala, identity, permitir) {
+      const conjunto = podeCompartilhar.get(sala) ?? new Set()
+      if (permitir) conjunto.add(identity)
+      else conjunto.delete(identity)
+      podeCompartilhar.set(sala, conjunto)
     },
     async remover(sala, identity) {
       removidos.push({ sala, identity })
@@ -41,5 +54,5 @@ export function gatewayFalso() {
       salas.clear()
     },
   }
-  return { salas, removidos, gateway }
+  return { salas, removidos, presentes, podeCompartilhar, gateway }
 }

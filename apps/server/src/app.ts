@@ -30,7 +30,7 @@ const limiteDeCorpo = (maxSize: number) =>
 
 export function criarApp(deps: Deps) {
   // Quando uma sessão acaba, o link fixo que apontava para ela volta a "offline".
-  const sessoes = criarRegistroSessoes((id) => deps.links.sessaoAcabou(id))
+  const sessoes = criarRegistroSessoes(deps.salas, (id) => deps.links.sessaoAcabou(id))
 
   return (
     new Hono()
