@@ -17,6 +17,7 @@ import {
   Tray,
 } from 'electron'
 import Store from 'electron-store'
+import { autoUpdater } from 'electron-updater'
 import { CANAIS } from '../compartilhado/ipc.ts'
 import { criarSeletorDeFontes } from './fontes.ts'
 
@@ -229,6 +230,13 @@ if (!app.requestSingleInstanceLock()) {
     bandeja = new Tray(nativeImage.createFromPath(recurso('bandeja.png')))
     bandeja.on('click', mostrarJanela)
     atualizarBandeja()
+    // Só o app instalado se atualiza; o electron-updater lê os releases públicos do GitHub.
+    if (app.isPackaged) {
+      autoUpdater.checkForUpdatesAndNotify().catch((erro: unknown) => {
+        // Sem internet ou sem release novo: o app segue na versão atual.
+        console.warn('Não consegui procurar atualização.', erro)
+      })
+    }
   })
 
   app.on('will-quit', () => globalShortcut.unregisterAll())

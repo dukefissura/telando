@@ -47,6 +47,9 @@ test('desktop compartilha a tela com áudio do sistema e troca resolução ao vi
       .poll(
         async () =>
           (await janela.getByTestId('estatisticas').innerText()).match(/(\d+)×(\d+)/)?.[2],
+        // A captura é da tela real: com ela parada o Chromium quase não gera quadros, e a
+        // resolução nova só aparece no próximo.
+        { timeout: 20_000 },
       )
       .toBe('720')
     await recebeVideoEAudio(espectador)

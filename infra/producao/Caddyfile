@@ -1,0 +1,10 @@
+# O Caddy tira e renova os certificados HTTPS sozinho; os dois domínios precisam apontar para esta máquina.
+{$TELANDO_DOMINIO} {
+	encode zstd gzip
+	reverse_proxy localhost:8787
+}
+
+# Sinalização do LiveKit (WebSocket). A mídia não passa por aqui: vai direto nas portas UDP/TCP do LiveKit.
+{$LIVEKIT_DOMINIO} {
+	reverse_proxy localhost:7880
+}

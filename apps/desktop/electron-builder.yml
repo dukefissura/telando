@@ -1,0 +1,22 @@
+appId: app.telando.desktop
+productName: Telando
+directories:
+  output: release
+  buildResources: build
+# O main, o preload e o renderer já saem empacotados em out/ pelo electron-vite.
+files:
+  - out/**
+  - resources/**
+  - package.json
+win:
+  target: nsis
+  icon: build/icone.png
+nsis:
+  oneClick: true
+  perMachine: false
+  artifactName: Telando-Setup-${version}.${ext}
+  shortcutName: Telando
+publish:
+  provider: github
+  owner: dukefissura
+  repo: telando

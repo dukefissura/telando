@@ -6,7 +6,8 @@ export default defineConfig({
   fullyParallel: false,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    // E2E_BASE_URL aponta para o server de produção (API e site juntos) quando se quer testar o build.
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
     trace: 'retain-on-failure',
   },
   projects: [

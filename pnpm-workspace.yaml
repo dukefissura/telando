@@ -4,5 +4,6 @@ packages:
   - e2e
 allowBuilds:
   electron: true
+  electron-winstaller: false
   esbuild: true
   lefthook: true

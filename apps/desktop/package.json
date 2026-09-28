@@ -8,10 +8,9 @@
   "scripts": {
     "desktop": "electron-vite dev",
     "build": "electron-vite build",
-    "typecheck": "tsc"
-  },
-  "dependencies": {
-    "electron-store": "^11.0.2"
+    "typecheck": "tsc",
+    "instalador": "electron-vite build && electron-builder --win --publish never",
+    "publicar": "node -e \"if(!process.env.VITE_TELANDO_SERVER?.startsWith('https://'))throw new Error('Defina VITE_TELANDO_SERVER com o endereço https do servidor de produção.')\" && electron-vite build && electron-builder --win --publish always"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -23,6 +22,9 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-store": "^11.0.2",
+    "electron-updater": "^6.8.9",
     "electron-vite": "^5.0.0",
     "livekit-client": "^2.22.3",
     "motion": "^13.4.4",
@@ -30,5 +32,6 @@
     "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.1"
-  }
+  },
+  "author": "Luan <272624483+dukefissura@users.noreply.github.com>"
 }
