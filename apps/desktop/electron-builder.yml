@@ -28,6 +28,8 @@ nsis:
   perMachine: false
   # Nome fixo: a página do site aponta para releases/latest/download/Telando-Setup.exe.
   artifactName: Telando-Setup.${ext}
+  # Encerra o Telando (que pode estar escondido na bandeja) antes de instalar ou desinstalar.
+  include: build/installer.nsh
   shortcutName: Telando
 publish:
   provider: github

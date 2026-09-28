@@ -1,5 +1,11 @@
 # Novidades
 
+## 0.3.2
+
+- **Atualizações sem baixar o instalador de novo.** O Telando procura versões novas ao abrir e a cada 4 horas, baixa em segundo plano e mostra "Reiniciar e atualizar" na tela inicial. Se você não clicar, a versão nova entra na próxima vez que sair pelo menu da bandeja. Nunca interrompe uma transmissão.
+- **O instalador fecha o Telando mesmo quando ele está na bandeja.** Antes ele dizia "Não é possível fechar o Telando".
+- **Desligar o Windows fecha o Telando** normalmente, mesmo com ele na bandeja.
+
 ## 0.3.1
 
 - **Fechar a janela deixa o Telando na bandeja.** A transmissão continua; o ícone traz a janela de volta, e "Sair" no menu dele fecha de vez. Na primeira vez o Windows avisa.

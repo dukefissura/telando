@@ -43,4 +43,12 @@ export type Plataforma = {
   linkPendente(): Promise<string | null>
   /** Avisa que chegou um link com o app aberto; devolve a função que remove o ouvinte. */
   aoChegarLink(callback: () => void): () => void
+  /** Versão nova já baixada em segundo plano (só no app instalado). */
+  atualizacao: {
+    versaoNova(): Promise<string | null>
+    /** Avisa que uma versão terminou de baixar; devolve a função que remove o ouvinte. */
+    aoChegar(callback: () => void): () => void
+    /** Fecha, instala sem mostrar o instalador e reabre o app. */
+    instalar(): void
+  }
 }

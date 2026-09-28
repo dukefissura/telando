@@ -98,6 +98,36 @@ function mostrarJanela() {
   janela.focus()
 }
 
+// O app mora na bandeja e quase nunca fecha: procurar só ao abrir deixaria versões para trás.
+const INTERVALO_ATUALIZACAO_MS = 4 * 60 * 60 * 1000
+let versaoNova: string | null = null
+let instalarVersaoNova: (() => void) | null = null
+
+/**
+ * Baixa a versão nova em segundo plano. Pronta, a tela inicial oferece reiniciar; se ninguém
+ * clicar, ela instala sozinha quando o app sair (autoInstallOnAppQuit, padrão do electron-updater).
+ */
+async function procurarAtualizacoes() {
+  // Carregado só aqui: é metade do main e não tem nada a ver com abrir a janela.
+  const { autoUpdater } = await import('electron-updater')
+  autoUpdater.on('update-downloaded', ({ version }) => {
+    versaoNova = version
+    janela?.webContents.send(CANAIS.chegouVersaoNova)
+  })
+  instalarVersaoNova = () => {
+    saindo = true
+    // Silencioso e reabrindo o app: o instalador não aparece.
+    autoUpdater.quitAndInstall(true, true)
+  }
+  const procurar = () =>
+    autoUpdater.checkForUpdates().catch((erro: unknown) => {
+      // Sem internet ou sem release novo: o app segue na versão atual e tenta na próxima volta.
+      console.warn('Não consegui procurar atualização.', erro)
+    })
+  void procurar()
+  setInterval(() => void procurar(), INTERVALO_ATUALIZACAO_MS)
+}
+
 /** Um link telando:// chegou com o app já aberto (o Windows abriu uma segunda instância). */
 function abrirLink(argv: string[]) {
   const link = linkNosArgumentos(argv)
@@ -188,6 +218,10 @@ function criarJanela() {
     janela.hide()
     avisarQueFicouNaBandeja()
   })
+  // Desligando ou saindo da conta do Windows: a janela não pode segurar o encerramento.
+  janela.on('query-session-end', () => {
+    saindo = true
+  })
   janela.on('closed', () => {
     janela = null
   })
@@ -256,6 +290,15 @@ function registrarIpc() {
     linkPendente = null
     return link
   })
+  ipcMain.handle(CANAIS.versaoNova, (evento) => {
+    exigirOrigem(evento)
+    return versaoNova
+  })
+  ipcMain.on(CANAIS.instalarVersaoNova, (evento) => {
+    exigirOrigem(evento)
+    // Nunca durante uma transmissão: a tela só oferece no início, mas o main confere de novo.
+    if (!transmitindo) instalarVersaoNova?.()
+  })
   ipcMain.on(CANAIS.transmitindo, (evento, estado: unknown) => {
     exigirOrigem(evento)
     transmitindo = estado === true
@@ -294,15 +337,7 @@ if (!app.requestSingleInstanceLock()) {
     bandeja.on('click', mostrarJanela)
     atualizarBandeja()
     // Só o app instalado se atualiza; o electron-updater lê os releases públicos do GitHub.
-    // Carregado só aqui: é metade do main e não tem nada a ver com abrir a janela.
-    if (app.isPackaged) {
-      import('electron-updater')
-        .then(({ autoUpdater }) => autoUpdater.checkForUpdatesAndNotify())
-        .catch((erro: unknown) => {
-          // Sem internet ou sem release novo: o app segue na versão atual.
-          console.warn('Não consegui procurar atualização.', erro)
-        })
-    }
+    if (app.isPackaged) void procurarAtualizacoes()
   })
 
   app.on('before-quit', () => {

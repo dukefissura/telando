@@ -21,6 +21,11 @@ const plataformaDesktop: Plataforma = {
   aoAtalhoParar: telando.aoAtalhoParar,
   linkPendente: telando.linkPendente,
   aoChegarLink: telando.aoChegarLink,
+  atualizacao: {
+    versaoNova: telando.versaoNova,
+    aoChegar: telando.aoChegarVersaoNova,
+    instalar: telando.instalarVersaoNova,
+  },
 }
 
 aplicarTemaSalvo()

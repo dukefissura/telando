@@ -14,6 +14,9 @@ export type TelandoDesktop = {
   aoAtalhoParar(callback: () => void): () => void
   linkPendente(): Promise<string | null>
   aoChegarLink(callback: () => void): () => void
+  versaoNova(): Promise<string | null>
+  aoChegarVersaoNova(callback: () => void): () => void
+  instalarVersaoNova(): void
 }
 
 export const CANAIS = {
@@ -29,4 +32,7 @@ export const CANAIS = {
   gravarLinkFixo: 'link:gravar',
   linkPendente: 'link:pendente',
   chegouLink: 'link:chegou',
+  versaoNova: 'atualizacao:versao',
+  chegouVersaoNova: 'atualizacao:chegou',
+  instalarVersaoNova: 'atualizacao:instalar',
 } as const

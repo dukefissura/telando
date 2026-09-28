@@ -22,6 +22,13 @@ const telando: TelandoDesktop = {
     ipcRenderer.on(CANAIS.chegouLink, ouvinte)
     return () => ipcRenderer.off(CANAIS.chegouLink, ouvinte)
   },
+  versaoNova: () => ipcRenderer.invoke(CANAIS.versaoNova),
+  aoChegarVersaoNova: (callback) => {
+    const ouvinte = () => callback()
+    ipcRenderer.on(CANAIS.chegouVersaoNova, ouvinte)
+    return () => ipcRenderer.off(CANAIS.chegouVersaoNova, ouvinte)
+  },
+  instalarVersaoNova: () => ipcRenderer.send(CANAIS.instalarVersaoNova),
 }
 
 contextBridge.exposeInMainWorld('telando', telando)

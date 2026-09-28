@@ -4,6 +4,7 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Botao, classeCampo } from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { BotaoTema } from '../tema.tsx'
+import { AvisoAtualizacao } from './aviso-atualizacao.tsx'
 import { TelaCompartilhando } from './tela-compartilhando.tsx'
 import { TelaConfiguracoes } from './tela-configuracoes.tsx'
 import { TelaLinkFixo } from './tela-link-fixo.tsx'
@@ -196,12 +197,15 @@ export function AppHost({
     )
   }
   return (
-    <TelaInicio
-      meuLink={meuLink}
-      aoCompartilhar={() => setTela('configurando')}
-      aoAbrirLinkFixo={() => setTela('link-fixo')}
-      aoEntrarComLink={aoEntrarComLink}
-      avisoLink={avisoLink}
-    />
+    <>
+      <TelaInicio
+        meuLink={meuLink}
+        aoCompartilhar={() => setTela('configurando')}
+        aoAbrirLinkFixo={() => setTela('link-fixo')}
+        aoEntrarComLink={aoEntrarComLink}
+        avisoLink={avisoLink}
+      />
+      <AvisoAtualizacao atualizacao={plataforma.atualizacao} />
+    </>
   )
 }
