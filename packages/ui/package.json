@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
+    "@livekit/components-react": "^2.9.24",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@telando/core": "workspace:*",
     "lucide-react": "^1.48.0",
@@ -20,11 +21,14 @@
   "devDependencies": {
     "@telando/config": "workspace:*",
     "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "livekit-client": "^2.22.3",
-    "react": "^19.3.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "peerDependencies": {
     "livekit-client": "^2.22.3",
-    "react": "^19.3.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

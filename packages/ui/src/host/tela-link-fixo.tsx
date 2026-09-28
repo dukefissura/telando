@@ -9,7 +9,7 @@ export function TelaLinkFixo({
   aoSalvar,
   aoVoltar,
 }: {
-  plataforma: Plataforma & { linkFixo: NonNullable<Plataforma['linkFixo']> }
+  plataforma: Plataforma
   atual: MeuLinkFixo | null
   aoSalvar: (link: MeuLinkFixo) => void
   aoVoltar: () => void

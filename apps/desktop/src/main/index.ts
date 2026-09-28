@@ -25,19 +25,31 @@ import { criarSeletorDeFontes } from './fontes.ts'
 const ATALHO_PARAR = 'CommandOrControl+Alt+Shift+S'
 const PERMISSOES = new Set(['media', 'display-capture', 'clipboard-sanitized-write'])
 const LIMITE_PREFERENCIAS = 16 * 1024
+const LIMITE_LINK = 300
+
+// Os testes E2E abrem dois apps na mesma máquina; cada um precisa do próprio perfil (e do próprio
+// lock de instância única). Tem que vir antes do Store, que lê a pasta ao ser criado.
+if (process.env.TELANDO_PERFIL) app.setPath('userData', process.env.TELANDO_PERFIL)
 
 let janela: BrowserWindow | null = null
 let bandeja: Tray | null = null
 let transmitindo = false
+
+const linkNosArgumentos = (argv: string[]) =>
+  argv.find((arg) => arg.startsWith('telando://') && arg.length <= LIMITE_LINK) ?? null
+
+// O link que abriu o app fica aqui até o renderer carregar e pedir.
+let linkPendente = linkNosArgumentos(process.argv)
 
 const preferencias = new Store<{
   transmissao: unknown
   linkFixo: MeuLinkFixo | null
   /** Segredo do link fixo, cifrado com safeStorage (DPAPI da conta do Windows). */
   segredoLinkCifrado: string | null
+  janela: { maximizada: boolean; largura: number; altura: number } | null
 }>({
   name: 'preferencias',
-  defaults: { transmissao: null, linkFixo: null, segredoLinkCifrado: null },
+  defaults: { transmissao: null, linkFixo: null, segredoLinkCifrado: null, janela: null },
 })
 
 /** O segredo é gerado aqui na primeira vez e é o que prova que o link fixo é deste computador. */
@@ -73,6 +85,13 @@ function mostrarJanela() {
   if (janela.isMinimized()) janela.restore()
   janela.show()
   janela.focus()
+}
+
+/** Um link telando:// chegou com o app já aberto (o Windows abriu uma segunda instância). */
+function abrirLink(argv: string[]) {
+  const link = linkNosArgumentos(argv)
+  mostrarJanela()
+  if (link) janela?.webContents.send(CANAIS.abrirLink, link)
 }
 
 function pedirParada() {
@@ -114,11 +133,12 @@ function atualizarBandeja() {
 }
 
 function criarJanela() {
+  const salva = preferencias.get('janela')
   janela = new BrowserWindow({
-    width: 460,
-    height: 760,
-    minWidth: 360,
-    minHeight: 480,
+    width: salva?.largura ?? 1280,
+    height: salva?.altura ?? 800,
+    minWidth: 960,
+    minHeight: 600,
     title: 'Telando',
     backgroundColor: '#0a0a0a',
     autoHideMenuBar: true,
@@ -128,9 +148,19 @@ function criarJanela() {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      // Quem assiste não clica em nada para ouvir: o som da transmissão toca ao entrar.
+      autoplayPolicy: 'no-user-gesture-required',
     },
   })
-  janela.once('ready-to-show', () => janela?.show())
+  janela.once('ready-to-show', () => {
+    if (salva?.maximizada ?? true) janela?.maximize()
+    janela?.show()
+  })
+  janela.on('close', () => {
+    if (!janela) return
+    const { width, height } = janela.getNormalBounds()
+    preferencias.set('janela', { maximizada: janela.isMaximized(), largura: width, altura: height })
+  })
   janela.on('closed', () => {
     janela = null
   })
@@ -193,6 +223,12 @@ function registrarIpc() {
     if (!ehLinkFixo(link)) throw new Error('Link fixo inválido')
     preferencias.set('linkFixo', link)
   })
+  ipcMain.handle(CANAIS.linkPendente, (evento) => {
+    exigirOrigem(evento)
+    const link = linkPendente
+    linkPendente = null
+    return link
+  })
   ipcMain.on(CANAIS.transmitindo, (evento, estado: unknown) => {
     exigirOrigem(evento)
     transmitindo = estado === true
@@ -215,7 +251,7 @@ function endurecer() {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', mostrarJanela)
+  app.on('second-instance', (_evento, argv) => abrirLink(argv))
   endurecer()
 
   void app.whenReady().then(() => {

@@ -1,5 +1,6 @@
 import { Moon, Sun } from 'lucide-react'
-import { useState } from 'react'
+import { type MouseEvent, useState } from 'react'
+import { flushSync } from 'react-dom'
 
 type Tema = 'escuro' | 'claro'
 const CHAVE = 'telando:tema'
@@ -32,7 +33,7 @@ export function BotaoTema() {
   const rotulo = proximo === 'claro' ? 'Usar tema claro' : 'Usar tema escuro'
   const Icone = proximo === 'claro' ? Sun : Moon
 
-  const alternar = () => {
+  const trocar = () => {
     aplicar(proximo)
     setTema(proximo)
     try {
@@ -40,6 +41,30 @@ export function BotaoTema() {
     } catch {
       // Sem armazenamento, a escolha vale só até fechar a página.
     }
+  }
+
+  // O tema novo abre num círculo a partir do botão, como uma luz que acende.
+  const alternar = (evento: MouseEvent<HTMLButtonElement>) => {
+    if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      trocar()
+      return
+    }
+    const caixa = evento.currentTarget.getBoundingClientRect()
+    const x = caixa.left + caixa.width / 2
+    const y = caixa.top + caixa.height / 2
+    const raio = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
+    void document
+      .startViewTransition(() => flushSync(trocar))
+      .ready.then(() => {
+        document.documentElement.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${raio}px at ${x}px ${y}px)`] },
+          {
+            duration: 450,
+            easing: 'cubic-bezier(.4,0,.2,1)',
+            pseudoElement: '::view-transition-new(root)',
+          },
+        )
+      })
   }
 
   return (

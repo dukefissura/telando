@@ -9,15 +9,10 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@livekit/components-react": "^2.9.24",
     "@telando/core": "workspace:*",
     "@telando/ui": "workspace:*",
-    "livekit-client": "^2.22.3",
-    "lucide-react": "^1.48.0",
-    "motion": "^13.4.4",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-router": "^8.4.0"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

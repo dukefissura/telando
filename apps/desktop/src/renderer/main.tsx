@@ -1,5 +1,5 @@
 import { criarClienteApi } from '@telando/core'
-import { AppHost, aplicarTemaSalvo, type Plataforma } from '@telando/ui'
+import { App, aplicarTemaSalvo, type Plataforma } from '@telando/ui'
 import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -19,6 +19,8 @@ const plataformaDesktop: Plataforma = {
   },
   aoMudarTransmissao: telando.avisarTransmitindo,
   aoAtalhoParar: telando.aoAtalhoParar,
+  linkPendente: telando.linkPendente,
+  aoAbrirLink: telando.aoAbrirLink,
 }
 
 aplicarTemaSalvo()
@@ -29,7 +31,7 @@ if (!raiz) throw new Error('index.html sem #root')
 createRoot(raiz).render(
   <StrictMode>
     <MotionConfig reducedMotion="user">
-      <AppHost plataforma={plataformaDesktop} />
+      <App plataforma={plataformaDesktop} />
     </MotionConfig>
   </StrictMode>,
 )
