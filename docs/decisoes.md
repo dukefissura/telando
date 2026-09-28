@@ -96,3 +96,9 @@ Quando havia duas opções razoáveis, ficou a mais simples. Cada linha diz o qu
 - **Preview ao vivo** da fonte escolhida, pedido na taxa do monitor. A captura de tela do Chromium entrega no máximo uns 60 quadros por segundo (medido: aceita pedidos até 120, entrega 60, com WGC e com DXGI), então num monitor de 60 Hz o preview é o nativo, e acima disso fica em 60, que também é o teto da transmissão.
 - **Codificação por software.** Mesmo com a GPU liberada (fora dos testes a aceleração de vídeo está ligada), o WebRTC do Electron usou OpenH264, libaom e libvpx em compartilhamento de tela, com e sem simulcast, e com os ajustes de recurso do Chromium testados. Fica como está até haver evidência de um caminho de hardware que funcione.
 - **Os testes E2E rodam sem GPU de vídeo** (o Playwright abre o Electron assim). Números de CPU de codificação dos testes não valem para o uso real; os de abertura e memória valem.
+
+## Fase 8
+
+- **Sem chat e sem reações** (pedido do usuário em 2026-09-28). O canal de mensagens da sala continua, só para os avisos do revezamento (pedir, cancelar, recusar, devolver a vez): `useAvisosSala` no lugar do `useChatSala`, e o protocolo aceita só esses quatro avisos.
+- **Animação dos botões** num lugar só (`animacaoBotao`, em `controles.tsx`): sobe 1px sob o mouse e afunda (escala 0,97) ao apertar, em 150ms e 75ms. Só translate e scale, como pede o `docs/design.md`.
+- **Nome do pacote empacotado `telando`** (`extraMetadata` no electron-builder). O nome do monorepo (`@telando/desktop`) virava a pasta de instalação `@telandodesktop`. A pasta de dados do app instalado muda junto; para uma versão de teste, perder as preferências não pesa.

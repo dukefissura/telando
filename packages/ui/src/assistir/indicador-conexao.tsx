@@ -3,6 +3,7 @@ import { formatarMbps, type Recebimento, resumirRecebimento } from '@telando/cor
 import type { RemoteVideoTrack } from 'livekit-client'
 import { Signal } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { animacaoBotao } from '../controles.tsx'
 
 function useRecebimento(trilha: RemoteVideoTrack | undefined) {
   const [recebimento, setRecebimento] = useState<Recebimento | null>(null)
@@ -39,7 +40,7 @@ export function IndicadorConexao({ trilha }: { trilha: RemoteVideoTrack | undefi
       <button
         type="button"
         aria-label={`Conexão: ${descricao}`}
-        className={`rounded-md p-2 hover:bg-white/10 ${ruim ? 'text-aviso' : 'text-texto-suave'}`}
+        className={`rounded-md p-2 hover:bg-white/10 ${animacaoBotao} ${ruim ? 'text-aviso' : 'text-texto-suave'}`}
       >
         <Signal size={18} strokeWidth={1.5} aria-hidden />
       </button>

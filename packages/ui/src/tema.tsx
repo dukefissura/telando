@@ -1,6 +1,7 @@
 import { Moon, Sun } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { animacaoBotao } from './controles.tsx'
 
 type Tema = 'escuro' | 'claro'
 const CHAVE = 'telando:tema'
@@ -73,7 +74,7 @@ export function BotaoTema() {
       onClick={alternar}
       aria-label={rotulo}
       title={rotulo}
-      className="rounded-lg p-2 text-texto-suave transition-colors hover:bg-superficie-2 hover:text-texto"
+      className={`rounded-lg p-2 text-texto-suave hover:bg-superficie-2 hover:text-texto ${animacaoBotao}`}
     >
       <Icone size={18} strokeWidth={1.5} aria-hidden />
     </button>
