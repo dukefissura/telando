@@ -11,6 +11,11 @@ export type Reacao = (typeof REACOES)[number]
 const mensagemSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('chat'), texto: z.string().trim().min(1).max(500) }),
   z.object({ t: z.literal('reacao'), emoji: z.enum(REACOES) }),
+  // Revezamento: só avisos. Quem muda permissão é o server, a pedido do host.
+  z.object({ t: z.literal('pedido-tela') }),
+  z.object({ t: z.literal('pedido-cancelado') }),
+  z.object({ t: z.literal('pedido-recusado') }),
+  z.object({ t: z.literal('devolver-tela') }),
 ])
 
 export type MensagemSala = z.infer<typeof mensagemSchema>

@@ -69,6 +69,44 @@ describe('criarClienteApi', () => {
     expect(new Headers(chamadas[0]?.init?.headers).get('authorization')).toBe('Bearer segredo')
   })
 
+  it('reserva o link fixo e lê o estado dele', async () => {
+    const { chamadas, fetcher } = fetcherFalso(201, { url: 'https://t.test/luan' })
+    const api = criarClienteApi('', fetcher)
+
+    expect(await api.reservarLink('luan', 'segredo', 'Luan')).toEqual({
+      url: 'https://t.test/luan',
+    })
+    expect(chamadas[0]?.url).toBe('/api/links/luan')
+    expect(chamadas[0]?.init?.method).toBe('PUT')
+    expect(chamadas[0]?.init?.body).toBe(JSON.stringify({ segredo: 'segredo', nome: 'Luan' }))
+  })
+
+  it('lê se o link fixo está ao vivo', async () => {
+    const estado = { nome: 'Luan', aoVivo: true, sessionId: 'abc', url: 'https://t.test/luan' }
+    const { fetcher } = fetcherFalso(200, estado)
+    expect(await criarClienteApi('', fetcher).estadoDoLink('luan')).toEqual(estado)
+  })
+
+  it('aponta o link fixo para a sessão com segredo e hostToken', async () => {
+    const { chamadas, fetcher } = fetcherFalso(204, undefined)
+    const api = criarClienteApi('', fetcher)
+
+    await api.apontarLink('luan', 'segredo', { id: 'abc', hostToken: 'ht' })
+    expect(chamadas[0]?.url).toBe('/api/links/luan/live')
+    expect(chamadas[0]?.init?.body).toBe(JSON.stringify({ segredo: 'segredo', sessionId: 'abc' }))
+    expect(new Headers(chamadas[0]?.init?.headers).get('authorization')).toBe('Bearer ht')
+
+    await api.desapontarLink('luan', 'segredo')
+    expect(chamadas[1]?.init?.method).toBe('DELETE')
+  })
+
+  it('passa a vez de compartilhar', async () => {
+    const { chamadas, fetcher } = fetcherFalso(204, undefined)
+    await criarClienteApi('', fetcher).passarVez('abc', 'ht', 'v_1')
+    expect(chamadas[0]?.url).toBe('/api/sessions/abc/presenter')
+    expect(chamadas[0]?.init?.body).toBe(JSON.stringify({ identity: 'v_1' }))
+  })
+
   it('transforma a resposta de erro do server em ErroApi', async () => {
     const { fetcher } = fetcherFalso(404, {
       erro: 'sessao_nao_encontrada',
