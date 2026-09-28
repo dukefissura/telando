@@ -84,7 +84,7 @@ Você precisa de:
 
 - uma VPS Linux com IP público (2 vCPU e 2 GB dão conta de algumas transmissões ao mesmo tempo);
 - dois domínios apontando para ela, um para o site e outro para o LiveKit (por exemplo `telando.exemplo.com` e `livekit.telando.exemplo.com`);
-- estas portas liberadas no firewall:
+- o firewall liberando só estas portas (o LiveKit escuta também na 7880, que precisa ficar fechada: ela passa pelo Caddy):
 
   | Porta | Para quê |
   | --- | --- |

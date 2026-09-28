@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8787),
+  /** Interface onde o server escuta; atrás do Caddy, 127.0.0.1 para ninguém chegar nele por fora. */
+  HOST: z.string().optional(),
   PUBLIC_BASE_URL: z.url(),
   /** Endereço público do LiveKit, que vai para o navegador. */
   LIVEKIT_URL: z.url(),

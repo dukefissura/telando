@@ -38,6 +38,8 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8787
+      # Só o Caddy e o LiveKit, na mesma máquina, falam com o server.
+      HOST: 127.0.0.1
       PUBLIC_BASE_URL: https://${TELANDO_DOMINIO:?defina TELANDO_DOMINIO no .env}
       LIVEKIT_URL: wss://${LIVEKIT_DOMINIO}
       LIVEKIT_API_URL: http://localhost:7880

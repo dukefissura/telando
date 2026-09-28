@@ -39,6 +39,6 @@ const app = env.WEB_DIST
   ? criarSite(api, { dist: resolve(env.WEB_DIST), livekitUrl: env.LIVEKIT_URL })
   : api
 
-serve({ fetch: app.fetch, port: env.PORT }, ({ port }) => {
+serve({ fetch: app.fetch, port: env.PORT, ...(env.HOST && { hostname: env.HOST }) }, ({ port }) => {
   console.log(`server em http://localhost:${port}${env.WEB_DIST ? ' (API e site)' : ' (só API)'}`)
 })
