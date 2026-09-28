@@ -46,6 +46,7 @@ Estado compartilhado de uma sessão (quem apresenta, se está trancada) vive nos
 - Commits em Conventional Commits com descrição em pt-BR (commitlint no hook `commit-msg`; Biome no `pre-commit`).
 - pnpm 12 bloqueia scripts de instalação: dependências que precisam deles entram em `allowBuilds` no `pnpm-workspace.yaml` (`pnpm approve-builds <pacote>`).
 - Não use as skills `caveman*` neste projeto.
+- O README é a vitrine pública: produto, download e como desenvolver. Servidor, publicação de versões e detalhes de segurança ficam em `docs/privado/` (fora do Git, só na máquina de quem mantém).
 
 ## Convenções (requisito, não preferência)
 
