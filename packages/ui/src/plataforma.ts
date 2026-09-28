@@ -10,6 +10,8 @@ export type FonteDeCaptura = {
   /** Só as telas têm tamanho conhecido antes de capturar. */
   largura: number | null
   altura: number | null
+  /** Taxa de atualização do monitor, em Hz (janelas usam a do monitor principal). */
+  frequencia: number
 }
 
 export type MeuLinkFixo = { slug: string; nome: string; url: string }

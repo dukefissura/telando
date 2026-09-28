@@ -65,31 +65,6 @@ export async function recebeVideoEAudio(espectador: Page) {
     .toBe(true)
 }
 
-// Com a tela parada o Chromium não gera quadros, e quem entra depois espera um quadro-chave que
-// não vem. Um quadrado mudando de cor num canto garante que a Tela 1 sempre tenha movimento.
-const PAGINA_ANIMADA = `data:text/html,${encodeURIComponent(
-  '<body style="margin:0"><canvas id="c" width="120" height="120"></canvas><script>' +
-    'const c = document.getElementById("c").getContext("2d"); let i = 0;' +
-    'setInterval(() => { c.fillStyle = "hsl(" + ((i += 7) % 360) + ",80%,50%)"; c.fillRect(0, 0, 120, 120) }, 50)' +
-    '</script></body>',
-)}`
-
-async function manterTelaMexendo(aberto: AppAberto) {
-  await aberto.app.evaluate(({ BrowserWindow }, pagina) => {
-    const janela = new BrowserWindow({
-      width: 120,
-      height: 120,
-      x: 0,
-      y: 0,
-      frame: false,
-      alwaysOnTop: true,
-      focusable: false,
-      skipTaskbar: true,
-    })
-    void janela.loadURL(pagina)
-  }, PAGINA_ANIMADA)
-}
-
 /** O Windows abre uma segunda instância com o link; ela entrega o link à primeira e fecha. */
 export async function entregarLink(perfil: string, link: string) {
   const segunda = spawn(executavel, [pastaDesktop, link], {
@@ -104,7 +79,6 @@ export async function entregarLink(perfil: string, link: string) {
  */
 export async function transmitir(opcoes: { antesDeIniciar?: (host: Page) => Promise<void> } = {}) {
   const aberto = await abrirApp()
-  await manterTelaMexendo(aberto)
   const host = aberto.janela
   await host.getByRole('button', { name: 'Compartilhar tela' }).click()
   await host.getByRole('button', { name: /^Tela 1/ }).click()

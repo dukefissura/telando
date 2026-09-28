@@ -93,7 +93,8 @@ test('um link que chega durante a transmissão não derruba o host', async () =>
 test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura', async () => {
   const { host, link } = await transmitir({
     antesDeIniciar: async (host) => {
-      // Conta as capturas: ajustar fps e áudio muda a trilha, não pede a tela de novo.
+      // Conta as capturas (o preview das configurações também captura): ajustar fps e áudio ao
+      // vivo muda a trilha, não pede a tela de novo.
       await host.evaluate(() => {
         const janela = window as Window & { capturas?: number }
         const original = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices)
@@ -108,6 +109,8 @@ test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura'
     },
   })
 
+  const capturas = () => host.evaluate(() => (window as Window & { capturas?: number }).capturas)
+  const capturasAoVivo = await capturas()
   const { janela: espectador } = await assistir(link, 'Quati Verde')
   await recebeVideoEAudio(espectador)
 
@@ -119,5 +122,5 @@ test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura'
 
   await recebeVideoEAudio(espectador)
   await expect(host.getByTestId('espectadores')).toContainText('1 pessoa assistindo')
-  expect(await host.evaluate(() => (window as Window & { capturas?: number }).capturas)).toBe(1)
+  expect(await capturas()).toBe(capturasAoVivo)
 })

@@ -1,5 +1,10 @@
 # Novidades
 
+## 0.2.1
+
+- **Preview ao vivo.** A tela ou janela escolhida aparece em movimento nas configurações, na taxa do monitor (até 60 fps), em vez de uma miniatura por segundo.
+- **Mais leve e mais rápido.** O app abre uns 20% mais rápido, gasta menos CPU parado e nas configurações, e o instalador ficou 9 MB menor.
+
 ## 0.2.0
 
 Agora tudo acontece no app: quem compartilha e quem assiste.
