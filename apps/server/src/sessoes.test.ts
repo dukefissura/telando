@@ -46,7 +46,7 @@ describe('POST /api/sessions', () => {
   it('cria a sala com metadados e devolve o link', async () => {
     const sessao = await criarSessao('Luan')
 
-    expect(sessao.id).toMatch(/^[A-Za-z0-9]{12}$/)
+    expect(sessao.id).toMatch(/^[A-Za-z0-9]{8}$/)
     expect(sessao.url).toBe(`https://telando.test/s/${sessao.id}`)
     expect(sessao.livekitUrl).toBe('ws://livekit.test')
     expect(sessao.hostToken.length).toBeGreaterThanOrEqual(43)

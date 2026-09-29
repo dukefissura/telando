@@ -20,13 +20,13 @@ it('muda bitrate e fps da camada cheia e da camada menor sem republicar', async 
     { rid: 'q', scaleResolutionDownBy: 2, maxBitrate: 1, maxFramerate: 1 },
     { rid: 'h', scaleResolutionDownBy: 1, maxBitrate: 1, maxFramerate: 1 },
   ])
-  const jogo = resolverTransmissao(aplicarPreset(configPadrao(), 'jogo'), FULL_HD, [])
+  const filme = resolverTransmissao(aplicarPreset(configPadrao(), 'filme'), FULL_HD, [])
 
-  await ajustarEncodings(sender, jogo)
+  await ajustarEncodings(sender, filme)
 
   expect(aplicados()?.encodings).toEqual([
-    { rid: 'q', scaleResolutionDownBy: 2, maxBitrate: 2_000_000, maxFramerate: 15 },
-    { rid: 'h', scaleResolutionDownBy: 1, maxBitrate: 8_000_000, maxFramerate: 60 },
+    { rid: 'q', scaleResolutionDownBy: 2, maxBitrate: 1_500_000, maxFramerate: 15 },
+    { rid: 'h', scaleResolutionDownBy: 1, maxBitrate: 10_000_000, maxFramerate: 30 },
   ])
 })
 
@@ -36,5 +36,5 @@ it('sem simulcast há um encoding só, que recebe o bitrate cheio', async () => 
 
   await ajustarEncodings(sender, texto)
 
-  expect(aplicados()?.encodings).toEqual([{ maxBitrate: 2_500_000, maxFramerate: 15 }])
+  expect(aplicados()?.encodings).toEqual([{ maxBitrate: 6_000_000, maxFramerate: 30 }])
 })

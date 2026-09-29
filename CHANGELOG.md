@@ -1,5 +1,15 @@
 # Novidades
 
+## 0.4.1
+
+- **Imagem mais nítida e mais fluida.** O codec automático passou a ser H.264: quem assiste recebe 1080p a 30 fps no Texto e no Filme, em vez de 540p travando. O Jogo sai sem a camada extra e chega a 60 fps quando o PC aguenta.
+- **Mais banda para a transmissão.** Texto até 6 Mbps, Filme até 10 Mbps, Jogo até 12 Mbps e Economia até 2,5 Mbps. Quem tem internet fraca continua recebendo uma versão menor, leve como antes.
+- **Texto a 30 fps.** Rolar código ou documento não parece mais travado.
+- **Link mais curto.** O código da sessão tem 8 caracteres, e o endereço ficou `telando.up.railway.app`. Um link antigo colado no Telando continua funcionando.
+- **O Economia sai de fato em 720p**, e o teste de conexão mede melhor quem tem upload rápido.
+- Se você tinha escolhido um preset, ele passa a usar os valores novos.
+- Pequenos acertos visuais: o gráfico da faixa de sinal não vira mais uma fileira de pontos com a tela parada, e os avisos do Windows saem com o nome do Telando.
+
 ## 0.4.0
 
 - **Você vê o que está indo ao ar.** A tela de transmissão abre com um monitor da imagem que quem assiste recebe, com o AO VIVO, quem está assistindo e a qualidade por cima.

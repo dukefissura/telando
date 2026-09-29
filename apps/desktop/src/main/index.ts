@@ -331,6 +331,9 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', (_evento, argv) => abrirLink(argv))
   endurecer()
+  // Mesmo id do atalho que o instalador cria: sem ele, o aviso da bandeja sai com um nome técnico
+  // no lugar de "Telando".
+  if (app.isPackaged) app.setAppUserModelId('app.telando.desktop')
 
   void app.whenReady().then(() => {
     const sessao = session.defaultSession

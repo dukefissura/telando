@@ -1,5 +1,13 @@
 import { type Page, test } from '@playwright/test'
-import { type AppAberto, assistir, fecharTodos, recebeVideoEAudio, transmitir } from './apoio.ts'
+import {
+  type AppAberto,
+  abrirApp,
+  abrirLink,
+  assistir,
+  fecharTodos,
+  recebeVideoEAudio,
+  transmitir,
+} from './apoio.ts'
 
 // Não é teste: gera as capturas para conferir o visual. Rode com CAPTURAS=1 pnpm e2e -- capturas.
 test.skip(!process.env.CAPTURAS, 'Só com CAPTURAS=1')
@@ -33,8 +41,15 @@ async function alternarTema(pagina: Page) {
 }
 
 test('capturas das telas', async () => {
-  const { host, hostApp, link } = await transmitir()
+  const { host, hostApp, link, sessao } = await transmitir()
   await capturar(hostApp, 'compartilhando-escuro')
+  await host.getByRole('button', { name: /^Estatísticas/ }).click()
+  await host.getByRole('button', { name: 'Ajustes' }).click()
+  await capturar(hostApp, 'ajustes-escuro')
+  await host.getByRole('button', { name: 'Ajustes' }).click()
+
+  await capturar(await abrirApp({ args: [`telando://s/${sessao.id}`] }), 'entrar-escuro')
+  await capturar(await abrirLink('https://telando.app/s/k7Qm2xPa9Lzz'), 'link-invalido-escuro')
 
   const amigo = await assistir(link, 'Capivara Azul')
   await recebeVideoEAudio(amigo.janela)

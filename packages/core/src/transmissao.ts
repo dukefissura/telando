@@ -29,41 +29,48 @@ export type ConfigTransmissao = {
 
 type CamposDoPreset = Pick<
   ConfigTransmissao,
-  'resolucao' | 'fps' | 'bitrateMaxKbps' | 'otimizacao' | 'qualidadeAudio'
+  'resolucao' | 'fps' | 'bitrateMaxKbps' | 'otimizacao' | 'qualidadeAudio' | 'simulcast'
 >
 
 export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string }> = {
   texto: {
     nome: 'Texto/código',
     resolucao: '1080p',
-    fps: 15,
-    bitrateMaxKbps: 2500,
+    // 30 e não 15: rolar código e documento a 15 fps parece travado.
+    fps: 30,
+    bitrateMaxKbps: 6000,
     otimizacao: 'nitidez',
     qualidadeAudio: 'voz',
+    simulcast: true,
   },
   jogo: {
     nome: 'Jogo',
     resolucao: '1080p',
     fps: 60,
-    bitrateMaxKbps: 8000,
+    // H.264 em software gasta mais bits que o x264 de uma live: 8 Mbps borrava cena com movimento.
+    bitrateMaxKbps: 12_000,
     otimizacao: 'fluidez',
     qualidadeAudio: 'musica',
+    // Medido: com a camada extra, os dois codificadores dividem a CPU e o 1080p60 caía para ~41 fps.
+    simulcast: false,
   },
   filme: {
     nome: 'Filme/vídeo',
     resolucao: '1080p',
     fps: 30,
-    bitrateMaxKbps: 6000,
+    bitrateMaxKbps: 10_000,
     otimizacao: 'equilibrio',
     qualidadeAudio: 'alta',
+    simulcast: true,
   },
   economia: {
     nome: 'Economia',
     resolucao: '720p',
     fps: 30,
-    bitrateMaxKbps: 1500,
+    bitrateMaxKbps: 2500,
     otimizacao: 'equilibrio',
     qualidadeAudio: 'voz',
+    simulcast: true,
   },
 }
 
@@ -95,8 +102,6 @@ const OTIMIZACAO: Record<
   fluidez: { contentHint: 'motion', degradacao: 'maintain-framerate' },
   equilibrio: { contentHint: '', degradacao: 'balanced' },
 }
-
-const ORDEM_CODEC_AUTOMATICO = ['av1', 'vp9', 'h264'] as const
 
 export type Dimensoes = { largura: number; altura: number }
 
@@ -156,17 +161,23 @@ export function presetAtual(config: ConfigTransmissao): PresetId | 'personalizad
       preset.fps === config.fps &&
       preset.bitrateMaxKbps === config.bitrateMaxKbps &&
       preset.otimizacao === config.otimizacao &&
+      preset.simulcast === config.simulcast &&
       preset.qualidadeAudio === config.qualidadeAudio
     )
   })
   return id ?? 'personalizado'
 }
 
+/** Altura que a captura já deve entregar; a nativa não limita. */
+export function alturaPedida(resolucao: Resolucao): number | null {
+  return resolucao === 'nativa' ? null : ALTURAS[resolucao]
+}
+
 const par = (valor: number) => Math.round(valor / 2) * 2
 const arredondarCentena = (valor: number) => Math.round(valor / 100) * 100
 
 function calcularAlvo(resolucao: Resolucao, fonte: Dimensoes) {
-  const pedida = resolucao === 'nativa' ? fonte.altura : ALTURAS[resolucao]
+  const pedida = alturaPedida(resolucao) ?? fonte.altura
   const altura = Math.min(pedida, fonte.altura)
   return {
     alvo: { largura: par((fonte.largura * altura) / fonte.altura), altura },
@@ -181,7 +192,10 @@ function bitrateAutomatico({ largura, altura }: Dimensoes, fps: number) {
 
 function escolherCodec(codec: Codec, codecsDoHost: string[]): Exclude<Codec, 'auto'> {
   if (codec !== 'auto') return codec
-  return ORDEM_CODEC_AUTOMATICO.find((candidato) => codecsDoHost.includes(candidato)) ?? 'vp8'
+  // AV1 e VP9 comprimem melhor no papel, mas em compartilhamento de tela o Chromium codifica por
+  // software (libaom, libvpx) e, medido, a camada cheia nem decolava: quem assistia recebia 540p a
+  // ~15 fps. Com H.264 a mesma transmissão chega em 1080p60. AV1 e VP9 ficam para quem escolher.
+  return codecsDoHost.includes('h264') ? 'h264' : 'vp8'
 }
 
 export const formatarMbps = (kbps: number) =>
@@ -197,6 +211,9 @@ export function constraintsDoAudioSistema(config: ConfigTransmissao): MediaTrack
     channelCount: AUDIO[config.qualidadeAudio].estereo ? 2 : 1,
   }
 }
+
+// A camada menor é para quem tem internet fraca: subir o teto da cheia não pode pesar nela também.
+const TETO_CAMADA_MENOR_KBPS = 1500
 
 export function resolverTransmissao(
   config: ConfigTransmissao,
@@ -216,7 +233,7 @@ export function resolverTransmissao(
           largura: par(alvo.largura / 2),
           altura: par(alvo.altura / 2),
           fps: Math.min(config.fps, 15),
-          bitrateKbps: arredondarCentena(bitrateKbps / 4),
+          bitrateKbps: Math.min(TETO_CAMADA_MENOR_KBPS, arredondarCentena(bitrateKbps / 4)),
         },
       ]
     : []

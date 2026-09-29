@@ -1,7 +1,12 @@
 // Sem 0/O, 1/l/I: o link às vezes é ditado ou copiado à mão. O server gera ids com este alfabeto.
 export const ALFABETO_ID_SESSAO = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz'
-export const TAMANHO_ID_SESSAO = 12
-const ID_SESSAO = new RegExp(`^[${ALFABETO_ID_SESSAO}]{${TAMANHO_ID_SESSAO}}$`)
+// 8 caracteres: 56⁸, uns 97 trilhões de códigos, para sessões que duram horas. Até a 0.4.0 eram 12,
+// e esses links antigos continuam valendo.
+export const TAMANHO_ID_SESSAO = 8
+const TAMANHO_ID_ANTIGO = 12
+const ID_SESSAO = new RegExp(
+  `^(?:[${ALFABETO_ID_SESSAO}]{${TAMANHO_ID_SESSAO}}|[${ALFABETO_ID_SESSAO}]{${TAMANHO_ID_ANTIGO}})$`,
+)
 /** Formato do link fixo (luan, bia-2); o server recusa outros. */
 export const SLUG_LINK_FIXO = /^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/
 

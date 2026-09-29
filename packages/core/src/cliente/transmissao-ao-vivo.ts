@@ -10,6 +10,7 @@ import type { criarClienteApi, SessaoCriada } from '../api.ts'
 import { type AmostraEnvio, type EstatisticasEnvio, resumirEnvio } from '../estatisticas.ts'
 import { lerSessaoMetadata } from '../sessao.ts'
 import {
+  alturaPedida,
   type ConfigTransmissao,
   constraintsDoAudioSistema,
   type Dimensoes,
@@ -50,8 +51,11 @@ async function capturarTela(config: ConfigTransmissao): Promise<Captura> {
   let fluxo: MediaStream
   try {
     const audio = constraintsDoAudioSistema(config)
+    const altura = alturaPedida(config.resolucao)
+    // A altura vai já no pedido: aplicada depois, antes do primeiro quadro, a captura de tela a
+    // ignorava (Economia saía em 1080p em vez de 720p).
     fluxo = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { max: config.fps } },
+      video: { frameRate: { max: config.fps }, ...(altura && { height: { max: altura } }) },
       audio: audio ?? false,
     })
   } catch (erro) {
@@ -61,11 +65,17 @@ async function capturarTela(config: ConfigTransmissao): Promise<Captura> {
   }
   const [video] = fluxo.getVideoTracks()
   if (!video) throw new Error('A captura veio sem vídeo.')
-  const { width = 1920, height = 1080 } = video.getSettings()
+  // O tamanho da tela vem das capacidades: a captura já pode chegar reduzida (a altura vai no
+  // pedido), e subir a resolução depois precisa saber até onde a fonte vai.
+  const { width, height } = video.getCapabilities()
+  const atual = video.getSettings()
   return {
     video,
     audio: fluxo.getAudioTracks()[0] ?? null,
-    fonte: { largura: width, altura: height },
+    fonte: {
+      largura: width?.max ?? atual.width ?? 1920,
+      altura: height?.max ?? atual.height ?? 1080,
+    },
   }
 }
 

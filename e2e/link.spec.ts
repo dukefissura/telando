@@ -14,7 +14,7 @@ test.afterEach(fecharTodos)
 
 test('host compartilha, dois amigos assistem no app com áudio e veem a sessão encerrar', async () => {
   const { host, link } = await transmitir()
-  expect(link).toMatch(/\/s\/[A-Za-z0-9]{12}$/)
+  expect(link).toMatch(/\/s\/[A-Za-z0-9]{8}$/)
 
   const espectadores = [
     (await assistir(link, 'Capivara Azul')).janela,
@@ -105,7 +105,7 @@ test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura'
         }
       })
       await host.getByText('Jogo', { exact: true }).click()
-      await expect(host.getByTestId('resumo')).toContainText('60 fps · até 8 Mbps · áudio Música')
+      await expect(host.getByTestId('resumo')).toContainText('60 fps · até 12 Mbps · áudio Música')
     },
   })
 

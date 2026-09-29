@@ -13,6 +13,21 @@ describe('destinoDoLink', () => {
     })
   })
 
+  it('aceita o código curto de hoje e o de 12 caracteres dos links antigos', () => {
+    expect(destinoDoLink('https://telando.up.railway.app/s/bdBjd88c')).toEqual({
+      tipo: 'sessao',
+      id: 'bdBjd88c',
+    })
+    expect(destinoDoLink('telando://s/k7Qm2xPa9Lzz')).toEqual({
+      tipo: 'sessao',
+      id: 'k7Qm2xPa9Lzz',
+    })
+    expect(destinoDoLink('https://telando.app/s/bdBjd88')).toBeNull()
+    expect(destinoDoLink('https://telando.app/s/k7Qm2xPa9Lzza')).toBeNull()
+    // Um link antigo cortado no fim não passa por um código de outro tamanho.
+    expect(destinoDoLink('https://telando.app/s/k7Qm2xPa9Lz')).toBeNull()
+  })
+
   it('lê o link fixo', () => {
     expect(destinoDoLink('https://telando.app/luan')).toEqual({ tipo: 'linkFixo', slug: 'luan' })
   })

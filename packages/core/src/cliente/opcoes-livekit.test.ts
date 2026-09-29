@@ -6,19 +6,19 @@ import { opcoesDePublicacao } from './opcoes-livekit.ts'
 const FULL_HD = { largura: 1920, altura: 1080 }
 
 it('publica a tela com codec, reserva, bitrate em bps e a camada de simulcast', () => {
-  const resolvida = resolverTransmissao(aplicarPreset(configPadrao(), 'jogo'), FULL_HD, ['vp9'])
-  const { video } = opcoesDePublicacao(resolvida)
+  const filme = { ...aplicarPreset(configPadrao(), 'filme'), codec: 'vp9' as const }
+  const { video } = opcoesDePublicacao(resolverTransmissao(filme, FULL_HD, ['vp9']))
 
   expect(video).toMatchObject({
     source: Track.Source.ScreenShare,
     videoCodec: 'vp9',
     backupCodec: { codec: 'vp8' },
-    screenShareEncoding: { maxBitrate: 8_000_000, maxFramerate: 60 },
+    screenShareEncoding: { maxBitrate: 10_000_000, maxFramerate: 30 },
     simulcast: true,
-    degradationPreference: 'maintain-framerate',
+    degradationPreference: 'balanced',
   })
   expect(video.screenShareSimulcastLayers?.map((c) => [c.width, c.height, c.encoding])).toEqual([
-    [960, 540, { maxBitrate: 2_000_000, maxFramerate: 15 }],
+    [960, 540, { maxBitrate: 1_500_000, maxFramerate: 15 }],
   ])
 })
 

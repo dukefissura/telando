@@ -31,6 +31,7 @@ export {
 } from './protocolo.ts'
 export { lerSessaoMetadata, type SessaoMetadata } from './sessao.ts'
 export {
+  alturaPedida,
   aplicarPreset,
   type CamadaSimulcast,
   type Codec,

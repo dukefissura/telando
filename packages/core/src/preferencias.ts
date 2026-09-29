@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   AUDIO,
+  aplicarPreset,
   type ConfigTransmissao,
   configPadrao,
   PRESETS,
@@ -40,10 +41,50 @@ function schemaComPadrao(padrao: ConfigTransmissao) {
   })
 }
 
+// Os presets até a 0.4: quem escolheu um deles ganha os valores de hoje, em vez de ficar preso no
+// "Personalizado" com o 8 Mbps e o simulcast que derrubavam o Jogo.
+const PRESETS_ATE_0_4: Record<PresetId, Omit<(typeof PRESETS)[PresetId], 'nome' | 'simulcast'>> = {
+  texto: {
+    resolucao: '1080p',
+    fps: 15,
+    bitrateMaxKbps: 2500,
+    otimizacao: 'nitidez',
+    qualidadeAudio: 'voz',
+  },
+  jogo: {
+    resolucao: '1080p',
+    fps: 60,
+    bitrateMaxKbps: 8000,
+    otimizacao: 'fluidez',
+    qualidadeAudio: 'musica',
+  },
+  filme: {
+    resolucao: '1080p',
+    fps: 30,
+    bitrateMaxKbps: 6000,
+    otimizacao: 'equilibrio',
+    qualidadeAudio: 'alta',
+  },
+  economia: {
+    resolucao: '720p',
+    fps: 30,
+    bitrateMaxKbps: 1500,
+    otimizacao: 'equilibrio',
+    qualidadeAudio: 'voz',
+  },
+}
+
 export function lerConfigSalva(salva: unknown): ConfigTransmissao {
   const padrao = configPadrao()
   const resultado = schemaComPadrao(padrao).safeParse(salva)
-  return resultado.success ? resultado.data : padrao
+  if (!resultado.success) return padrao
+  const config = resultado.data
+  const antigo = (Object.keys(PRESETS_ATE_0_4) as PresetId[]).find((id) =>
+    Object.entries(PRESETS_ATE_0_4[id]).every(
+      ([campo, valor]) => config[campo as keyof typeof config] === valor,
+    ),
+  )
+  return antigo ? aplicarPreset(config, antigo) : config
 }
 
 const FOLGA = 1.2

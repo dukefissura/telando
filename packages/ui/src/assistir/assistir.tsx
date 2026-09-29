@@ -157,7 +157,7 @@ export function Assistir({
       <form onSubmit={enviar} className="grid w-full max-w-sm gap-6 p-8">
         <div className="grid gap-2">
           <h1 className="font-semibold text-2xl tracking-tight">Entrar para assistir</h1>
-          <p className="text-texto-suave" aria-live="polite">
+          <p className="text-pretty text-texto-suave" aria-live="polite">
             {previa.fase !== 'pronta'
               ? ' '
               : previa.hostNome

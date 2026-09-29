@@ -204,11 +204,12 @@ function FaixaDeSinal({
   const resumo = estatisticas
     ? `${estatisticas.altura}p · ${estatisticas.fps} fps · ${formatarMbps(estatisticas.videoKbps)} · perda ${estatisticas.perdaPct.toLocaleString('pt-BR')}%`
     : resolvida.resumo
-  // As mais antigas à esquerda; enquanto não há 30 amostras, o começo fica no mínimo.
-  const amostra = (posicao: number) =>
-    historico[historico.length - AMOSTRAS_DO_SINAL + posicao] ?? 0
-  const alturaDaBarra = (kbps: number) =>
-    Math.max(2, Math.min(20, (kbps / Math.max(resolvida.bitrateKbps, 1)) * 20))
+  // As mais antigas à esquerda; enquanto não há 30 amostras, o começo fica como trilho apagado.
+  const amostra = (posicao: number) => historico[historico.length - AMOSTRAS_DO_SINAL + posicao]
+  // A escala é o pico recente, não o teto: tela parada manda bem abaixo do teto, e medidas contra
+  // ele as barras viravam uma fileira de pontos.
+  const pico = Math.max(1, ...historico)
+  const alturaDaBarra = (kbps: number) => Math.max(2, (kbps / pico) * 20)
 
   return (
     <button
@@ -221,13 +222,16 @@ function FaixaDeSinal({
       <span className={`flex items-center gap-3 ${limitacao ? 'text-aviso' : 'text-texto-suave'}`}>
         <span className="font-mono text-xs tabular-nums">{resumo}</span>
         <span className="ml-auto flex h-5 items-end gap-0.5" aria-hidden>
-          {POSICOES_DO_SINAL.map((posicao) => (
-            <span
-              key={posicao}
-              className={`w-[3px] rounded-[1px] bg-current opacity-80 ${reduzir ? '' : 'transition-[height] duration-[400ms] ease-out'}`}
-              style={{ height: alturaDaBarra(amostra(posicao)) }}
-            />
-          ))}
+          {POSICOES_DO_SINAL.map((posicao) => {
+            const kbps = amostra(posicao)
+            return (
+              <span
+                key={posicao}
+                className={`w-[3px] rounded-[1px] bg-current ${kbps === undefined ? 'opacity-25' : 'opacity-80'} ${reduzir ? '' : 'transition-[height] duration-[400ms] ease-out'}`}
+                style={{ height: alturaDaBarra(kbps ?? 0) }}
+              />
+            )
+          })}
         </span>
       </span>
       <AnimatePresence initial={false}>

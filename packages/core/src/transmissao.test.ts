@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  alturaPedida,
   aplicarPreset,
   type ConfigTransmissao,
   configPadrao,
@@ -18,10 +19,10 @@ function comPreset(id: PresetId): ConfigTransmissao {
 
 describe('presets', () => {
   it.each([
-    ['texto', '1080p · 15 fps · até 2,5 Mbps · áudio Voz'],
-    ['jogo', '1080p · 60 fps · até 8 Mbps · áudio Música'],
-    ['filme', '1080p · 30 fps · até 6 Mbps · áudio Alta fidelidade'],
-    ['economia', '720p · 30 fps · até 1,5 Mbps · áudio Voz'],
+    ['texto', '1080p · 30 fps · até 6 Mbps · áudio Voz'],
+    ['jogo', '1080p · 60 fps · até 12 Mbps · áudio Música'],
+    ['filme', '1080p · 30 fps · até 10 Mbps · áudio Alta fidelidade'],
+    ['economia', '720p · 30 fps · até 2,5 Mbps · áudio Voz'],
   ] as const)('%s gera o resumo da tabela', (id, resumo) => {
     expect(resolverTransmissao(comPreset(id), FULL_HD, TODOS_OS_CODECS).resumo).toBe(resumo)
   })
@@ -50,9 +51,15 @@ describe('presets', () => {
   })
 
   it('aplicar preset mantém o que não está na tabela', () => {
-    const config = aplicarPreset({ ...configPadrao(), codec: 'vp9', simulcast: false }, 'jogo')
+    const config = aplicarPreset({ ...configPadrao(), codec: 'vp9', audioSistema: false }, 'jogo')
     expect(config.codec).toBe('vp9')
-    expect(config.simulcast).toBe(false)
+    expect(config.audioSistema).toBe(false)
+  })
+
+  it('Jogo desliga as várias qualidades: dois codificadores na CPU derrubavam os 60 fps', () => {
+    expect(comPreset('jogo').simulcast).toBe(false)
+    expect(comPreset('filme').simulcast).toBe(true)
+    expect(presetAtual({ ...comPreset('jogo'), simulcast: true })).toBe('personalizado')
   })
 })
 
@@ -100,7 +107,9 @@ describe('resolução', () => {
 
 describe('bitrate', () => {
   it('usa o máximo escolhido', () => {
-    expect(resolverTransmissao(comPreset('jogo'), FULL_HD, TODOS_OS_CODECS).bitrateKbps).toBe(8000)
+    expect(resolverTransmissao(comPreset('jogo'), FULL_HD, TODOS_OS_CODECS).bitrateKbps).toBe(
+      12_000,
+    )
   })
 
   it('no automático cresce com pixels e fps e fica entre 0,5 e 20 Mbps', () => {
@@ -124,17 +133,15 @@ describe('bitrate', () => {
       FULL_HD,
       TODOS_OS_CODECS,
     )
-    expect(r.resumo).toBe('1080p · 15 fps · bitrate automático · áudio Voz')
+    expect(r.resumo).toBe('1080p · 30 fps · bitrate automático · áudio Voz')
   })
 })
 
 describe('codec', () => {
-  it('no automático tenta AV1, depois VP9, depois H.264', () => {
+  it('no automático usa H.264 e, sem ele, VP8; AV1 e VP9 só se escolhidos', () => {
     const codec = (host: string[]) => resolverTransmissao(configPadrao(), FULL_HD, host).codec
-    expect(codec(['vp8', 'h264', 'vp9', 'av1'])).toBe('av1')
-    expect(codec(['vp8', 'h264', 'vp9'])).toBe('vp9')
-    expect(codec(['vp8', 'h264'])).toBe('h264')
-    expect(codec(['vp8'])).toBe('vp8')
+    expect(codec(['vp8', 'h264', 'vp9', 'av1'])).toBe('h264')
+    expect(codec(['vp8', 'vp9', 'av1'])).toBe('vp8')
   })
 
   it('usa VP8 de reserva só para AV1 e VP9', () => {
@@ -161,8 +168,8 @@ describe('otimização', () => {
 
 describe('simulcast', () => {
   it('cria uma camada menor para quem tem internet fraca', () => {
-    const r = resolverTransmissao(comPreset('jogo'), FULL_HD, TODOS_OS_CODECS)
-    expect(r.camadas).toEqual([{ largura: 960, altura: 540, fps: 15, bitrateKbps: 2000 }])
+    const r = resolverTransmissao(comPreset('filme'), FULL_HD, TODOS_OS_CODECS)
+    expect(r.camadas).toEqual([{ largura: 960, altura: 540, fps: 15, bitrateKbps: 1500 }])
   })
 
   it('sem simulcast não tem camadas', () => {
@@ -222,5 +229,13 @@ describe('áudio', () => {
       noiseSuppression: false,
       autoGainControl: true,
     })
+  })
+})
+
+describe('altura pedida à captura', () => {
+  it('pede a altura da resolução escolhida; a nativa não limita', () => {
+    expect(alturaPedida('720p')).toBe(720)
+    expect(alturaPedida('1080p')).toBe(1080)
+    expect(alturaPedida('nativa')).toBeNull()
   })
 })
