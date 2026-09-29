@@ -1,5 +1,15 @@
 # Novidades
 
+## 0.4.3
+
+- **1080p a 60 fps de verdade.** A captura estava presa em 30 fps, ou perdia metade dos quadros tentando segurar os 60. Agora o Jogo chega a 1080p60.
+- **Mais banda para o Jogo:** até 16 Mbps. E ele volta a mandar uma versão menor (540p a 30 fps) para quem tem internet fraca, que passa a baixar de qualidade em vez de travar.
+- **Não gasta nada enquanto ninguém assiste.** Até alguém entrar, o vídeo não é codificado, e o painel mostra "Parado até alguém entrar". Sobra CPU para o jogo.
+- **Transmissões longas com o Telando escondido** (na bandeja ou atrás do jogo) ficam mais estáveis: o app não é mais posto para dormir enquanto está ao vivo.
+- **Tela inicial nova:** um painel de vidro sobre um fundo que pulsa e troca de cor devagar.
+- **Sem contorno azul** em volta dos campos quando você digita um link ou apelido.
+- Se você tinha escolhido o preset Jogo, ele passa a usar os valores novos.
+
 ## 0.4.2
 
 - **Ícone novo**, "vidro sobre vidro": no instalador, no atalho, na bandeja (nítido em telas com zoom) e no site.

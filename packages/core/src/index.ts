@@ -22,7 +22,12 @@ export {
   resumirEnvio,
   resumirRecebimento,
 } from './estatisticas.ts'
-export { lerConfigSalva, presetQueCabe, uploadNecessarioKbps } from './preferencias.ts'
+export {
+  lerConfigSalva,
+  paraGravar,
+  presetQueCabe,
+  uploadNecessarioKbps,
+} from './preferencias.ts'
 export {
   type AvisoRevezamento,
   codificarAviso,
@@ -40,6 +45,7 @@ export {
   configPadrao,
   constraintsDoAudioSistema,
   type Dimensoes,
+  FPS_DA_CAPTURA,
   type Fps,
   formatarMbps,
   NOMES_QUALIDADE_AUDIO,

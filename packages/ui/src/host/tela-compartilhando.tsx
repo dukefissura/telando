@@ -208,7 +208,7 @@ function FaixaDeSinal({
   }, [estatisticas])
 
   const limitacao = estatisticas?.limitacao ?? null
-  const resumo = estatisticas
+  const resumo = estatisticas?.enviando
     ? `${estatisticas.altura}p · ${estatisticas.fps} fps · ${formatarMbps(estatisticas.videoKbps)} · perda ${estatisticas.perdaPct.toLocaleString('pt-BR')}%`
     : resolvida.resumo
   // As mais antigas à esquerda; enquanto não há 30 amostras, o começo fica como trilho apagado.
@@ -244,9 +244,11 @@ function FaixaDeSinal({
         <span className={`flex items-center gap-3 ${limitacao ? 'text-aviso' : 'text-texto'}`}>
           {/* Resolução e fps já estão no monitor; aqui fica o que é do sinal. */}
           <span className="font-mono text-xs tabular-nums">
-            {estatisticas
-              ? `${formatarMbps(estatisticas.videoKbps)} · perda ${estatisticas.perdaPct.toLocaleString('pt-BR')}%`
-              : 'Medindo…'}
+            {!estatisticas
+              ? 'Medindo…'
+              : estatisticas.enviando
+                ? `${formatarMbps(estatisticas.videoKbps)} · perda ${estatisticas.perdaPct.toLocaleString('pt-BR')}%`
+                : 'Parado até alguém entrar'}
           </span>
           <span className="ml-auto flex h-[22px] items-end gap-0.5" aria-hidden>
             {POSICOES_DO_SINAL.map((posicao) => {
@@ -425,7 +427,8 @@ export function TelaCompartilhando({
         <p className="font-semibold">O host pausou o compartilhamento</p>
       </div>
     ) : null
-  const qualidadeNoAr = estatisticas
+  // Sem ninguém assistindo, o dynacast pausa tudo; aí vale o que vai sair quando alguém entrar.
+  const qualidadeNoAr = estatisticas?.enviando
     ? `${estatisticas.altura}p · ${estatisticas.fps} fps`
     : `${resolvida.alvo.altura}p · ${resolvida.fps} fps`
   // Quem pediu e saiu da sala some da lista.

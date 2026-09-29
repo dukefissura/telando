@@ -95,13 +95,7 @@ export function Grupo({
   className?: string
   children: ReactNode
 }) {
-  const bloco = (
-    <div
-      className={`grupo has-focus-visible:outline-2 has-focus-visible:outline-destaque ${className}`}
-    >
-      {children}
-    </div>
-  )
+  const bloco = <div className={`grupo ${className}`}>{children}</div>
   if (!rotulo) return bloco
   return (
     <fieldset className="min-w-0">

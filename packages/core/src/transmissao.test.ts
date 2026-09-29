@@ -4,6 +4,7 @@ import {
   aplicarPreset,
   type ConfigTransmissao,
   configPadrao,
+  FPS_DA_CAPTURA,
   PRESETS,
   type PresetId,
   presetAtual,
@@ -20,7 +21,7 @@ function comPreset(id: PresetId): ConfigTransmissao {
 describe('presets', () => {
   it.each([
     ['texto', '1080p · 30 fps · até 6 Mbps · áudio Voz'],
-    ['jogo', '1080p · 60 fps · até 12 Mbps · áudio Música'],
+    ['jogo', '1080p · 60 fps · até 16 Mbps · áudio Música'],
     ['filme', '1080p · 30 fps · até 10 Mbps · áudio Alta fidelidade'],
     ['economia', '720p · 30 fps · até 2,5 Mbps · áudio Voz'],
   ] as const)('%s gera o resumo da tabela', (id, resumo) => {
@@ -56,10 +57,10 @@ describe('presets', () => {
     expect(config.audioSistema).toBe(false)
   })
 
-  it('Jogo desliga as várias qualidades: dois codificadores na CPU derrubavam os 60 fps', () => {
-    expect(comPreset('jogo').simulcast).toBe(false)
-    expect(comPreset('filme').simulcast).toBe(true)
-    expect(presetAtual({ ...comPreset('jogo'), simulcast: true })).toBe('personalizado')
+  it('todos os presets mandam uma versão menor para quem tem internet fraca', () => {
+    for (const id of ['texto', 'jogo', 'filme', 'economia'] as const)
+      expect(comPreset(id).simulcast, id).toBe(true)
+    expect(presetAtual({ ...comPreset('jogo'), simulcast: false })).toBe('personalizado')
   })
 })
 
@@ -95,20 +96,21 @@ describe('resolução', () => {
     expect(r.limitadoPelaFonte).toBe(false)
   })
 
-  it('limita a captura ao alvo e ao fps', () => {
+  it('limita a trilha ao tamanho, com folga no fps; quem corta no fps é o encoder', () => {
     const r = resolverTransmissao(comPreset('economia'), FULL_HD, TODOS_OS_CODECS)
     expect(r.constraintsVideo).toEqual({
       width: { max: 1280 },
       height: { max: 720 },
-      frameRate: { max: 30 },
+      frameRate: { max: FPS_DA_CAPTURA },
     })
+    expect(r.fps).toBe(30)
   })
 })
 
 describe('bitrate', () => {
   it('usa o máximo escolhido', () => {
     expect(resolverTransmissao(comPreset('jogo'), FULL_HD, TODOS_OS_CODECS).bitrateKbps).toBe(
-      12_000,
+      16_000,
     )
   })
 
@@ -170,6 +172,11 @@ describe('simulcast', () => {
   it('cria uma camada menor para quem tem internet fraca', () => {
     const r = resolverTransmissao(comPreset('filme'), FULL_HD, TODOS_OS_CODECS)
     expect(r.camadas).toEqual([{ largura: 960, altura: 540, fps: 15, bitrateKbps: 1500 }])
+  })
+
+  it('em 60 fps a camada menor anda a 30: a 15, jogo fica picotado', () => {
+    const r = resolverTransmissao(comPreset('jogo'), FULL_HD, TODOS_OS_CODECS)
+    expect(r.camadas).toEqual([{ largura: 960, altura: 540, fps: 30, bitrateKbps: 1500 }])
   })
 
   it('sem simulcast não tem camadas', () => {

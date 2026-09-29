@@ -27,7 +27,7 @@ export function AvisoAtualizacao({ atualizacao }: { atualizacao: Plataforma['atu
           animate={{ opacity: 1, y: 0 }}
           exit={SAIDA}
           transition={{ duration: 0.3, ease: MOLA_SUAVE }}
-          className="vidro fixed bottom-6 left-1/2 flex w-max -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-full py-1.5 pr-1.5 pl-4 text-[13px]"
+          className="vidro fixed bottom-6 left-1/2 z-10 flex w-max -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-full py-1.5 pr-1.5 pl-4 text-[13px]"
         >
           <Sparkles size={15} aria-hidden className="text-destaque" />
           <span>

@@ -14,6 +14,7 @@ import {
   type ConfigTransmissao,
   constraintsDoAudioSistema,
   type Dimensoes,
+  FPS_DA_CAPTURA,
   resolverTransmissao,
   type TransmissaoResolvida,
 } from '../transmissao.ts'
@@ -55,7 +56,10 @@ async function capturarTela(config: ConfigTransmissao): Promise<Captura> {
     // A altura vai já no pedido: aplicada depois, antes do primeiro quadro, a captura de tela a
     // ignorava (Economia saía em 1080p em vez de 720p).
     fluxo = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { max: config.fps }, ...(altura && { height: { max: altura } }) },
+      video: {
+        frameRate: { max: FPS_DA_CAPTURA },
+        ...(altura && { height: { max: altura } }),
+      },
       audio: audio ?? false,
     })
   } catch (erro) {
@@ -199,7 +203,8 @@ export class TransmissaoAoVivo {
       throw sessao.reason
     }
 
-    const room = new Room()
+    // Dynacast: a camada que ninguém está assistindo para de ser codificada, e a CPU fica para o jogo.
+    const room = new Room({ dynacast: true })
     let transmissao: TransmissaoAoVivo | null = null
     try {
       const resolvida = resolverTransmissao(config, captura.value.fonte, codecsDoHost())

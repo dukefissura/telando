@@ -57,10 +57,9 @@ test('capturas das telas', async () => {
   await capturar(amigo, 'assistindo')
 
   await host.getByRole('button', { name: 'Parar' }).click()
-  await capturar(hostApp, 'inicio-escuro')
-  await alternarTema(host)
-  await capturar(hostApp, 'inicio-claro')
+  await capturar(hostApp, 'inicio')
   await host.getByRole('button', { name: 'Compartilhar tela' }).click()
+  await alternarTema(host)
   await host.getByRole('button', { name: /^Tela 1/ }).click()
   // A prévia ao vivo leva um instante para o primeiro quadro.
   await host.waitForTimeout(1500)

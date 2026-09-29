@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerConfigSalva, presetQueCabe, uploadNecessarioKbps } from './preferencias.ts'
+import { lerConfigSalva, paraGravar, presetQueCabe, uploadNecessarioKbps } from './preferencias.ts'
 import { aplicarPreset, configPadrao, presetAtual, resolverTransmissao } from './transmissao.ts'
 
 describe('lerConfigSalva', () => {
@@ -32,6 +32,34 @@ describe('lerConfigSalva', () => {
     expect(config.microfone.ativo).toBe(true)
   })
 
+  it('o Jogo salvo na 0.4.1 e na 0.4.2 volta com os valores de hoje', () => {
+    const jogoDa041 = {
+      ...configPadrao(),
+      resolucao: '1080p',
+      fps: 60,
+      bitrateMaxKbps: 12_000,
+      otimizacao: 'fluidez',
+      qualidadeAudio: 'musica',
+      simulcast: false,
+    }
+    expect(presetAtual(lerConfigSalva(jogoDa041))).toBe('jogo')
+  })
+
+  it('o que já foi gravado com os presets de hoje não é migrado, mesmo igual a um antigo', () => {
+    const escolhidoHoje = paraGravar({
+      ...configPadrao(),
+      resolucao: '1080p',
+      fps: 60,
+      bitrateMaxKbps: 12_000,
+      otimizacao: 'fluidez',
+      qualidadeAudio: 'musica',
+      simulcast: false,
+    })
+    const lida = lerConfigSalva(JSON.parse(JSON.stringify(escolhidoHoje)))
+    expect(lida.bitrateMaxKbps).toBe(12_000)
+    expect(lida.simulcast).toBe(false)
+  })
+
   it('um ajuste próprio não vira preset', () => {
     const proprio = { ...configPadrao(), fps: 60, bitrateMaxKbps: 8000 }
     expect(lerConfigSalva(proprio).bitrateMaxKbps).toBe(8000)
@@ -39,22 +67,22 @@ describe('lerConfigSalva', () => {
 })
 
 describe('upload', () => {
-  it('pede 20% de folga sobre vídeo e áudio', () => {
+  it('pede 20% de folga sobre vídeo, camada menor e áudio', () => {
     const jogo = resolverTransmissao(aplicarPreset(configPadrao(), 'jogo'), FULL_HD, [])
-    expect(uploadNecessarioKbps(jogo)).toBe(Math.round((12_000 + 128) * 1.2))
+    expect(uploadNecessarioKbps(jogo)).toBe(Math.round((16_000 + 1500 + 128) * 1.2))
   })
 
   it('sem áudio do sistema conta só o vídeo', () => {
     const semAudio = { ...aplicarPreset(configPadrao(), 'jogo'), audioSistema: false }
-    expect(uploadNecessarioKbps(resolverTransmissao(semAudio, FULL_HD, []))).toBe(14_400)
+    expect(uploadNecessarioKbps(resolverTransmissao(semAudio, FULL_HD, []))).toBe(21_000)
   })
 
   it('sugere o preset mais caprichado que cabe no upload medido', () => {
     expect(presetQueCabe(50_000)).toBe('jogo')
-    expect(presetQueCabe(13_000)).toBe('filme')
-    expect(presetQueCabe(8000)).toBe('texto')
-    expect(presetQueCabe(3100)).toBe('economia')
-    expect(presetQueCabe(2900)).toBeNull()
+    expect(presetQueCabe(15_000)).toBe('filme')
+    expect(presetQueCabe(10_000)).toBe('texto')
+    expect(presetQueCabe(3800)).toBe('economia')
+    expect(presetQueCabe(3700)).toBeNull()
   })
 })
 

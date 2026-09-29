@@ -27,7 +27,7 @@ export type ConfigTransmissao = {
   microfone: ConfigMicrofone
 }
 
-type CamposDoPreset = Pick<
+export type CamposDoPreset = Pick<
   ConfigTransmissao,
   'resolucao' | 'fps' | 'bitrateMaxKbps' | 'otimizacao' | 'qualidadeAudio' | 'simulcast'
 >
@@ -50,12 +50,12 @@ export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string; nomeCurt
     nomeCurto: 'Jogo',
     resolucao: '1080p',
     fps: 60,
-    // H.264 em software gasta mais bits que o x264 de uma live: 8 Mbps borrava cena com movimento.
-    bitrateMaxKbps: 12_000,
+    // H.264 em software gasta mais bits que o x264 de uma live: em 1080p60 o encoder batia nos
+    // 12 Mbps com cena em movimento (medido).
+    bitrateMaxKbps: 16_000,
     otimizacao: 'fluidez',
     qualidadeAudio: 'musica',
-    // Medido: com a camada extra, os dois codificadores dividem a CPU e o 1080p60 caía para ~41 fps.
-    simulcast: false,
+    simulcast: true,
   },
   filme: {
     nome: 'Filme/vídeo',
@@ -173,6 +173,14 @@ export function presetAtual(config: ConfigTransmissao): PresetId | 'personalizad
   return id ?? 'personalizado'
 }
 
+/**
+ * Teto de fps da captura e da trilha, acima de qualquer preset. Com o fps exato do preset, a trilha
+ * descarta quadros fora de ritmo (60 virava 32 a 49 e 30 virava uns 24, medido); sem teto nenhum,
+ * o Chromium volta ao padrão de tela, 30. Quem corta no fps escolhido é o maxFramerate do encoder.
+ * Capturar com essa folga custa uns 2 a 4% de CPU.
+ */
+export const FPS_DA_CAPTURA = 120
+
 /** Altura que a captura já deve entregar; a nativa não limita. */
 export function alturaPedida(resolucao: Resolucao): number | null {
   return resolucao === 'nativa' ? null : ALTURAS[resolucao]
@@ -237,7 +245,8 @@ export function resolverTransmissao(
         {
           largura: par(alvo.largura / 2),
           altura: par(alvo.altura / 2),
-          fps: Math.min(config.fps, 15),
+          // A 15 fps jogo fica picotado; em 60, a camada menor anda a 30.
+          fps: Math.min(config.fps, config.fps >= 60 ? 30 : 15),
           bitrateKbps: Math.min(TETO_CAMADA_MENOR_KBPS, arredondarCentena(bitrateKbps / 4)),
         },
       ]
@@ -257,7 +266,7 @@ export function resolverTransmissao(
     constraintsVideo: {
       width: { max: alvo.largura },
       height: { max: alvo.altura },
-      frameRate: { max: config.fps },
+      frameRate: { max: FPS_DA_CAPTURA },
     },
     ...OTIMIZACAO[config.otimizacao],
     codec,

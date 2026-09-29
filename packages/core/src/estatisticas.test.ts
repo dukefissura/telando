@@ -65,7 +65,14 @@ it('sem vídeo saindo devolve zeros', () => {
     codec: null,
     perdaPct: 0,
     limitacao: null,
+    enviando: false,
   })
+})
+
+it('com todas as camadas pausadas (ninguém assistindo), diz que não está enviando', () => {
+  const pausada = { id: 'v', type: 'outbound-rtp', kind: 'video', active: false, frameWidth: 1920 }
+  expect(resumirEnvio([pausada], null, 0).estatisticas.enviando).toBe(false)
+  expect(resumirEnvio(relatorio(0, 0), null, 0).estatisticas.enviando).toBe(true)
 })
 
 it('ignora a camada que o LiveKit pausou porque ninguém está pedindo', () => {

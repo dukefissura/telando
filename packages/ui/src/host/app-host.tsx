@@ -1,19 +1,11 @@
-import { type ConfigTransmissao, lerConfigSalva, mensagemDoErro } from '@telando/core'
+import { type ConfigTransmissao, lerConfigSalva, mensagemDoErro, paraGravar } from '@telando/core'
 import { useTransmissao } from '@telando/core/cliente'
-import { Clipboard, Link2, LogIn, ScreenShare } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { BarraDoApp, IconeTelando, Luz, Marca } from '../barra-do-app.tsx'
-import {
-  AbreEspaco,
-  Botao,
-  classeCampoEmGrupo,
-  Grupo,
-  LinhaDeGrupo,
-  Separador,
-} from '../controles.tsx'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { AbreEspaco } from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { AvisoAtualizacao } from './aviso-atualizacao.tsx'
+import { FundoPulsante, IconeColorido, useFundoPulsante } from './fundo-pulsante.tsx'
 import { partesDo } from './link.tsx'
 import { TelaCompartilhando } from './tela-compartilhando.tsx'
 import { TelaConfiguracoes } from './tela-configuracoes.tsx'
@@ -27,7 +19,7 @@ function useConfigSalva(preferencias: Plataforma['preferencias']) {
   const mudar = useCallback(
     (nova: ConfigTransmissao) => {
       setConfig(nova)
-      void preferencias.gravar(nova)
+      void preferencias.gravar(paraGravar(nova))
     },
     [preferencias],
   )
@@ -63,6 +55,14 @@ function useSugestaoDeLink(ler: Plataforma['linkNaAreaDeTransferencia'], meuLink
   return { sugestao, dispensar }
 }
 
+// Vidro leve dos grupos do Início, sobre o fundo pulsante.
+const vidroDoGrupo =
+  'rounded-[20px] border border-white/[0.07] bg-[rgb(20_20_20/0.55)] shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] backdrop-blur-[20px] backdrop-saturate-150'
+
+/**
+ * O Início é sempre escuro: um painel de vidro sobre o fundo pulsante, com o destaque passando pelas
+ * cores do ciclo. As CSS vars do destaque ficam na raiz daqui e somem quando o Início desmonta.
+ */
 function TelaInicio({
   meuLink,
   aoCompartilhar,
@@ -81,6 +81,12 @@ function TelaInicio({
   const { sugestao, dispensar } = useSugestaoDeLink(lerAreaDeTransferencia, meuLink?.url ?? null)
   const partes = sugestao ? partesDo(sugestao) : null
 
+  const raiz = useRef<HTMLElement>(null)
+  const centro = useRef<HTMLDivElement>(null)
+  const painel = useRef<HTMLDivElement>(null)
+  const focos = useRef<(HTMLDivElement | null)[]>([])
+  useFundoPulsante(raiz, { centro, painel, focos })
+
   const entrar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault()
     const campo = new FormData(evento.currentTarget).get('link')
@@ -88,107 +94,137 @@ function TelaInicio({
   }
 
   return (
-    <main className="relative isolate flex min-h-dvh flex-col">
-      <Luz posicao="55% 45% at 50% 18%" />
-      <BarraDoApp>
-        <Marca />
-      </BarraDoApp>
-      <div className="mx-auto grid w-full max-w-[440px] gap-8 px-4 pt-16 pb-24">
-        <div className="grid justify-items-center gap-3 text-center">
-          <IconeTelando className="size-24 drop-shadow-[0_18px_30px_rgb(11_107_219/0.28)]" />
-          <h1 className="font-semibold text-[40px] leading-[1.1] tracking-[-0.03em]">Telando</h1>
-          <p className="text-[17px] text-texto-suave leading-[26px]">
-            Mostre sua tela para quem tiver o link.
-          </p>
-        </div>
+    <main
+      ref={raiz}
+      className="sempre-escuro relative min-h-dvh overflow-hidden bg-[#050505] text-texto"
+    >
+      <FundoPulsante centro={centro} focos={focos} />
 
-        <Botao variante="primario" tamanho="grande" className="w-full" onClick={aoCompartilhar}>
-          <ScreenShare size={19} aria-hidden />
-          Compartilhar tela
-        </Botao>
+      {/* 10% de margem nas laterais e 5,5% em cima e embaixo. */}
+      <div className="absolute inset-x-[10%] inset-y-[5.5%] overflow-hidden rounded-[14px] bg-[rgb(10_10_10/0.6)] shadow-[inset_0_1px_0_rgb(255_255_255/0.06),0_0_0_1px_rgb(255_255_255/0.08),0_40px_120px_-40px_rgb(0_0_0/0.9)] backdrop-blur-[40px] backdrop-saturate-[1.4]">
+        <div
+          ref={painel}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 origin-[50%_18%]"
+          style={{
+            background:
+              'radial-gradient(60% 50% at 50% 18%, color-mix(in srgb, var(--destaque) 30%, transparent), transparent 70%)',
+          }}
+        />
 
-        <Grupo rotulo="Seu link fixo">
-          <LinhaDeGrupo
-            icone={Link2}
-            acessorio={
-              <Botao
-                variante="fantasma"
-                tamanho="compacto"
-                aria-label={meuLink ? 'Editar link fixo' : undefined}
+        <div className="relative grid h-full justify-items-center overflow-y-auto pt-[120px] pb-10">
+          <div className="grid w-[440px] max-w-full content-start gap-8 px-4">
+            <div className="grid justify-items-center gap-[18px] text-center">
+              <IconeColorido />
+              <div className="grid gap-2">
+                <h1 className="font-semibold text-[40px] leading-[1.1] tracking-[-0.03em]">
+                  Telando
+                </h1>
+                <p className="text-[17px] text-texto-suave leading-[26px]">
+                  Mostre sua tela para quem tiver o link.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={aoCompartilhar}
+              className="flex h-[52px] items-center justify-center rounded-full font-semibold text-[#0a0a0a] text-base transition-[translate,scale,filter] duration-150 ease-out hover:-translate-y-px hover:brightness-105 active:translate-y-0 active:scale-[0.98] active:duration-75"
+              style={{
+                background: 'linear-gradient(180deg, var(--destaque-topo), var(--destaque))',
+                boxShadow:
+                  'inset 0 1px 0 rgb(255 255 255 / 0.45), 0 10px 24px -10px color-mix(in srgb, var(--destaque) 60%, transparent)',
+              }}
+            >
+              Compartilhar tela
+            </button>
+
+            <div className="grid gap-2">
+              <span className="pl-4 text-texto-suave text-xs">Seu link fixo</span>
+              {/* A linha inteira é o botão de editar, sem botão à mostra. */}
+              <button
+                type="button"
                 onClick={aoAbrirLinkFixo}
+                title={meuLink ? 'Editar link fixo' : 'Criar link fixo'}
+                className={`${vidroDoGrupo} truncate px-4 py-3.5 text-left font-mono text-sm tracking-[-0.02em] transition-colors hover:bg-[rgb(28_28_28/0.6)]`}
               >
-                {meuLink ? 'Editar' : 'Criar link fixo'}
-              </Botao>
-            }
-          >
-            {meuLink ? (
-              <p className="min-w-0 truncate font-mono">
-                <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
-                <span className="text-destaque">{meuLink.slug}</span>
-              </p>
-            ) : (
-              <p className="text-texto-suave">Um endereço que seus amigos salvam.</p>
-            )}
-          </LinhaDeGrupo>
-        </Grupo>
+                <span className="sr-only">
+                  {meuLink ? 'Editar link fixo: ' : 'Criar link fixo: '}
+                </span>
+                {meuLink ? (
+                  <>
+                    <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
+                    <span style={{ color: 'var(--destaque)' }}>{meuLink.slug}</span>
+                  </>
+                ) : (
+                  <span className="font-sans text-texto-suave">
+                    Um endereço que seus amigos salvam.
+                  </span>
+                )}
+              </button>
+            </div>
 
-        <form className="grid gap-2" onSubmit={entrar}>
-          <Grupo rotulo="Entrar com um link">
-            <AnimatePresence initial={false}>
-              {sugestao && partes && (
-                <AbreEspaco key="sugestao">
-                  <LinhaDeGrupo
-                    icone={Clipboard}
-                    destaque
-                    acessorio={
-                      <Botao
-                        tamanho="compacto"
-                        aria-label={`Entrar em ${sugestao}`}
-                        onClick={() => {
-                          dispensar()
-                          aoEntrarComLink(sugestao)
+            <form className="grid gap-2" onSubmit={entrar}>
+              <label htmlFor="entrar-link" className="pl-4 text-texto-suave text-xs">
+                Entrar com um link
+              </label>
+              <div className={`${vidroDoGrupo} overflow-hidden`}>
+                <AnimatePresence initial={false}>
+                  {sugestao && partes && (
+                    <AbreEspaco key="sugestao">
+                      <div
+                        className="flex items-center gap-3 py-2.5 pr-2 pl-4"
+                        style={{
+                          background: 'color-mix(in srgb, var(--destaque) 6%, transparent)',
                         }}
                       >
-                        Entrar
-                      </Botao>
-                    }
+                        <span className="grid min-w-0 flex-1 gap-px">
+                          <span className="text-texto-suave text-xs">Copiado agora há pouco</span>
+                          <span className="truncate font-mono text-sm tracking-[-0.02em]">
+                            <span className="text-texto-suave">{partes.base}</span>
+                            <span style={{ color: 'var(--destaque)' }}>{partes.final}</span>
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Entrar em ${sugestao}`}
+                          onClick={() => {
+                            dispensar()
+                            aoEntrarComLink(sugestao)
+                          }}
+                          className="h-8 shrink-0 rounded-full border border-white/10 bg-white/[0.08] px-3.5 font-medium text-[13px] transition-colors hover:bg-white/[0.14]"
+                        >
+                          Entrar
+                        </button>
+                      </div>
+                      <div className="h-px bg-white/[0.07]" />
+                    </AbreEspaco>
+                  )}
+                </AnimatePresence>
+                <div className="flex items-center gap-3 py-2 pr-2 pl-4">
+                  <input
+                    id="entrar-link"
+                    name="link"
+                    placeholder="Cole aqui o link que te mandaram"
+                    onChange={dispensar}
+                    className="h-8 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-texto-suave/70"
+                  />
+                  <button
+                    type="submit"
+                    className="h-8 shrink-0 rounded-full px-3.5 font-medium text-[13px] text-texto-suave transition-colors hover:bg-white/[0.08] hover:text-texto"
                   >
-                    <div className="grid min-w-0 gap-0.5">
-                      <span className="text-texto-suave text-xs">Copiado agora há pouco</span>
-                      <span className="truncate font-mono tracking-tight">
-                        <span className="text-texto-suave">{partes.base}</span>
-                        <span className="text-destaque">{partes.final}</span>
-                      </span>
-                    </div>
-                  </LinhaDeGrupo>
-                  <Separador />
-                </AbreEspaco>
+                    Entrar
+                  </button>
+                </div>
+              </div>
+              {avisoLink && (
+                <p role="alert" className="pl-4 text-parar text-sm">
+                  {avisoLink}
+                </p>
               )}
-            </AnimatePresence>
-            <LinhaDeGrupo
-              icone={LogIn}
-              acessorio={
-                <Botao variante="fantasma" tamanho="compacto" type="submit">
-                  Entrar
-                </Botao>
-              }
-            >
-              <input
-                id="entrar-link"
-                name="link"
-                aria-label="Entrar com um link"
-                placeholder="Cole aqui o link que te mandaram"
-                onChange={dispensar}
-                className={classeCampoEmGrupo}
-              />
-            </LinhaDeGrupo>
-          </Grupo>
-          {avisoLink && (
-            <p role="alert" className="pl-4 text-parar text-sm">
-              {avisoLink}
-            </p>
-          )}
-        </form>
+            </form>
+          </div>
+        </div>
       </div>
     </main>
   )

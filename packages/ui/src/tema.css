@@ -48,7 +48,15 @@
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 }
 
-:root {
+/* O Início é sempre escuro (fundo pulsante), mesmo com o app no tema claro. As cores do topo e do
+   fundo do destaque valem até o primeiro quadro da animação, e com "reduzir movimento". */
+.sempre-escuro {
+  --destaque-topo: #7cc0ff;
+  --destaque-fundo: #0b6bdb;
+}
+
+:root,
+.sempre-escuro {
   color-scheme: dark;
   --fundo: #0a0a0a;
   --superficie: #131313;
@@ -146,6 +154,11 @@ body {
 :focus-visible {
   outline: 2px solid var(--destaque);
   outline-offset: 2px;
+}
+
+/* Campo de texto não ganha contorno: o cursor piscando já mostra onde se escreve. */
+input:is(:not([type]), [type="text"], [type="search"]):focus-visible {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

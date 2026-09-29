@@ -48,7 +48,8 @@ export function useSalaEspectador(api: Plataforma['api'], id: string) {
       entrando.current = true
       setSala({ fase: 'entrando' })
       // Sem adaptiveStream: o seletor de qualidade do palco decide o tamanho pedido (ver useQualidade).
-      const room = new Room()
+      // Dynacast: se quem assiste passar a apresentar, a camada que ninguém vê para de ser codificada.
+      const room = new Room({ dynacast: true })
       try {
         const entrada = await api.entrarNaSessao(id, apelido)
         room.on(RoomEvent.Disconnected, (motivo) => {

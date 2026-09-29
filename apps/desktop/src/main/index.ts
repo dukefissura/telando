@@ -310,6 +310,10 @@ function registrarIpc() {
   ipcMain.on(CANAIS.transmitindo, (evento, estado: unknown) => {
     exigirOrigem(evento)
     transmitindo = estado === true
+    // Quem transmite deixa o Telando escondido por horas; estrangulada, a página atrasava os timers
+    // do LiveKit (ping da sala) e das estatísticas. Fora da transmissão, o estrangulamento volta e
+    // as animações param quando a janela some.
+    evento.sender.setBackgroundThrottling(!transmitindo)
     atualizarAtalho()
     atualizarBandeja()
   })
@@ -325,6 +329,10 @@ function endurecer() {
     })
   })
 }
+
+// O vídeo é codificado no processo da página; escondida, ela perde prioridade para o jogo que
+// disputa a CPU, e o encoder começa a perder quadros.
+app.commandLine.appendSwitch('disable-renderer-backgrounding')
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()

@@ -105,7 +105,7 @@ test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura'
         }
       })
       await host.getByText('Jogo', { exact: true }).click()
-      await expect(host.getByTestId('resumo')).toContainText('60 fps · até 12 Mbps · áudio Música')
+      await expect(host.getByTestId('resumo')).toContainText('60 fps · até 16 Mbps · áudio Música')
     },
   })
 
@@ -118,8 +118,9 @@ test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura'
   const ajustes = host.getByRole('complementary', { name: 'Ajustes da transmissão' })
   await ajustes.getByText('5', { exact: true }).click()
   await ajustes.getByText('Voz', { exact: true }).click()
-  // O monitor mostra o que está saindo de fato: o fps medido cai para 5.
-  await expect(host.getByText(/^\d+p · 5 fps$/)).toBeVisible({ timeout: 15_000 })
+  // O monitor mostra o que está saindo de fato: o fps medido cai para no máximo 5. Com a tela quase
+  // parada, a captura só manda quadro quando algo muda e sai menos que isso.
+  await expect(host.getByText(/^\d+p · [1-5] fps$/)).toBeVisible({ timeout: 15_000 })
 
   await recebeVideoEAudio(espectador)
   await expect(host.getByTestId('espectadores')).toContainText('1 pessoa assistindo')

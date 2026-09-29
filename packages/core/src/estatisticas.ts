@@ -11,6 +11,8 @@ export type EstatisticasEnvio = {
   perdaPct: number
   /** Por que o navegador está reduzindo a qualidade, se estiver. */
   limitacao: 'cpu' | 'banda' | null
+  /** Falso quando o dynacast pausou todas as camadas: ninguém está assistindo. */
+  enviando: boolean
 }
 
 export type AmostraEnvio = { em: number; bytesVideo: number; bytesAudio: number }
@@ -69,6 +71,7 @@ export function resumirEnvio(
       codec: typeof mimeType === 'string' ? (mimeType.split('/')[1] ?? null) : null,
       perdaPct: Math.round(perda * 1000) / 10,
       limitacao: LIMITACOES[String(maisAlta?.qualityLimitationReason)] ?? null,
+      enviando: maisAlta !== undefined,
     },
     amostra: { em: agoraMs, bytesVideo, bytesAudio },
   }
