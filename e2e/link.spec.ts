@@ -118,9 +118,27 @@ test('ajustes ao vivo não derrubam quem está assistindo nem reabrem a captura'
   const ajustes = host.getByRole('complementary', { name: 'Ajustes da transmissão' })
   await ajustes.getByText('5', { exact: true }).click()
   await ajustes.getByText('Voz', { exact: true }).click()
-  await expect(host.getByText('5 fps · até 8 Mbps · áudio Voz')).toBeVisible()
+  // O monitor mostra o que está saindo de fato: o fps medido cai para 5.
+  await expect(host.getByText(/^\d+p · 5 fps$/)).toBeVisible({ timeout: 15_000 })
 
   await recebeVideoEAudio(espectador)
   await expect(host.getByTestId('espectadores')).toContainText('1 pessoa assistindo')
   expect(await capturas()).toBe(capturasAoVivo)
+})
+
+test('um link do Telando copiado vira sugestão no Início, e entra com um clique', async () => {
+  // O host copia o link sozinho ao entrar no ar; o amigo, na mesma máquina, vê a sugestão.
+  await transmitir()
+  const { janela } = await abrirApp()
+  await expect(janela.getByText('Copiado agora há pouco')).toBeVisible()
+  await janela.getByRole('button', { name: /^Entrar em / }).click()
+  await expect(janela.getByRole('heading', { name: 'Entrar para assistir' })).toBeVisible()
+})
+
+test('depois do Parar, o host não vê o próprio link como sugestão', async () => {
+  const { host } = await transmitir()
+  await host.getByRole('button', { name: 'Parar' }).click()
+  await expect(host.getByRole('button', { name: 'Compartilhar tela' })).toBeVisible()
+  await host.waitForTimeout(1000)
+  await expect(host.getByText('Copiado agora há pouco')).toBeHidden()
 })

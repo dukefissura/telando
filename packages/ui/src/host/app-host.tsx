@@ -1,10 +1,13 @@
 import { type ConfigTransmissao, lerConfigSalva, mensagemDoErro } from '@telando/core'
 import { useTransmissao } from '@telando/core/cliente'
+import { AnimatePresence, motion } from 'motion/react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Botao, classeCampo } from '../controles.tsx'
+import { ENTRADA, SAIDA } from '../movimento.ts'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { BotaoTema } from '../tema.tsx'
 import { AvisoAtualizacao } from './aviso-atualizacao.tsx'
+import { partesDo } from './link.tsx'
 import { TelaCompartilhando } from './tela-compartilhando.tsx'
 import { TelaConfiguracoes } from './tela-configuracoes.tsx'
 import { TelaLinkFixo } from './tela-link-fixo.tsx'
@@ -24,19 +27,53 @@ function useConfigSalva(preferencias: Plataforma['preferencias']) {
   return [config, mudar] as const
 }
 
+// Links que não voltam como sugestão: os usados, os dispensados e os do próprio host (que ele
+// copiou para mandar aos amigos). Ficam no módulo porque o Início desmonta a cada vez que a
+// pessoa vai assistir, configurar ou transmitir, e a lista precisa sobreviver a isso.
+const linksQueNaoVoltam = new Set<string>()
+
+/**
+ * Um link do Telando copiado há pouco vira sugestão no "Entrar com um link". Consulta ao abrir e a
+ * cada vez que a janela ganha foco.
+ */
+function useSugestaoDeLink(ler: Plataforma['linkNaAreaDeTransferencia'], meuLink: string | null) {
+  const [sugestao, setSugestao] = useState<string | null>(null)
+
+  useEffect(() => {
+    const consultar = () =>
+      void ler().then((texto) =>
+        setSugestao(texto && texto !== meuLink && !linksQueNaoVoltam.has(texto) ? texto : null),
+      )
+    consultar()
+    window.addEventListener('focus', consultar)
+    return () => window.removeEventListener('focus', consultar)
+  }, [ler, meuLink])
+
+  const dispensar = () => {
+    if (sugestao) linksQueNaoVoltam.add(sugestao)
+    setSugestao(null)
+  }
+  return { sugestao, dispensar }
+}
+
 function TelaInicio({
   meuLink,
   aoCompartilhar,
   aoAbrirLinkFixo,
   aoEntrarComLink,
   avisoLink,
+  lerAreaDeTransferencia,
 }: {
   meuLink: MeuLinkFixo | null
   aoCompartilhar: () => void
   aoAbrirLinkFixo: () => void
   aoEntrarComLink: (texto: string) => void
   avisoLink: string | null
+  lerAreaDeTransferencia: Plataforma['linkNaAreaDeTransferencia']
 }) {
+  const { sugestao, dispensar } = useSugestaoDeLink(lerAreaDeTransferencia, meuLink?.url ?? null)
+  const partes = sugestao ? partesDo(sugestao) : null
+
   const entrar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault()
     const campo = new FormData(evento.currentTarget).get('link')
@@ -76,11 +113,45 @@ function TelaInicio({
           <label htmlFor="entrar-link" className="text-sm text-texto-suave">
             Entrar com um link
           </label>
+          <AnimatePresence initial={false}>
+            {sugestao && partes && (
+              <motion.div
+                key="sugestao"
+                className="grid"
+                initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+                animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+                exit={{ ...SAIDA, gridTemplateRows: '0fr' }}
+                transition={ENTRADA}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-borda bg-superficie py-1.5 pr-1.5 pl-3">
+                    <div className="grid min-w-0 gap-0.5">
+                      <span className="text-texto-suave text-xs">Copiado agora há pouco</span>
+                      <span className="truncate font-mono text-sm tracking-tight">
+                        <span className="text-texto-suave">{partes.base}</span>
+                        <span className="text-destaque">{partes.final}</span>
+                      </span>
+                    </div>
+                    <Botao
+                      aria-label={`Entrar em ${sugestao}`}
+                      onClick={() => {
+                        dispensar()
+                        aoEntrarComLink(sugestao)
+                      }}
+                    >
+                      Entrar
+                    </Botao>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="flex gap-2">
             <input
               id="entrar-link"
               name="link"
               placeholder="Cole aqui o link que te mandaram"
+              onChange={dispensar}
               className={`${classeCampo} min-w-0 flex-1`}
             />
             <Botao type="submit">Entrar</Botao>
@@ -125,6 +196,14 @@ export function AppHost({
   useEffect(() => {
     if (estado.fase === 'ao-vivo') setTela('inicio')
   }, [estado.fase])
+
+  // Os links desta transmissão vão para a área de transferência (para mandar aos amigos) e não
+  // podem voltar como sugestão depois do "Parar".
+  useEffect(() => {
+    if (estado.fase !== 'ao-vivo') return
+    linksQueNaoVoltam.add(estado.link)
+    if (estado.linkFixo) linksQueNaoVoltam.add(estado.linkFixo)
+  }, [estado])
 
   const iniciar = async (config: ConfigTransmissao) => {
     // Enquanto lê o segredo o botão já fica travado: um clique duplo abriria duas sessões.
@@ -204,6 +283,7 @@ export function AppHost({
         aoAbrirLinkFixo={() => setTela('link-fixo')}
         aoEntrarComLink={aoEntrarComLink}
         avisoLink={avisoLink}
+        lerAreaDeTransferencia={plataforma.linkNaAreaDeTransferencia}
       />
       <AvisoAtualizacao atualizacao={plataforma.atualizacao} />
     </>

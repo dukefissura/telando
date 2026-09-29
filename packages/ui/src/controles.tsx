@@ -5,7 +5,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
  * descida. Só translate e scale; o reduced-motion do tema.css zera a transição.
  */
 export const animacaoBotao =
-  'transition-[color,background-color,border-color,opacity,translate,scale] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] active:duration-75'
+  'transition-[color,background-color,border-color,box-shadow,opacity,translate,scale] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] active:duration-75'
 
 const VARIANTES = {
   primario: 'bg-destaque text-sobre-destaque hover:bg-destaque/90',

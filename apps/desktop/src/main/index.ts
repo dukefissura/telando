@@ -1,10 +1,12 @@
 import { randomBytes } from 'node:crypto'
 import { cpus } from 'node:os'
 import { join } from 'node:path'
+import { destinoDoLink } from '@telando/core'
 import type { MeuLinkFixo } from '@telando/ui'
 import {
   app,
   BrowserWindow,
+  clipboard,
   globalShortcut,
   type IpcMainEvent,
   type IpcMainInvokeEvent,
@@ -289,6 +291,12 @@ function registrarIpc() {
     const link = linkPendente
     linkPendente = null
     return link
+  })
+  // Só um link do Telando sai da área de transferência; qualquer outro conteúdo fica no main.
+  ipcMain.handle(CANAIS.linkNaAreaDeTransferencia, async (evento) => {
+    exigirOrigem(evento)
+    const texto = (await clipboard.readText()).slice(0, 2048).trim()
+    return destinoDoLink(texto) ? texto : null
   })
   ipcMain.handle(CANAIS.versaoNova, (evento) => {
     exigirOrigem(evento)

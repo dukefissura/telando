@@ -1,7 +1,9 @@
 import { RoomContext } from '@livekit/components-react'
 import { apelidoAleatorio, ErroApi } from '@telando/core'
+import { motion } from 'motion/react'
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
 import { Botao, classeCampo } from '../controles.tsx'
+import { ENTRADA } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { BotaoTema } from '../tema.tsx'
 import { Aviso, Centro } from './aviso.tsx'
@@ -75,10 +77,14 @@ export function Assistir({
     </Botao>
   )
 
-  if (sala.fase === 'conectado') {
+  if (sala.fase === 'conectado' || sala.fase === 'encerrando') {
     return (
       <RoomContext.Provider value={sala.room}>
-        <Palco fontes={plataforma.fontes} aoSair={aoVoltar} />
+        <Palco
+          fontes={plataforma.fontes}
+          aoSair={aoVoltar}
+          desligando={sala.fase === 'encerrando'}
+        />
       </RoomContext.Provider>
     )
   }
@@ -86,9 +92,15 @@ export function Assistir({
   const aviso = (() => {
     if (sala.fase === 'encerrada')
       return (
-        <Aviso titulo="Sessão encerrada" texto="Quem estava compartilhando parou a transmissão.">
-          {voltar}
-        </Aviso>
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={ENTRADA}
+        >
+          <Aviso titulo="Sessão encerrada" texto="Quem estava compartilhando parou a transmissão.">
+            {voltar}
+          </Aviso>
+        </motion.div>
       )
     if (sala.fase === 'removido')
       return (

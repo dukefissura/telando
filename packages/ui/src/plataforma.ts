@@ -43,6 +43,8 @@ export type Plataforma = {
   linkPendente(): Promise<string | null>
   /** Avisa que chegou um link com o app aberto; devolve a função que remove o ouvinte. */
   aoChegarLink(callback: () => void): () => void
+  /** O texto da área de transferência, só se for um link do Telando. */
+  linkNaAreaDeTransferencia(): Promise<string | null>
   /** Versão nova já baixada em segundo plano (só no app instalado). */
   atualizacao: {
     versaoNova(): Promise<string | null>

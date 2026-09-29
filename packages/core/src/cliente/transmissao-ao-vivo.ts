@@ -151,9 +151,14 @@ export class TransmissaoAoVivo {
     }))
   }
 
-  /** A sala do LiveKit, para o chat e as reações. */
+  /** A sala do LiveKit, para os avisos do revezamento. */
   get sala() {
     return this.room
+  }
+
+  /** O vídeo capturado que está indo ao ar; muda quando a fonte é trocada. */
+  get trilhaDeVideo(): MediaStreamTrack {
+    return this.captura.video
   }
 
   trancar(trancada: boolean) {

@@ -21,6 +21,7 @@ const plataformaDesktop: Plataforma = {
   aoAtalhoParar: telando.aoAtalhoParar,
   linkPendente: telando.linkPendente,
   aoChegarLink: telando.aoChegarLink,
+  linkNaAreaDeTransferencia: telando.linkNaAreaDeTransferencia,
   atualizacao: {
     versaoNova: telando.versaoNova,
     aoChegar: telando.aoChegarVersaoNova,

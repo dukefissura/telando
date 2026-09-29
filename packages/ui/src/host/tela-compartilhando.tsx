@@ -1,4 +1,9 @@
-import { type ConfigTransmissao, formatarMbps, uploadNecessarioKbps } from '@telando/core'
+import {
+  type ConfigTransmissao,
+  formatarMbps,
+  type TransmissaoResolvida,
+  uploadNecessarioKbps,
+} from '@telando/core'
 import {
   codecsDoHost,
   type Estatisticas,
@@ -6,13 +11,14 @@ import {
   useAvisosSala,
   type useTransmissao,
 } from '@telando/core/cliente'
-import { AnimatePresence, motion } from 'motion/react'
+import { type Room, Track } from 'livekit-client'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
-import { Alternador, Botao, Secao } from '../controles.tsx'
-import { ENTRADA, MOLA_SUAVE, SAIDA } from '../movimento.ts'
+import { Alternador, animacaoBotao, Botao, Secao } from '../controles.tsx'
+import { ENTRADA, LIGAR_TV, MOLA_SUAVE, SAIDA } from '../movimento.ts'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
-import { Link } from './link.tsx'
+import { Link, partesDo } from './link.tsx'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
 import { PainelFonte, useFontes } from './painel-fonte.tsx'
 import { useMicrofones } from './use-microfones.ts'
@@ -97,6 +103,153 @@ function AbreEspaco({ children }: { children: ReactNode }) {
   )
 }
 
+/** A tela de quem apresenta no lugar do host, se a sala já recebe o vídeo dela. */
+function trilhaDoApresentador(sala: Room | null, identity: string): MediaStreamTrack | null {
+  const publicacao = sala?.remoteParticipants
+    .get(identity)
+    ?.getTrackPublication(Track.Source.ScreenShare)
+  return publicacao?.track?.mediaStreamTrack ?? null
+}
+
+/**
+ * O que vai ao ar, visto de quem compartilha. Sempre mudo, para não fazer eco. A trilha é relida
+ * a cada render (as estatísticas redesenham a tela a cada segundo): trocar a fonte troca a trilha.
+ */
+function MonitorDeRetorno({
+  trilha,
+  cartela,
+  children,
+}: {
+  trilha: MediaStreamTrack | null
+  /** No lugar do vídeo: pausado, ou a vez com outra pessoa cuja tela ainda não chegou. */
+  cartela: ReactNode
+  /** A faixa de baixo: AO VIVO, quem assiste e a qualidade. */
+  children: ReactNode
+}) {
+  const refVideo = useRef<HTMLVideoElement>(null)
+  const trilhaNoVideo = useRef<MediaStreamTrack | null>(null)
+
+  useEffect(() => {
+    if (!refVideo.current || trilha === trilhaNoVideo.current) return
+    trilhaNoVideo.current = trilha
+    refVideo.current.srcObject = trilha ? new MediaStream([trilha]) : null
+  })
+
+  return (
+    <motion.div
+      {...LIGAR_TV}
+      className="relative aspect-video origin-center overflow-hidden rounded-xl border border-borda bg-black"
+    >
+      <motion.video
+        ref={refVideo}
+        autoPlay
+        muted
+        playsInline
+        aria-label="O que está indo ao ar"
+        className="absolute inset-0 h-full w-full object-contain"
+        animate={{ opacity: cartela ? 0 : 1 }}
+        transition={ENTRADA}
+      />
+      <AnimatePresence initial={false}>
+        {cartela && (
+          <motion.div
+            key="cartela"
+            className="absolute inset-0 grid place-items-center p-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={SAIDA}
+            transition={ENTRADA}
+          >
+            {cartela}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <span className="absolute top-3 left-3 rounded-md bg-fundo/80 px-2.5 py-1 text-texto-suave text-xs">
+        O que eles veem
+      </span>
+      <div className="absolute inset-x-3 bottom-3 flex items-center gap-2.5 text-sm">
+        {children}
+      </div>
+    </motion.div>
+  )
+}
+
+const AMOSTRAS_DO_SINAL = 30
+const POSICOES_DO_SINAL = Array.from({ length: AMOSTRAS_DO_SINAL }, (_, i) => i)
+
+/**
+ * O resumo da transmissão ao vivo, com um gráfico dos últimos 30s de vídeo enviado. Abre e fecha
+ * as estatísticas completas; fica em aviso quando a qualidade cai.
+ */
+function FaixaDeSinal({
+  estatisticas,
+  resolvida,
+  abertas,
+  aoAlternar,
+}: {
+  estatisticas: Estatisticas | null
+  resolvida: TransmissaoResolvida
+  abertas: boolean
+  aoAlternar: () => void
+}) {
+  const reduzir = useReducedMotion()
+  const [historico, setHistorico] = useState<number[]>([])
+
+  useEffect(() => {
+    if (estatisticas)
+      setHistorico((atual) => [...atual, estatisticas.videoKbps].slice(-AMOSTRAS_DO_SINAL))
+  }, [estatisticas])
+
+  const limitacao = estatisticas?.limitacao ?? null
+  const resumo = estatisticas
+    ? `${estatisticas.altura}p · ${estatisticas.fps} fps · ${formatarMbps(estatisticas.videoKbps)} · perda ${estatisticas.perdaPct.toLocaleString('pt-BR')}%`
+    : resolvida.resumo
+  // As mais antigas à esquerda; enquanto não há 30 amostras, o começo fica no mínimo.
+  const amostra = (posicao: number) =>
+    historico[historico.length - AMOSTRAS_DO_SINAL + posicao] ?? 0
+  const alturaDaBarra = (kbps: number) =>
+    Math.max(2, Math.min(20, (kbps / Math.max(resolvida.bitrateKbps, 1)) * 20))
+
+  return (
+    <button
+      type="button"
+      onClick={aoAlternar}
+      aria-expanded={abertas}
+      aria-label={`Estatísticas: ${resumo}`}
+      className={`grid w-full gap-2 rounded-lg border px-3 py-2.5 text-left hover:bg-superficie ${animacaoBotao} ${limitacao ? 'border-aviso/40' : 'border-borda'}`}
+    >
+      <span className={`flex items-center gap-3 ${limitacao ? 'text-aviso' : 'text-texto-suave'}`}>
+        <span className="font-mono text-xs tabular-nums">{resumo}</span>
+        <span className="ml-auto flex h-5 items-end gap-0.5" aria-hidden>
+          {POSICOES_DO_SINAL.map((posicao) => (
+            <span
+              key={posicao}
+              className={`w-[3px] rounded-[1px] bg-current opacity-80 ${reduzir ? '' : 'transition-[height] duration-[400ms] ease-out'}`}
+              style={{ height: alturaDaBarra(amostra(posicao)) }}
+            />
+          ))}
+        </span>
+      </span>
+      <AnimatePresence initial={false}>
+        {limitacao && (
+          <motion.span
+            key="limitacao"
+            className="grid"
+            initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+            animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+            exit={{ ...SAIDA, gridTemplateRows: '0fr' }}
+            transition={ENTRADA}
+          >
+            <span role="status" className="min-h-0 overflow-hidden text-aviso text-xs">
+              {TEXTO_LIMITACAO[limitacao]}
+            </span>
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  )
+}
+
 /** Dois bipes curtos e baixos: dá para notar sem assustar ninguém em call. */
 function tocarAvisoDePedido() {
   const contexto = new AudioContext()
@@ -128,7 +281,7 @@ export function TelaCompartilhando({
 }) {
   const { estado, estatisticas } = controle
   const [painel, setPainel] = useState<'nenhum' | 'ajustes' | 'fonte'>('nenhum')
-  const [verEstatisticas, setVerEstatisticas] = useState(false)
+  const [abertas, setAbertas] = useState(false)
   // Os controles mostram o que o host escolheu na hora; a transmissão alcança logo depois.
   const [rascunho, setRascunho] = useState<ConfigTransmissao | null>(null)
   const [avisoFonte, setAvisoFonte] = useState<string | null>(null)
@@ -170,6 +323,30 @@ export function TelaCompartilhando({
   const aviso = estado.aviso ?? avisoFonte ?? avisoLink
   const nomeDe = (identity: string) =>
     estado.espectadores.find((e) => e.identity === identity)?.nome ?? 'Alguém'
+  // Com a vez com outra pessoa, o que vai ao ar é a tela dela (se a sala já recebe).
+  const trilhaNoAr = apresentador
+    ? trilhaDoApresentador(controle.sala, apresentador)
+    : controle.trilhaLocal()
+  const canal = estado.linkFixo ? partesDo(estado.linkFixo) : null
+  const cartela =
+    apresentador && !trilhaNoAr ? (
+      <p className="text-sm">
+        Agora: tela de {nomeDe(apresentador)}. A sua está pausada para quem assiste.
+      </p>
+    ) : !apresentador && estado.pausado ? (
+      <div className="grid gap-2">
+        {canal && (
+          <p className="font-mono text-base tracking-tight">
+            <span className="text-texto-suave">{canal.base}</span>
+            <span className="text-destaque">{canal.final}</span>
+          </p>
+        )}
+        <p className="font-semibold">O host pausou o compartilhamento</p>
+      </div>
+    ) : null
+  const qualidadeNoAr = estatisticas
+    ? `${estatisticas.altura}p · ${estatisticas.fps} fps`
+    : `${resolvida.alvo.altura}p · ${resolvida.fps} fps`
   // Quem pediu e saiu da sala some da lista.
   const pedidosAtivos = pedidos.filter((p) =>
     estado.espectadores.some((e) => e.identity === p.identity),
@@ -208,8 +385,8 @@ export function TelaCompartilhando({
   return (
     <main className="relative mx-auto grid w-full max-w-6xl gap-6 p-6 min-[1100px]:grid-cols-[minmax(0,1fr)_24rem] min-[1100px]:items-start min-[1100px]:p-10">
       <div className="grid content-start gap-5">
-        <div className="flex items-center gap-3 text-sm">
-          <span className="relative inline-flex items-center gap-1.5 rounded-full bg-ao-vivo/10 px-2.5 py-1 font-medium text-ao-vivo text-xs tracking-wider">
+        <MonitorDeRetorno trilha={trilhaNoAr} cartela={cartela}>
+          <span className="relative inline-flex items-center gap-1.5 rounded-full bg-fundo/80 px-2.5 py-1 font-medium text-ao-vivo text-xs tracking-wider">
             <span
               className="size-1.5 animate-pulse rounded-full bg-ao-vivo motion-reduce:animate-none"
               aria-hidden
@@ -227,7 +404,7 @@ export function TelaCompartilhando({
               />
             )}
           </span>
-          <span className="text-texto-suave tabular-nums">
+          <span className="rounded-md bg-fundo/80 px-2 py-0.5 text-texto-suave tabular-nums">
             <span className="sr-only" data-testid="espectadores">
               {contagem === 1 ? '1 pessoa assistindo' : `${contagem} pessoas assistindo`}
             </span>
@@ -236,8 +413,10 @@ export function TelaCompartilhando({
               {contagem === 1 ? 'pessoa assistindo' : 'pessoas assistindo'}
             </span>
           </span>
-          {estado.pausado && <span className="ml-auto text-aviso">Vídeo pausado</span>}
-        </div>
+          <span className="ml-auto rounded-md bg-fundo/80 px-2 py-0.5 font-mono text-texto-suave text-xs tabular-nums">
+            {qualidadeNoAr}
+          </span>
+        </MonitorDeRetorno>
 
         {/* Os cards abrem e fecham o próprio espaço; o -mt-5 anula o gap quando não há nenhum. */}
         <div className="-mt-5">
@@ -313,7 +492,21 @@ export function TelaCompartilhando({
             destacarFinal={false}
             aoCopiar={controle.copiarLink}
           />
-          <p className="font-mono text-texto-suave text-xs tabular-nums">{resolvida.resumo}</p>
+          <div>
+            <FaixaDeSinal
+              estatisticas={estatisticas}
+              resolvida={resolvida}
+              abertas={abertas}
+              aoAlternar={() => setAbertas(!abertas)}
+            />
+            <AnimatePresence initial={false}>
+              {abertas && (
+                <AbreEspaco key="estatisticas">
+                  <PainelEstatisticas estatisticas={estatisticas} />
+                </AbreEspaco>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {config.audioSistema && !estado.comAudio && (
@@ -328,14 +521,6 @@ export function TelaCompartilhando({
             className="rounded-lg border border-parar/40 px-3 py-2 text-parar text-sm"
           >
             {aviso}
-          </p>
-        )}
-        {estatisticas?.limitacao && (
-          <p
-            role="status"
-            className="rounded-lg border border-aviso/40 px-3 py-2 text-aviso text-sm"
-          >
-            {TEXTO_LIMITACAO[estatisticas.limitacao]}
           </p>
         )}
 
@@ -364,16 +549,10 @@ export function TelaCompartilhando({
           >
             Ajustes
           </Botao>
-          <Botao
-            variante="fantasma"
-            onClick={() => setVerEstatisticas(!verEstatisticas)}
-            aria-expanded={verEstatisticas}
-          >
-            Estatísticas
+          <Botao variante="perigo" className="ml-auto" onClick={controle.parar}>
+            Parar
           </Botao>
         </div>
-
-        {verEstatisticas && <PainelEstatisticas estatisticas={estatisticas} />}
 
         {painel === 'fonte' && (
           <section aria-label="Trocar o que está sendo compartilhado" className="grid gap-3">
@@ -409,10 +588,6 @@ export function TelaCompartilhando({
             </Secao>
           </aside>
         )}
-
-        <Botao variante="perigo" className="justify-self-start" onClick={controle.parar}>
-          Parar
-        </Botao>
       </div>
 
       <aside aria-label="Sala" className="grid content-start gap-5">

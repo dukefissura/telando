@@ -1,5 +1,13 @@
 # Novidades
 
+## 0.4.0
+
+- **Você vê o que está indo ao ar.** A tela de transmissão abre com um monitor da imagem que quem assiste recebe, com o AO VIVO, quem está assistindo e a qualidade por cima.
+- **A prévia roda dentro do card escolhido**, ao vivo, e o "Iniciar" fica sempre à vista.
+- **Link copiado vira atalho.** Se você copiou um link do Telando, a tela inicial oferece entrar nele com um clique.
+- **Faixa de sinal.** O resumo da transmissão mostra o que está saindo de verdade, com um gráfico dos últimos 30 segundos; clique para ver as estatísticas completas. Fica amarela quando a qualidade cai.
+- **A TV desliga** quando quem compartilhava para a transmissão.
+
 ## 0.3.2
 
 - **Atualizações sem baixar o instalador de novo.** O Telando procura versões novas ao abrir e a cada 4 horas, baixa em segundo plano e mostra "Reiniciar e atualizar" na tela inicial. Se você não clicar, a versão nova entra na próxima vez que sair pelo menu da bandeja. Nunca interrompe uma transmissão.

@@ -46,6 +46,9 @@ test('capturas das telas', async () => {
   await alternarTema(host)
   await capturar(hostApp, 'inicio-claro')
   await host.getByRole('button', { name: 'Compartilhar tela' }).click()
+  await host.getByRole('button', { name: /^Tela 1/ }).click()
+  // A prévia ao vivo leva um instante para o primeiro quadro.
+  await host.waitForTimeout(1500)
   await capturar(hostApp, 'configuracoes-claro')
   await capturar(amigo, 'encerrada-escuro')
 })

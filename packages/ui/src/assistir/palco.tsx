@@ -21,7 +21,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
-import { ENTRADA, MOLA_SUAVE, SAIDA, TRANSICAO_SELO } from '../movimento.ts'
+import { DESLIGAR_TV, ENTRADA, LIGAR_TV, SAIDA, TRANSICAO_SELO } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { Aviso } from './aviso.tsx'
 import { BarraDeControles, type Qualidade } from './barra-de-controles.tsx'
@@ -103,19 +103,7 @@ function VideoDaTela({
   const pausado = useIsMuted(tela)
   return (
     <>
-      <motion.div
-        className="absolute inset-0 origin-center"
-        initial={{ scaleX: 0, scaleY: 0.004, opacity: 0, filter: 'brightness(3)' }}
-        animate={{
-          scaleX: [0, 1, 1],
-          scaleY: [0.004, 0.004, 1],
-          opacity: [0, 1, 1],
-          filter: ['brightness(3)', 'brightness(3)', 'brightness(1)'],
-          // Um filter que fica no ancestral do vídeo tira ele do overlay de hardware.
-          transitionEnd: { filter: 'none' },
-        }}
-        transition={{ duration: 0.42, times: [0, 0.43, 1], ease: MOLA_SUAVE }}
-      >
+      <motion.div className="absolute inset-0 origin-center" {...LIGAR_TV}>
         <VideoTrack trackRef={tela} ref={refVideo} className="h-full w-full object-contain" />
       </motion.div>
       {pausado && (
@@ -130,7 +118,40 @@ function VideoDaTela({
   )
 }
 
-export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair: () => void }) {
+const LARGURA_DO_QUADRO = 640
+const INTERVALO_DO_QUADRO_MS = 500
+
+/**
+ * Guarda de tempos em tempos um quadro reduzido do vídeo. Quando o host para, o LiveKit tira o
+ * vídeo na hora; é sobre esse quadro que a TV desliga.
+ */
+function useUltimoQuadro(refVideo: RefObject<HTMLVideoElement | null>, parar: boolean) {
+  const refQuadro = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    if (parar) return
+    const intervalo = setInterval(() => {
+      const video = refVideo.current
+      const quadro = refQuadro.current
+      if (!video || !quadro || video.videoWidth === 0) return
+      quadro.width = LARGURA_DO_QUADRO
+      quadro.height = Math.round((LARGURA_DO_QUADRO * video.videoHeight) / video.videoWidth)
+      quadro.getContext('2d')?.drawImage(video, 0, 0, quadro.width, quadro.height)
+    }, INTERVALO_DO_QUADRO_MS)
+    return () => clearInterval(intervalo)
+  }, [refVideo, parar])
+  return refQuadro
+}
+
+export function Palco({
+  fontes,
+  aoSair,
+  desligando,
+}: {
+  fontes: Plataforma['fontes']
+  aoSair: () => void
+  /** O host parou: a imagem fecha numa linha, vira um ponto e apaga. */
+  desligando: boolean
+}) {
   const room = useRoomContext()
   const { metadata } = useRoomInfo()
   const sessao = lerSessaoMetadata(metadata)
@@ -158,6 +179,7 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
   const [jaViuOHost, setJaViuOHost] = useState(false)
   const refPalco = useRef<HTMLDivElement>(null)
   const refVideo = useRef<HTMLVideoElement>(null)
+  const refQuadro = useUltimoQuadro(refVideo, desligando)
   const ativo = useAtividade()
 
   const publicacao =
@@ -304,6 +326,30 @@ export function Palco({ fontes, aoSair }: { fontes: Plataforma['fontes']; aoSair
             revezamento={<BotaoRevezamento revezamento={revezamento} />}
             aoSair={aoSair}
           />
+        </div>
+        {/* Sempre montada, para o canvas guardar o quadro; só aparece quando a TV desliga. */}
+        <div
+          aria-hidden
+          className={
+            desligando ? 'absolute inset-0 z-10 grid place-items-center bg-black' : 'hidden'
+          }
+        >
+          <motion.div
+            className="absolute inset-0 origin-center"
+            initial={false}
+            animate={desligando ? DESLIGAR_TV.animate : DESLIGAR_TV.initial}
+            transition={desligando ? DESLIGAR_TV.transition : { duration: 0 }}
+          >
+            <canvas ref={refQuadro} className="h-full w-full object-contain" />
+          </motion.div>
+          {desligando && (
+            <motion.span
+              className="size-1.5 rounded-full bg-texto shadow-[0_0_12px_2px_rgb(237_237_237/0.5)]"
+              initial={{ opacity: 0, scale: 1 }}
+              animate={{ opacity: [0, 1, 0], scale: [1, 1, 0.2] }}
+              transition={{ duration: 0.65, times: [0, 0.46, 1], ease: 'easeIn' }}
+            />
+          )}
         </div>
       </main>
 

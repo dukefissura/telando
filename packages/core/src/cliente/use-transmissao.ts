@@ -275,5 +275,6 @@ export function useTransmissao({ api, usoDeCpu }: Opcoes) {
     alternarAudio: alternar('audioMudo'),
     alternarMicrofone: alternar('microfoneMudo'),
     nivelAudio: () => ativa.current?.nivelAudio() ?? 0,
+    trilhaLocal: () => ativa.current?.trilhaDeVideo ?? null,
   }
 }

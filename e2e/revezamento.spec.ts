@@ -64,7 +64,7 @@ test('revezamento: o amigo pede, o host aprova e um terceiro passa a ver a tela 
   await compartilharComoAmigo(amigo)
 
   await expect(terceiro.getByText('Agora: tela de Capivara Azul')).toBeVisible()
-  await expect(host.getByText('Agora: tela de Capivara Azul')).toBeVisible()
+  await expect(host.getByRole('button', { name: 'Retomar minha tela' })).toBeVisible()
   await expect(amigo.getByRole('heading', { name: 'Você está mostrando a sua tela' })).toBeVisible()
   await recebeVideoEAudio(terceiro)
 

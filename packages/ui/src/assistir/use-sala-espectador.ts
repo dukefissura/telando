@@ -1,12 +1,15 @@
 import { ErroApi, mensagemDoErro } from '@telando/core'
 import { DisconnectReason, Room, RoomEvent } from 'livekit-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { DURACAO_DESLIGAR_TV_MS } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 
 export type SalaEspectador =
   | { fase: 'formulario' }
   | { fase: 'entrando' }
   | { fase: 'conectado'; room: Room }
+  /** O host parou: o palco toca a TV desligando antes do aviso. */
+  | { fase: 'encerrando'; room: Room }
   | { fase: 'encerrada' }
   | { fase: 'removido' }
   | { fase: 'trancada' }
@@ -48,7 +51,19 @@ export function useSalaEspectador(api: Plataforma['api'], id: string) {
       const room = new Room()
       try {
         const entrada = await api.entrarNaSessao(id, apelido)
-        room.on(RoomEvent.Disconnected, (motivo) => setSala(faseAoDesconectar(motivo)))
+        room.on(RoomEvent.Disconnected, (motivo) => {
+          const proxima = faseAoDesconectar(motivo)
+          // Só o fim normal ganha a TV desligando; queda e remoção cortam seco, que avisa melhor.
+          if (
+            proxima.fase !== 'encerrada' ||
+            matchMedia('(prefers-reduced-motion: reduce)').matches
+          ) {
+            setSala(proxima)
+            return
+          }
+          setSala({ fase: 'encerrando', room })
+          setTimeout(() => montado.current && setSala(proxima), DURACAO_DESLIGAR_TV_MS)
+        })
         await room.connect(entrada.livekitUrl, entrada.livekitToken)
         // A tela pode ter fechado (ou trocado de sessão) enquanto conectava.
         if (!montado.current) {

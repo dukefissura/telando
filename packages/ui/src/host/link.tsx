@@ -5,7 +5,7 @@ import { Botao } from '../controles.tsx'
 import { ESTALO } from '../movimento.ts'
 
 /** Separa "telando.app/s/" de "k7Qm2xPa9L" para o final do link ganhar destaque. */
-function partesDo(url: string) {
+export function partesDo(url: string) {
   const { host, pathname } = new URL(url)
   const corte = pathname.lastIndexOf('/') + 1
   return { base: `${host}${pathname.slice(0, corte)}`, final: pathname.slice(corte) }

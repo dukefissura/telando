@@ -20,7 +20,7 @@ test('o app compartilha a tela com áudio do sistema e troca resolução ao vivo
   await recebeVideoEAudio(espectador)
   await expect(janela.getByTestId('espectadores')).toContainText('1 pessoa assistindo')
 
-  await janela.getByRole('button', { name: 'Estatísticas' }).click()
+  await janela.getByRole('button', { name: /^Estatísticas/ }).click()
   await janela.getByRole('button', { name: 'Ajustes' }).click()
   await janela.getByText('720p', { exact: true }).click()
   await expect

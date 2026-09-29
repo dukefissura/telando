@@ -22,6 +22,7 @@ const telando: TelandoDesktop = {
     ipcRenderer.on(CANAIS.chegouLink, ouvinte)
     return () => ipcRenderer.off(CANAIS.chegouLink, ouvinte)
   },
+  linkNaAreaDeTransferencia: () => ipcRenderer.invoke(CANAIS.linkNaAreaDeTransferencia),
   versaoNova: () => ipcRenderer.invoke(CANAIS.versaoNova),
   aoChegarVersaoNova: (callback) => {
     const ouvinte = () => callback()
