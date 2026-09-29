@@ -1,7 +1,9 @@
 import { apelidoAleatorio, ErroApi, estadoLinkSchema, mensagemDoErro } from '@telando/core'
+import { UserRound } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { Botao, classeCampo } from '../controles.tsx'
+import { IconeTelando } from '../barra-do-app.tsx'
+import { Botao, classeCampoEmGrupo, Grupo, LinhaDeGrupo } from '../controles.tsx'
 import { SAIDA, TRANSICAO_SELO } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { Assistir } from './assistir.tsx'
@@ -72,7 +74,7 @@ function Canal({ dominio, slug }: { dominio: string | null; slug: string }) {
   return (
     <motion.p
       layoutId="selo-tela"
-      className="justify-self-center font-mono text-[22px] tracking-tight"
+      className="justify-self-center font-mono text-[20px] tracking-tight"
       transition={TRANSICAO_SELO}
     >
       {dominio && <span className="text-texto-suave">{dominio}/</span>}
@@ -161,25 +163,32 @@ export function EsperarLinkFixo({
   return (
     <Centro>
       <Varredura />
-      <div className="grid w-full max-w-sm gap-6 p-8">
-        <Canal dominio={dominio} slug={slug} />
-        <Aviso
-          titulo={
-            estado.jaTransmitiu
+      <div className="grid w-[400px] max-w-[calc(100vw-2rem)] justify-items-center gap-7 text-center">
+        <IconeTelando className="size-[72px] opacity-90" />
+        <div role="status" className="grid gap-2">
+          <Canal dominio={dominio} slug={slug} />
+          <h1 className="font-semibold text-2xl tracking-tight">
+            {estado.jaTransmitiu
               ? `${estado.nome} encerrou a transmissão`
-              : `${estado.nome} não está ao vivo agora`
-          }
-          texto="Deixe o Telando aberto: ele entra na transmissão assim que começar."
-        />
-        <label className="grid gap-2 text-sm">
-          <span className="text-texto-suave">Seu apelido</span>
-          <input
-            value={apelido}
-            maxLength={32}
-            onChange={(e) => setApelido(e.target.value)}
-            className={classeCampo}
-          />
-        </label>
+              : `${estado.nome} não está ao vivo agora`}
+          </h1>
+          <p className="text-pretty text-[15px] text-texto-suave leading-[22px]">
+            Deixe o Telando aberto: ele entra na transmissão assim que começar.
+          </p>
+        </div>
+        <div className="w-full text-left">
+          <Grupo rotulo="Seu apelido">
+            <LinhaDeGrupo icone={UserRound}>
+              <input
+                aria-label="Seu apelido"
+                value={apelido}
+                maxLength={32}
+                onChange={(e) => setApelido(e.target.value)}
+                className={classeCampoEmGrupo}
+              />
+            </LinhaDeGrupo>
+          </Grupo>
+        </div>
         <Botao variante="fantasma" onClick={aoVoltar}>
           Voltar
         </Botao>

@@ -1,7 +1,7 @@
 import { Check, Copy } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { Botao } from '../controles.tsx'
+import { Botao, BotaoIcone } from '../controles.tsx'
 import { ESTALO } from '../movimento.ts'
 
 /** Separa "telando.app/s/" de "k7Qm2xPa9L" para o final do link ganhar destaque. */
@@ -58,19 +58,20 @@ function useSintonia(final: string, ligada: boolean) {
 /**
  * O link é o que o app existe para produzir, então ele é o elemento de destaque da tela do host:
  * Geist Mono grande, e o endereço pessoal do link fixo na cor de destaque, como um canal de TV.
+ * O `principal` abre o card de links; a `linha` é o link só desta transmissão, embaixo dele.
  */
 export function Link({
   id,
   rotulo,
   url,
-  grande,
+  variante,
   destacarFinal,
   aoCopiar,
 }: {
   id: string
   rotulo: string
   url: string
-  grande: boolean
+  variante: 'principal' | 'linha'
   destacarFinal: boolean
   aoCopiar: (url: string) => Promise<boolean>
 }) {
@@ -80,6 +81,7 @@ export function Link({
   const { base, final } = partesDo(url)
   const sintonizando = useSintonia(final, destacarFinal && !reduzir)
   const copiado = copia === 'copiado'
+  const textoCopia = copiado ? 'Copiado' : copia === 'falhou' ? 'Selecione e copie' : 'Copiar'
 
   useEffect(() => {
     if (copia === 'parado') return
@@ -87,30 +89,84 @@ export function Link({
     return () => clearTimeout(timer)
   }, [copia])
 
+  const copiar = async () => {
+    const deuCerto = await aoCopiar(url)
+    setCopia(deuCerto ? 'copiado' : 'falhou')
+    if (deuCerto) setCopias((n) => n + 1)
+  }
+
+  const icone = (
+    <span className="relative grid size-4 place-items-center">
+      <AnimatePresence initial={false}>
+        <motion.span
+          key={copiado ? 'check' : 'copy'}
+          className="absolute"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+          transition={{ duration: 0.2, ease: ESTALO }}
+        >
+          {copiado ? (
+            <Check size={16} strokeWidth={1.75} aria-hidden />
+          ) : (
+            <Copy size={16} strokeWidth={1.75} aria-hidden />
+          )}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  )
+
+  // O endereço acende no destaque a cada cópia e apaga de novo.
+  const brilho = copias > 0 && (
+    <motion.span
+      key={copias}
+      aria-hidden
+      className="pointer-events-none absolute -inset-x-2 -inset-y-1 rounded-xl ring-1 ring-destaque"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1, 1, 0] }}
+      transition={{ duration: 0.7, times: [0, 0.2, 0.57, 1], ease: 'easeOut' }}
+    />
+  )
+
+  if (variante === 'linha') {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="relative grid min-w-0 flex-1 gap-0.5">
+          {brilho}
+          <span id={`${id}-rotulo`} className="text-texto-suave text-xs">
+            {rotulo}
+          </span>
+          <output
+            id={id}
+            data-url={url}
+            aria-labelledby={`${id}-rotulo`}
+            title={url}
+            className="min-w-0 select-all truncate font-mono text-[13px] tracking-tight"
+          >
+            {/* Só o fim importa aqui; o endereço inteiro está no link de cima. */}
+            <span className="text-texto-suave">…{base.slice(base.indexOf('/'))}</span>
+            <span className="font-medium text-texto">{final}</span>
+          </output>
+        </div>
+        <BotaoIcone tamanho="pequeno" rotulo={textoCopia} onClick={() => void copiar()}>
+          {icone}
+        </BotaoIcone>
+      </div>
+    )
+  }
+
   return (
-    <div className="grid gap-1.5">
-      <span id={`${id}-rotulo`} className="text-texto-suave text-xs">
+    <div className="grid gap-2.5">
+      <span id={`${id}-rotulo`} className="sr-only">
         {rotulo}
       </span>
-      <div
-        className={`relative flex items-center gap-3 rounded-xl border border-borda bg-superficie pr-2 pl-4 ${grande ? 'py-3' : 'py-1.5'}`}
-      >
-        {copias > 0 && (
-          // A borda acende no destaque a cada cópia e apaga de novo.
-          <motion.span
-            key={copias}
-            aria-hidden
-            className="pointer-events-none absolute -inset-px rounded-xl border border-destaque"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 1, 1, 0] }}
-            transition={{ duration: 0.7, times: [0, 0.2, 0.57, 1], ease: 'easeOut' }}
-          />
-        )}
+      <div className="relative min-w-0">
+        {brilho}
         <output
           id={id}
           data-url={url}
           aria-labelledby={`${id}-rotulo`}
-          className={`min-w-0 flex-1 select-all truncate font-mono tracking-tight ${grande ? 'text-xl' : 'text-sm'}`}
+          className="block min-w-0 select-all truncate font-mono text-[17px] tracking-tight"
         >
           <motion.span
             className="text-texto-suave"
@@ -132,35 +188,11 @@ export function Link({
             </>
           )}
         </output>
-        <Botao
-          variante={grande ? 'primario' : 'secundario'}
-          onClick={async () => {
-            const deuCerto = await aoCopiar(url)
-            setCopia(deuCerto ? 'copiado' : 'falhou')
-            if (deuCerto) setCopias((n) => n + 1)
-          }}
-        >
-          <span className="relative grid size-4 place-items-center">
-            <AnimatePresence initial={false}>
-              <motion.span
-                key={copiado ? 'check' : 'copy'}
-                className="absolute"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
-                transition={{ duration: 0.2, ease: ESTALO }}
-              >
-                {copiado ? (
-                  <Check size={16} strokeWidth={1.5} aria-hidden />
-                ) : (
-                  <Copy size={16} strokeWidth={1.5} aria-hidden />
-                )}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-          {copiado ? 'Copiado' : copia === 'falhou' ? 'Selecione e copie' : 'Copiar'}
-        </Botao>
       </div>
+      <Botao variante="primario" tamanho="barra" className="w-full" onClick={() => void copiar()}>
+        {icone}
+        {textoCopia}
+      </Botao>
     </div>
   )
 }

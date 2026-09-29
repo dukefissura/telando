@@ -1,7 +1,7 @@
 import { Moon, Sun } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { animacaoBotao } from './controles.tsx'
+import { BotaoIcone } from './controles.tsx'
 
 type Tema = 'escuro' | 'claro'
 const CHAVE = 'telando:tema'
@@ -69,14 +69,8 @@ export function BotaoTema() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={alternar}
-      aria-label={rotulo}
-      title={rotulo}
-      className={`rounded-lg p-2 text-texto-suave hover:bg-superficie-2 hover:text-texto ${animacaoBotao}`}
-    >
-      <Icone size={18} strokeWidth={1.5} aria-hidden />
-    </button>
+    <BotaoIcone rotulo={rotulo} onClick={alternar}>
+      <Icone size={17} strokeWidth={1.75} aria-hidden />
+    </BotaoIcone>
   )
 }

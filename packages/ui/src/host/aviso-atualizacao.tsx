@@ -1,7 +1,8 @@
+import { Sparkles } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Botao } from '../controles.tsx'
-import { ENTRADA, SAIDA } from '../movimento.ts'
+import { MOLA_SUAVE, SAIDA } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 
 /**
@@ -22,16 +23,17 @@ export function AvisoAtualizacao({ atualizacao }: { atualizacao: Plataforma['atu
       {versao && (
         <motion.div
           role="status"
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={SAIDA}
-          transition={ENTRADA}
-          className="fixed bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-4 rounded-xl border border-borda bg-superficie py-2 pr-2 pl-4 text-sm"
+          transition={{ duration: 0.3, ease: MOLA_SUAVE }}
+          className="vidro fixed bottom-6 left-1/2 flex w-max -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-full py-1.5 pr-1.5 pl-4 text-[13px]"
         >
+          <Sparkles size={15} aria-hidden className="text-destaque" />
           <span>
             A versão <span className="font-mono">{versao}</span> do Telando está pronta.
           </span>
-          <Botao variante="primario" onClick={atualizacao.instalar}>
+          <Botao variante="invertido" tamanho="compacto" onClick={atualizacao.instalar}>
             Reiniciar e atualizar
           </Botao>
         </motion.div>

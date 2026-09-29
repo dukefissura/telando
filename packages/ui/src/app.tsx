@@ -5,7 +5,7 @@ import { Assistir } from './assistir/assistir.tsx'
 import { EsperarLinkFixo } from './assistir/esperar-link-fixo.tsx'
 import { Botao } from './controles.tsx'
 import { AppHost } from './host/app-host.tsx'
-import { ENTRADA, SAIDA } from './movimento.ts'
+import { MOLA_SUAVE, SAIDA } from './movimento.ts'
 import type { Plataforma } from './plataforma.ts'
 
 /** Um link chegou com uma sessão aberta: trocar só se a pessoa quiser. */
@@ -14,18 +14,18 @@ function PerguntaDeTroca({ aoAbrir, aoIgnorar }: { aoAbrir: () => void; aoIgnora
     <motion.div
       role="alertdialog"
       aria-label="Abrir outro link"
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={SAIDA}
-      transition={ENTRADA}
-      className="fixed top-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-borda bg-fundo py-2 pr-2 pl-4 text-sm"
+      transition={{ duration: 0.3, ease: MOLA_SUAVE }}
+      className="vidro fixed top-4 left-1/2 z-50 flex w-max -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-full py-1.5 pr-1.5 pl-4 text-[13px]"
     >
       Chegou outro link. Sair desta transmissão e abrir?
       <span className="flex gap-1">
-        <Botao variante="primario" onClick={aoAbrir}>
+        <Botao variante="primario" tamanho="compacto" onClick={aoAbrir}>
           Abrir
         </Botao>
-        <Botao variante="fantasma" onClick={aoIgnorar}>
+        <Botao variante="fantasma" tamanho="compacto" onClick={aoIgnorar}>
           Ficar aqui
         </Botao>
       </span>

@@ -21,6 +21,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
+import { Avatar } from '../controles.tsx'
 import { DESLIGAR_TV, ENTRADA, LIGAR_TV, SAIDA, TRANSICAO_SELO } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { Aviso } from './aviso.tsx'
@@ -277,18 +278,19 @@ export function Palco({
             <motion.p
               layoutId="selo-tela"
               aria-live="polite"
-              className="overflow-hidden rounded-md bg-fundo/80 px-2.5 py-1 text-sm"
+              className={`vidro-video overflow-hidden rounded-full py-1.5 pr-3.5 text-[13px] ${nomeNaTela ? 'pl-1.5' : 'pl-3.5'}`}
               transition={TRANSICAO_SELO}
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={textoSelo}
-                  className="block"
+                  className="flex items-center gap-2"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={ENTRADA}
                 >
+                  {nomeNaTela && <Avatar nome={nomeNaTela} className="size-6 text-[11px]" />}
                   {textoSelo}
                 </motion.span>
               </AnimatePresence>
@@ -299,7 +301,7 @@ export function Palco({
         {conexao === ConnectionState.Reconnecting && (
           <p
             role="status"
-            className="absolute top-4 right-4 rounded-md bg-fundo/90 px-2.5 py-1 text-aviso text-sm"
+            className="vidro-video absolute top-4 right-4 rounded-full px-3.5 py-1.5 text-[13px] text-aviso"
           >
             Reconectando…
           </p>
@@ -307,7 +309,7 @@ export function Palco({
 
         {/* Ao ficar ocioso a barra afunda 8px enquanto some; volta mais rápido do que sai. */}
         <div
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-[opacity,translate] ${ativo ? 'translate-y-0 opacity-100 duration-150 ease-out' : 'translate-y-2 opacity-0 duration-200 ease-in focus-within:translate-y-0 focus-within:opacity-100 hover:translate-y-0 hover:opacity-100'}`}
+          className={`absolute bottom-5 left-1/2 -translate-x-1/2 transition-[opacity,translate] ${ativo ? 'translate-y-0 opacity-100 duration-150 ease-out' : 'translate-y-2 opacity-0 duration-200 ease-in focus-within:translate-y-0 focus-within:opacity-100 hover:translate-y-0 hover:opacity-100'}`}
         >
           <BarraDeControles
             volume={volume}

@@ -9,6 +9,7 @@ import {
 } from '@telando/core'
 import { compartilharComoConvidado } from '@telando/core/cliente'
 import type { Room } from 'livekit-client'
+import { Hand } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alternador, Botao, Segmentado } from '../controles.tsx'
@@ -124,15 +125,20 @@ export function EscolherOQueCompartilhar({
       animate={{ opacity: 1, scale: 1 }}
       transition={ENTRADA}
       aria-label="Você foi aprovado"
-      className="grid max-h-[calc(100dvh-8rem)] w-[44rem] max-w-[calc(100vw-2rem)] gap-5 overflow-y-auto rounded-xl border border-borda bg-fundo p-5"
+      className="grid max-h-[calc(100dvh-8rem)] w-[44rem] max-w-[calc(100vw-2rem)] gap-[18px] overflow-y-auto rounded-[28px] border border-grupo-borda bg-superficie p-[22px] shadow-[0_30px_60px_-30px_rgb(0_0_0/0.9)]"
     >
-      <h2 className="font-semibold">Você foi aprovado, escolha o que compartilhar</h2>
-      <PainelFonte lista={lista} escolhida={fonte?.id ?? null} aoEscolher={setFonte} />
+      <PainelFonte
+        titulo="Você foi aprovado, escolha o que compartilhar"
+        lista={lista}
+        escolhida={fonte?.id ?? null}
+        aoEscolher={setFonte}
+      />
       <Segmentado
         rotulo="Tipo de conteúdo"
         opcoes={(Object.keys(PRESETS) as PresetId[]).map((id) => ({
           valor: id,
-          texto: PRESETS[id].nome,
+          texto: PRESETS[id].nomeCurto,
+          dica: PRESETS[id].nome,
         }))}
         valor={preset}
         aoMudar={setPreset}
@@ -170,9 +176,10 @@ export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) 
       return (
         <button
           type="button"
-          className={classeBotaoDaBarra}
+          className={`${classeBotaoDaBarra} bg-preenchimento-forte`}
           onClick={() => void revezamento.pedir()}
         >
+          <Hand size={17} strokeWidth={1.75} aria-hidden />
           Pedir para compartilhar
         </button>
       )
@@ -188,7 +195,7 @@ export function BotaoRevezamento({ revezamento }: { revezamento: Revezamento }) 
       )
     case 'recusado':
       return (
-        <span role="status" className="px-2.5 text-sm text-texto-suave">
+        <span role="status" className="px-3.5 text-[13px] text-texto-suave">
           O host recusou agora
         </span>
       )

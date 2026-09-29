@@ -11,9 +11,19 @@ import {
   uploadNecessarioKbps,
 } from '@telando/core'
 import { codecsDoHost } from '@telando/core/cliente'
+import { ChevronLeft, Link2, Monitor, Volume2 } from 'lucide-react'
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { Alternador, Botao, Secao, Segmentado } from '../controles.tsx'
+import { BarraDoApp, Luz } from '../barra-do-app.tsx'
+import {
+  Alternador,
+  Botao,
+  BotaoIcone,
+  Grupo,
+  Secao,
+  Segmentado,
+  Separador,
+} from '../controles.tsx'
 import { ENTRADA } from '../movimento.ts'
 import type { FonteDeCaptura, MeuLinkFixo, Plataforma } from '../plataforma.ts'
 import { PainelAudio, PainelVideo } from './paineis.tsx'
@@ -63,8 +73,8 @@ function ResultadoDoTeste({
   )
 }
 
-// A régua vai até 10 Mbps, como no handoff; uma configuração que pede mais fica com a marca no fim.
-const ESCALA_KBPS = 10_000
+// A régua vai até 20 Mbps: o Jogo pede uns 14,6 com a folga, e a marca precisa caber nela.
+const ESCALA_KBPS = 20_000
 // easeOutCubic: 1 - (1 - p)^3.
 const ASSENTAR = [0.33, 1, 0.68, 1] as const
 
@@ -107,12 +117,14 @@ function ReguaDeUpload({ teste, necessarioKbps }: { teste: Teste; necessarioKbps
   }, [teste, reduzir, kbps])
 
   const temValor = teste.fase === 'medido' || (teste.fase === 'medindo' && !reduzir)
-  const cor =
+  const cabe = teste.fase === 'medido' && teste.uploadKbps >= necessarioKbps
+  const cor = teste.fase !== 'medido' ? 'text-texto-suave' : cabe ? 'text-destaque' : 'text-aviso'
+  const preenchido =
     teste.fase !== 'medido'
-      ? 'text-texto-suave'
-      : teste.uploadKbps >= necessarioKbps
-        ? 'text-destaque'
-        : 'text-aviso'
+      ? 'bg-texto-suave'
+      : cabe
+        ? 'bg-[linear-gradient(90deg,var(--destaque),var(--destaque-claro))] shadow-[0_0_12px_rgb(59_158_255/0.6)]'
+        : 'bg-aviso'
   const marca = Math.min(100, (necessarioKbps / ESCALA_KBPS) * 100)
 
   return (
@@ -123,14 +135,14 @@ function ReguaDeUpload({ teste, necessarioKbps }: { teste: Teste; necessarioKbps
           {temValor ? <motion.span>{texto}</motion.span> : '—'}
         </span>
       </div>
-      <div className="relative h-1.5 rounded-full bg-superficie-2">
+      <div className="relative h-1.5 rounded-full bg-preenchimento">
         <motion.div
-          className="absolute inset-0 origin-left rounded-full bg-current"
+          className={`absolute inset-0 origin-left rounded-full ${preenchido}`}
           style={{ scaleX: preenchimento }}
         />
         <span
           aria-hidden
-          className="absolute -top-1.5 -bottom-1.5 w-px bg-texto-suave"
+          className="absolute -top-1.5 -bottom-1.5 w-0.5 -translate-x-1/2 rounded bg-texto"
           style={{ left: `${marca}%` }}
         />
       </div>
@@ -210,19 +222,31 @@ export function TelaConfiguracoes({
     }
   }
 
-  return (
-    <main className="mx-auto grid w-full max-w-6xl gap-6 p-6 min-[1100px]:p-10">
-      <header className="flex items-center justify-between">
-        <h1 className="font-semibold text-lg">Configurar transmissão</h1>
-        <Botao variante="fantasma" onClick={aoVoltar}>
-          Voltar
-        </Botao>
-      </header>
+  const audio = config.audioSistema
+    ? config.microfone.ativo
+      ? 'Som do PC + mic'
+      : 'Som do PC'
+    : config.microfone.ativo
+      ? 'Só o mic'
+      : 'Sem som'
 
-      <div className="grid gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_24rem] min-[1100px]:items-start">
-        <section aria-label="O que compartilhar" className="grid gap-3">
-          <h2 className="font-medium">O que compartilhar</h2>
+  return (
+    <main className="relative isolate flex min-h-dvh flex-col">
+      <Luz posicao="45% 40% at 30% 0%" />
+      <BarraDoApp>
+        <BotaoIcone rotulo="Voltar" onClick={aoVoltar}>
+          <ChevronLeft size={18} aria-hidden />
+        </BotaoIcone>
+        <h1 className="font-semibold text-[17px]">Configurar transmissão</h1>
+      </BarraDoApp>
+
+      <div className="mx-auto grid w-full max-w-[1320px] gap-5 px-6 pt-2 pb-6 min-[1100px]:grid-cols-[minmax(0,1fr)_360px] min-[1100px]:items-start">
+        <section
+          aria-label="O que compartilhar"
+          className="grid content-start gap-[18px] rounded-[28px] border border-grupo-borda bg-superficie p-[22px]"
+        >
           <PainelFonte
+            titulo="O que compartilhar"
             lista={fontes}
             escolhida={fonteAtual?.id ?? null}
             aoEscolher={escolherFonte}
@@ -235,19 +259,24 @@ export function TelaConfiguracoes({
           )}
         </section>
 
-        <div className="grid gap-5">
+        <div className="grid content-start gap-[18px]">
           <Segmentado
             rotulo={preset === 'personalizado' ? 'Preset: personalizado' : 'Preset'}
             opcoes={(Object.keys(PRESETS) as PresetId[]).map((id) => ({
               valor: id,
-              texto: PRESETS[id].nome,
+              texto: PRESETS[id].nomeCurto,
+              dica: PRESETS[id].nome,
             }))}
             valor={preset === 'personalizado' ? null : preset}
             aoMudar={(id) => aoMudarConfig(aplicarPreset(config, id))}
           />
 
-          <div>
-            <Secao titulo="Vídeo">
+          <Grupo>
+            <Secao
+              titulo="Vídeo"
+              icone={Monitor}
+              valor={`${resolvida.alvo.altura}p · ${config.fps} fps`}
+            >
               <PainelVideo
                 config={config}
                 aoMudar={aoMudarConfig}
@@ -256,67 +285,80 @@ export function TelaConfiguracoes({
                 uploadNecessarioKbps={necessarioKbps}
               />
             </Secao>
-            <Secao titulo="Áudio">
+            <Separador />
+            <Secao titulo="Áudio" icone={Volume2} valor={audio}>
               <PainelAudio config={config} aoMudar={aoMudarConfig} microfones={microfones} />
             </Secao>
-          </div>
-
-          <div className="grid gap-1.5">
-            <span className="text-texto-suave text-xs">Vai ao ar</span>
-            <p className="text-sm">{fonteAtual?.nome ?? 'Nada escolhido ainda'}</p>
-          </div>
-
-          <div className="grid gap-2">
-            <p className="font-mono text-sm" data-testid="resumo">
-              {resolvida.resumo}
-            </p>
-            <ReguaDeUpload teste={teste} necessarioKbps={necessarioKbps} />
-            <div className="flex items-center gap-3">
-              <Botao onClick={testar} disabled={teste.fase === 'medindo'}>
-                {teste.fase === 'medindo' ? 'Testando…' : 'Testar conexão'}
-              </Botao>
-              <motion.div
-                key={teste.fase}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={ENTRADA}
-              >
-                <ResultadoDoTeste
-                  teste={teste}
-                  necessarioKbps={necessarioKbps}
-                  aoUsarPreset={(id) => aoMudarConfig(aplicarPreset(config, id))}
-                />
-              </motion.div>
-            </div>
-          </div>
-
-          <div className="grid gap-2">
             {linkFixo && (
-              <Alternador
-                rotulo="Usar meu link fixo nesta transmissão"
-                descricao={linkFixo.url}
-                ligado={usarLinkFixo}
-                aoMudar={aoMudarUsarLinkFixo}
-              />
+              <>
+                <Separador />
+                <Alternador
+                  icone={Link2}
+                  rotulo="Usar meu link fixo nesta transmissão"
+                  descricao={
+                    // Encurta do começo: o fim do endereço é o que a pessoa reconhece.
+                    <span className="block truncate font-mono text-[11px] [direction:rtl]">
+                      <bdi>{linkFixo.url}</bdi>
+                    </span>
+                  }
+                  ligado={usarLinkFixo}
+                  aoMudar={aoMudarUsarLinkFixo}
+                />
+              </>
             )}
-            <Botao
-              variante="primario"
-              className="py-3"
-              onClick={aoIniciar}
-              disabled={iniciando || precisaEscolherFonte}
-            >
-              {iniciando
-                ? 'Começando…'
-                : precisaEscolherFonte
-                  ? 'Escolha uma tela ou janela'
-                  : 'Iniciar'}
-            </Botao>
-            {erro && (
-              <p role="alert" className="text-parar text-sm">
-                {erro}
+          </Grupo>
+
+          <div className="grupo grid gap-3.5 p-4">
+            <div className="grid gap-0.5">
+              <span className="text-texto-suave text-xs">Vai ao ar</span>
+              <p className="font-medium text-[15px]">
+                {fonteAtual?.nome ?? 'Nada escolhido ainda'}
               </p>
-            )}
+              <p className="font-mono text-texto-suave text-xs" data-testid="resumo">
+                {resolvida.resumo}
+              </p>
+            </div>
+            <ReguaDeUpload teste={teste} necessarioKbps={necessarioKbps} />
+            <motion.div
+              key={teste.fase}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={ENTRADA}
+            >
+              <ResultadoDoTeste
+                teste={teste}
+                necessarioKbps={necessarioKbps}
+                aoUsarPreset={(id) => aoMudarConfig(aplicarPreset(config, id))}
+              />
+            </motion.div>
+            <Botao
+              tamanho="compacto"
+              className="justify-self-start"
+              onClick={testar}
+              disabled={teste.fase === 'medindo'}
+            >
+              {teste.fase === 'medindo' ? 'Testando…' : 'Testar conexão'}
+            </Botao>
           </div>
+
+          <Botao
+            variante="primario"
+            tamanho="grande"
+            className="w-full"
+            onClick={aoIniciar}
+            disabled={iniciando || precisaEscolherFonte}
+          >
+            {iniciando
+              ? 'Começando…'
+              : precisaEscolherFonte
+                ? 'Escolha uma tela ou janela'
+                : 'Iniciar'}
+          </Botao>
+          {erro && (
+            <p role="alert" className="pl-4 text-parar text-sm">
+              {erro}
+            </p>
+          )}
         </div>
       </div>
     </main>

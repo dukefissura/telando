@@ -1,11 +1,18 @@
 import { type ConfigTransmissao, lerConfigSalva, mensagemDoErro } from '@telando/core'
 import { useTransmissao } from '@telando/core/cliente'
-import { AnimatePresence, motion } from 'motion/react'
+import { Clipboard, Link2, LogIn, ScreenShare } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { Botao, classeCampo } from '../controles.tsx'
-import { ENTRADA, SAIDA } from '../movimento.ts'
+import { BarraDoApp, IconeTelando, Luz, Marca } from '../barra-do-app.tsx'
+import {
+  AbreEspaco,
+  Botao,
+  classeCampoEmGrupo,
+  Grupo,
+  LinhaDeGrupo,
+  Separador,
+} from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
-import { BotaoTema } from '../tema.tsx'
 import { AvisoAtualizacao } from './aviso-atualizacao.tsx'
 import { partesDo } from './link.tsx'
 import { TelaCompartilhando } from './tela-compartilhando.tsx'
@@ -81,83 +88,103 @@ function TelaInicio({
   }
 
   return (
-    <main className="relative grid min-h-dvh content-center px-8 py-16">
-      <div className="absolute top-4 right-4">
-        <BotaoTema />
-      </div>
-      <div className="mx-auto grid w-full max-w-md gap-10">
-        <div className="grid gap-3">
-          <h1 className="font-semibold text-[40px] leading-[1.1] tracking-tight">Telando</h1>
-          <p className="text-lg text-texto-suave">Mostre sua tela para quem tiver o link.</p>
+    <main className="relative isolate flex min-h-dvh flex-col">
+      <Luz posicao="55% 45% at 50% 18%" />
+      <BarraDoApp>
+        <Marca />
+      </BarraDoApp>
+      <div className="mx-auto grid w-full max-w-[440px] gap-8 px-4 pt-16 pb-24">
+        <div className="grid justify-items-center gap-3 text-center">
+          <IconeTelando className="size-24 drop-shadow-[0_18px_30px_rgb(11_107_219/0.28)]" />
+          <h1 className="font-semibold text-[40px] leading-[1.1] tracking-[-0.03em]">Telando</h1>
+          <p className="text-[17px] text-texto-suave leading-[26px]">
+            Mostre sua tela para quem tiver o link.
+          </p>
         </div>
 
-        <Botao variante="primario" tamanho="grande" onClick={aoCompartilhar}>
+        <Botao variante="primario" tamanho="grande" className="w-full" onClick={aoCompartilhar}>
+          <ScreenShare size={19} aria-hidden />
           Compartilhar tela
         </Botao>
 
-        <div className="flex items-center justify-between gap-4 border-borda border-t pt-5">
-          {meuLink ? (
-            <p className="min-w-0 truncate font-mono text-sm">
-              <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
-              <span className="text-destaque">{meuLink.slug}</span>
-            </p>
-          ) : (
-            <p className="text-sm text-texto-suave">Um endereço que seus amigos salvam.</p>
-          )}
-          <Botao variante="fantasma" onClick={aoAbrirLinkFixo}>
-            {meuLink ? 'Editar link fixo' : 'Criar link fixo'}
-          </Botao>
-        </div>
-
-        <form className="grid gap-2 border-borda border-t pt-5" onSubmit={entrar}>
-          <label htmlFor="entrar-link" className="text-sm text-texto-suave">
-            Entrar com um link
-          </label>
-          <AnimatePresence initial={false}>
-            {sugestao && partes && (
-              <motion.div
-                key="sugestao"
-                className="grid"
-                initial={{ gridTemplateRows: '0fr', opacity: 0 }}
-                animate={{ gridTemplateRows: '1fr', opacity: 1 }}
-                exit={{ ...SAIDA, gridTemplateRows: '0fr' }}
-                transition={ENTRADA}
+        <Grupo rotulo="Seu link fixo">
+          <LinhaDeGrupo
+            icone={Link2}
+            acessorio={
+              <Botao
+                variante="fantasma"
+                tamanho="compacto"
+                aria-label={meuLink ? 'Editar link fixo' : undefined}
+                onClick={aoAbrirLinkFixo}
               >
-                <div className="min-h-0 overflow-hidden">
-                  <div className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-borda bg-superficie py-1.5 pr-1.5 pl-3">
+                {meuLink ? 'Editar' : 'Criar link fixo'}
+              </Botao>
+            }
+          >
+            {meuLink ? (
+              <p className="min-w-0 truncate font-mono">
+                <span className="text-texto-suave">{new URL(meuLink.url).host}/</span>
+                <span className="text-destaque">{meuLink.slug}</span>
+              </p>
+            ) : (
+              <p className="text-texto-suave">Um endereço que seus amigos salvam.</p>
+            )}
+          </LinhaDeGrupo>
+        </Grupo>
+
+        <form className="grid gap-2" onSubmit={entrar}>
+          <Grupo rotulo="Entrar com um link">
+            <AnimatePresence initial={false}>
+              {sugestao && partes && (
+                <AbreEspaco key="sugestao">
+                  <LinhaDeGrupo
+                    icone={Clipboard}
+                    destaque
+                    acessorio={
+                      <Botao
+                        tamanho="compacto"
+                        aria-label={`Entrar em ${sugestao}`}
+                        onClick={() => {
+                          dispensar()
+                          aoEntrarComLink(sugestao)
+                        }}
+                      >
+                        Entrar
+                      </Botao>
+                    }
+                  >
                     <div className="grid min-w-0 gap-0.5">
                       <span className="text-texto-suave text-xs">Copiado agora há pouco</span>
-                      <span className="truncate font-mono text-sm tracking-tight">
+                      <span className="truncate font-mono tracking-tight">
                         <span className="text-texto-suave">{partes.base}</span>
                         <span className="text-destaque">{partes.final}</span>
                       </span>
                     </div>
-                    <Botao
-                      aria-label={`Entrar em ${sugestao}`}
-                      onClick={() => {
-                        dispensar()
-                        aoEntrarComLink(sugestao)
-                      }}
-                    >
-                      Entrar
-                    </Botao>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <div className="flex gap-2">
-            <input
-              id="entrar-link"
-              name="link"
-              placeholder="Cole aqui o link que te mandaram"
-              onChange={dispensar}
-              className={`${classeCampo} min-w-0 flex-1`}
-            />
-            <Botao type="submit">Entrar</Botao>
-          </div>
+                  </LinhaDeGrupo>
+                  <Separador />
+                </AbreEspaco>
+              )}
+            </AnimatePresence>
+            <LinhaDeGrupo
+              icone={LogIn}
+              acessorio={
+                <Botao variante="fantasma" tamanho="compacto" type="submit">
+                  Entrar
+                </Botao>
+              }
+            >
+              <input
+                id="entrar-link"
+                name="link"
+                aria-label="Entrar com um link"
+                placeholder="Cole aqui o link que te mandaram"
+                onChange={dispensar}
+                className={classeCampoEmGrupo}
+              />
+            </LinhaDeGrupo>
+          </Grupo>
           {avisoLink && (
-            <p role="alert" className="text-parar text-sm">
+            <p role="alert" className="pl-4 text-parar text-sm">
               {avisoLink}
             </p>
           )}

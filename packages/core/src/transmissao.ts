@@ -32,9 +32,11 @@ type CamposDoPreset = Pick<
   'resolucao' | 'fps' | 'bitrateMaxKbps' | 'otimizacao' | 'qualidadeAudio' | 'simulcast'
 >
 
-export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string }> = {
+/** `nomeCurto` vai no segmentado; o `nome` fica na dica e nos textos corridos. */
+export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string; nomeCurto: string }> = {
   texto: {
     nome: 'Texto/código',
+    nomeCurto: 'Texto',
     resolucao: '1080p',
     // 30 e não 15: rolar código e documento a 15 fps parece travado.
     fps: 30,
@@ -45,6 +47,7 @@ export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string }> = {
   },
   jogo: {
     nome: 'Jogo',
+    nomeCurto: 'Jogo',
     resolucao: '1080p',
     fps: 60,
     // H.264 em software gasta mais bits que o x264 de uma live: 8 Mbps borrava cena com movimento.
@@ -56,6 +59,7 @@ export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string }> = {
   },
   filme: {
     nome: 'Filme/vídeo',
+    nomeCurto: 'Filme',
     resolucao: '1080p',
     fps: 30,
     bitrateMaxKbps: 10_000,
@@ -65,6 +69,7 @@ export const PRESETS: Record<PresetId, CamposDoPreset & { nome: string }> = {
   },
   economia: {
     nome: 'Economia',
+    nomeCurto: 'Economia',
     resolucao: '720p',
     fps: 30,
     bitrateMaxKbps: 2500,

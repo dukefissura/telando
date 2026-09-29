@@ -1,5 +1,14 @@
 # Novidades
 
+## 0.4.2
+
+- **Ícone novo**, "vidro sobre vidro": no instalador, no atalho, na bandeja (nítido em telas com zoom) e no site.
+- **Visual novo no app inteiro.** Botões em cápsula, listas agrupadas como nos Ajustes do sistema, uma luz azul suave ao fundo e vidro só nas barras que flutuam sobre a tela.
+- **Barra de ações** embaixo do monitor, com ícones: Pausar, Mutar, Trocar, Ajustes e Parar. O selo AO VIVO sobe para o topo, ao lado do nome.
+- **Card de links** com o botão Copiar em destaque e o link só desta transmissão logo abaixo.
+- **Quem está assistindo** aparece com a inicial de cada pessoa, no monitor e na lista.
+- **Quem assiste** tem uma barra de controles nova, com volume, qualidade e pedir a vez numa cápsula só.
+
 ## 0.4.1
 
 - **Imagem mais nítida e mais fluida.** O codec automático passou a ser H.264: quem assiste recebe 1080p a 30 fps no Texto e no Filme, em vez de 540p travando. O Jogo sai sem a camada extra e chega a 60 fps quando o PC aguenta.

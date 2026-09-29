@@ -1,6 +1,8 @@
 import { mensagemDoErro } from '@telando/core'
+import { ChevronLeft } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
-import { Botao, classeCampo } from '../controles.tsx'
+import { BarraDoApp, Luz } from '../barra-do-app.tsx'
+import { Botao, BotaoIcone, classeCampo } from '../controles.tsx'
 import type { MeuLinkFixo, Plataforma } from '../plataforma.ts'
 
 export function TelaLinkFixo({
@@ -37,59 +39,66 @@ export function TelaLinkFixo({
   }
 
   return (
-    <main className="mx-auto grid max-w-xl gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <h1 className="font-semibold text-lg">Meu link fixo</h1>
-        <Botao variante="fantasma" onClick={aoVoltar}>
-          Voltar
-        </Botao>
-      </header>
-
-      <p className="text-sm text-texto-suave">
-        Um endereço que seus amigos salvam nos favoritos. Quando você não estiver ao vivo, eles veem
-        um aviso e entram sozinhos assim que você começar.
-      </p>
-
-      {atual && (
-        <p className="grid gap-1 text-sm">
-          <span className="text-texto-suave">Seu link agora</span>
-          <span className="font-mono">{atual.url}</span>
+    <main className="relative isolate flex min-h-dvh flex-col">
+      <Luz posicao="45% 40% at 50% 0%" />
+      <BarraDoApp>
+        <BotaoIcone rotulo="Voltar" onClick={aoVoltar}>
+          <ChevronLeft size={18} aria-hidden />
+        </BotaoIcone>
+        <h1 className="font-semibold text-[17px]">Meu link fixo</h1>
+      </BarraDoApp>
+      <div className="mx-auto grid w-full max-w-[440px] gap-6 px-4 pt-6 pb-10">
+        <p className="text-sm text-texto-suave">
+          Um endereço que seus amigos salvam nos favoritos. Quando você não estiver ao vivo, eles
+          veem um aviso e entram sozinhos assim que você começar.
         </p>
-      )}
 
-      <form onSubmit={salvar} className="grid gap-4">
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-texto-suave">Seu nome (aparece para quem abrir o link)</span>
-          <input
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            maxLength={32}
-            required
-            className={classeCampo}
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-texto-suave">
-            Endereço (3 a 20 letras minúsculas, números ou hífen)
-          </span>
-          <input
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-            minLength={3}
-            maxLength={20}
-            required
-            className={`${classeCampo} font-mono`}
-          />
-        </label>
-        <Botao type="submit" variante="primario" disabled={salvando} className="justify-self-start">
-          {salvando ? 'Salvando…' : 'Salvar link'}
-        </Botao>
-        {erro && (
-          <p role="alert" className="text-parar text-sm">
-            {erro}
+        {atual && (
+          <p className="grid gap-1 text-sm">
+            <span className="text-texto-suave">Seu link agora</span>
+            <span className="font-mono">{atual.url}</span>
           </p>
         )}
-      </form>
+
+        <form onSubmit={salvar} className="grid gap-4">
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-texto-suave">Seu nome (aparece para quem abrir o link)</span>
+            <input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              maxLength={32}
+              required
+              className={classeCampo}
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-texto-suave">
+              Endereço (3 a 20 letras minúsculas, números ou hífen)
+            </span>
+            <input
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              minLength={3}
+              maxLength={20}
+              required
+              className={`${classeCampo} font-mono`}
+            />
+          </label>
+          <Botao
+            type="submit"
+            variante="primario"
+            disabled={salvando}
+            className="justify-self-start"
+          >
+            {salvando ? 'Salvando…' : 'Salvar link'}
+          </Botao>
+          {erro && (
+            <p role="alert" className="text-parar text-sm">
+              {erro}
+            </p>
+          )}
+        </form>
+      </div>
     </main>
   )
 }

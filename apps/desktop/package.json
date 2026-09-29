@@ -1,6 +1,6 @@
 {
   "name": "@telando/desktop",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "Telando: compartilhe a tela por um link",
   "type": "module",

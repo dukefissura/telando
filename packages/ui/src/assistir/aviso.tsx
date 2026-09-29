@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Luz } from '../barra-do-app.tsx'
 
 /** Um estado da sessão: o que aconteceu no título, o que fazer embaixo. */
 export function Aviso({
@@ -22,6 +23,9 @@ export function Aviso({
 /** Centraliza um aviso ou formulário na tela toda, sobre o fundo escuro. */
 export function Centro({ children }: { children: ReactNode }) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden">{children}</main>
+    <main className="relative isolate grid min-h-dvh place-items-center overflow-hidden">
+      <Luz posicao="40% 40% at 50% 38%" />
+      {children}
+    </main>
   )
 }

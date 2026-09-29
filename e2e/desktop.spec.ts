@@ -7,10 +7,10 @@ test.afterEach(fecharTodos)
 test('o app compartilha a tela com áudio do sistema e troca resolução ao vivo', async () => {
   const { host: janela, link } = await transmitir({
     antesDeIniciar: async (janela) => {
-      await janela.getByText('Filme/vídeo', { exact: true }).click()
+      await janela.getByText('Filme', { exact: true }).click()
       // Com uma camada só, a resolução nas estatísticas é a escolhida; com simulcast, o dynacast
       // pode mandar só a camada menor para um espectador de janela pequena.
-      await janela.locator('summary', { hasText: 'Vídeo' }).click()
+      await janela.getByRole('button', { name: /^Vídeo/ }).click()
       await janela.getByRole('switch', { name: 'Várias qualidades para quem assiste' }).uncheck()
       await janela.screenshot({ path: 'test-results/desktop-configuracoes.png' })
     },

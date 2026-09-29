@@ -12,10 +12,37 @@ import {
   type useTransmissao,
 } from '@telando/core/cliente'
 import { type Room, Track } from 'livekit-client'
+import {
+  AlertTriangle,
+  AppWindow,
+  ChevronDown,
+  Eye,
+  Lock,
+  Mic,
+  MicOff,
+  Monitor,
+  Pause,
+  Play,
+  SlidersHorizontal,
+  Square,
+  Users,
+  Volume2,
+  VolumeX,
+} from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useAtalhosDaJanela } from '../atalhos.ts'
-import { Alternador, animacaoBotao, Botao, Secao } from '../controles.tsx'
+import { BarraDoApp, Luz, Marca } from '../barra-do-app.tsx'
+import {
+  AbreEspaco,
+  Alternador,
+  Avatar,
+  Botao,
+  Grupo,
+  LinhaDeGrupo,
+  Secao,
+  Separador,
+} from '../controles.tsx'
 import { ENTRADA, LIGAR_TV, MOLA_SUAVE, SAIDA } from '../movimento.ts'
 import type { FonteDeCaptura, Plataforma } from '../plataforma.ts'
 import { Link, partesDo } from './link.tsx'
@@ -31,7 +58,7 @@ const TEXTO_LIMITACAO = {
 }
 
 function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | null }) {
-  if (!estatisticas) return <p className="text-sm text-texto-suave">Medindo…</p>
+  if (!estatisticas) return <p className="text-[13px] text-texto-suave">Medindo…</p>
   const linhas: Array<[string, string]> = [
     ['Resolução', `${estatisticas.largura}×${estatisticas.altura}`],
     ['Quadros', `${estatisticas.fps} fps`],
@@ -44,7 +71,7 @@ function PainelEstatisticas({ estatisticas }: { estatisticas: Estatisticas | nul
     linhas.push(['CPU do app', `${Math.round(estatisticas.cpuPct)}%`])
 
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm" data-testid="estatisticas">
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[13px]" data-testid="estatisticas">
       {linhas.map(([nome, valor]) => (
         <div key={nome} className="contents">
           <dt className="text-texto-suave">{nome}</dt>
@@ -86,23 +113,6 @@ function Odometro({ valor }: { valor: number }) {
   )
 }
 
-/** Abre e fecha o próprio espaço, para um card novo não empurrar a tela de uma vez. */
-function AbreEspaco({ children }: { children: ReactNode }) {
-  return (
-    <motion.div
-      className="grid"
-      initial={{ gridTemplateRows: '0fr', opacity: 0 }}
-      animate={{ gridTemplateRows: '1fr', opacity: 1 }}
-      exit={{ gridTemplateRows: '0fr', opacity: 0 }}
-      transition={ENTRADA}
-    >
-      <div className="min-h-0 overflow-hidden">
-        <div className="pt-5">{children}</div>
-      </div>
-    </motion.div>
-  )
-}
-
 /** A tela de quem apresenta no lugar do host, se a sala já recebe o vídeo dela. */
 function trilhaDoApresentador(sala: Room | null, identity: string): MediaStreamTrack | null {
   const publicacao = sala?.remoteParticipants
@@ -123,7 +133,7 @@ function MonitorDeRetorno({
   trilha: MediaStreamTrack | null
   /** No lugar do vídeo: pausado, ou a vez com outra pessoa cuja tela ainda não chegou. */
   cartela: ReactNode
-  /** A faixa de baixo: AO VIVO, quem assiste e a qualidade. */
+  /** A faixa de baixo: quem assiste e a qualidade. */
   children: ReactNode
 }) {
   const refVideo = useRef<HTMLVideoElement>(null)
@@ -138,7 +148,7 @@ function MonitorDeRetorno({
   return (
     <motion.div
       {...LIGAR_TV}
-      className="relative aspect-video origin-center overflow-hidden rounded-xl border border-borda bg-black"
+      className="relative aspect-video w-full origin-center overflow-hidden rounded-[28px] bg-black shadow-[0_0_0_1px_rgb(255_255_255/0.08),0_30px_60px_-30px_rgb(0_0_0/0.9)]"
     >
       <motion.video
         ref={refVideo}
@@ -164,10 +174,10 @@ function MonitorDeRetorno({
           </motion.div>
         )}
       </AnimatePresence>
-      <span className="absolute top-3 left-3 rounded-md bg-fundo/80 px-2.5 py-1 text-texto-suave text-xs">
-        O que eles veem
+      <span className="vidro-video absolute top-3.5 left-3.5 inline-flex items-center gap-1.5 rounded-full px-3 py-[5px] text-[13px]">
+        <Eye size={13} aria-hidden />O que eles veem
       </span>
-      <div className="absolute inset-x-3 bottom-3 flex items-center gap-2.5 text-sm">
+      <div className="absolute inset-x-3.5 bottom-3.5 flex items-center gap-2.5 text-[13px]">
         {children}
       </div>
     </motion.div>
@@ -179,20 +189,17 @@ const POSICOES_DO_SINAL = Array.from({ length: AMOSTRAS_DO_SINAL }, (_, i) => i)
 
 /**
  * O resumo da transmissão ao vivo, com um gráfico dos últimos 30s de vídeo enviado. Abre e fecha
- * as estatísticas completas; fica em aviso quando a qualidade cai.
+ * as estatísticas completas dentro do próprio grupo; fica em aviso quando a qualidade cai.
  */
 function FaixaDeSinal({
   estatisticas,
   resolvida,
-  abertas,
-  aoAlternar,
 }: {
   estatisticas: Estatisticas | null
   resolvida: TransmissaoResolvida
-  abertas: boolean
-  aoAlternar: () => void
 }) {
   const reduzir = useReducedMotion()
+  const [abertas, setAbertas] = useState(false)
   const [historico, setHistorico] = useState<number[]>([])
 
   useEffect(() => {
@@ -209,48 +216,119 @@ function FaixaDeSinal({
   // A escala é o pico recente, não o teto: tela parada manda bem abaixo do teto, e medidas contra
   // ele as barras viravam uma fileira de pontos.
   const pico = Math.max(1, ...historico)
-  const alturaDaBarra = (kbps: number) => Math.max(2, (kbps / pico) * 20)
+  const alturaDaBarra = (kbps: number) => Math.max(2, (kbps / pico) * 22)
 
   return (
-    <button
-      type="button"
-      onClick={aoAlternar}
-      aria-expanded={abertas}
-      aria-label={`Estatísticas: ${resumo}`}
-      className={`grid w-full gap-2 rounded-lg border px-3 py-2.5 text-left hover:bg-superficie ${animacaoBotao} ${limitacao ? 'border-aviso/40' : 'border-borda'}`}
+    <div
+      className="grupo"
+      // O utilitário grupo já pinta a borda; o estilo em linha é o que vence ele.
+      style={
+        limitacao ? { borderColor: 'color-mix(in srgb, var(--aviso) 40%, transparent)' } : undefined
+      }
     >
-      <span className={`flex items-center gap-3 ${limitacao ? 'text-aviso' : 'text-texto-suave'}`}>
-        <span className="font-mono text-xs tabular-nums">{resumo}</span>
-        <span className="ml-auto flex h-5 items-end gap-0.5" aria-hidden>
-          {POSICOES_DO_SINAL.map((posicao) => {
-            const kbps = amostra(posicao)
-            return (
-              <span
-                key={posicao}
-                className={`w-[3px] rounded-[1px] bg-current ${kbps === undefined ? 'opacity-25' : 'opacity-80'} ${reduzir ? '' : 'transition-[height] duration-[400ms] ease-out'}`}
-                style={{ height: alturaDaBarra(kbps ?? 0) }}
-              />
-            )
-          })}
+      <button
+        type="button"
+        onClick={() => setAbertas(!abertas)}
+        aria-expanded={abertas}
+        aria-label={`Estatísticas: ${resumo}`}
+        className="grid w-full gap-2 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-preenchimento"
+      >
+        <span className="flex items-center justify-between text-texto-suave text-xs">
+          Sinal
+          <ChevronDown
+            size={16}
+            aria-hidden
+            className={`transition-transform duration-150 ${abertas ? 'rotate-180' : ''}`}
+          />
         </span>
-      </span>
+        <span className={`flex items-center gap-3 ${limitacao ? 'text-aviso' : 'text-texto'}`}>
+          {/* Resolução e fps já estão no monitor; aqui fica o que é do sinal. */}
+          <span className="font-mono text-xs tabular-nums">
+            {estatisticas
+              ? `${formatarMbps(estatisticas.videoKbps)} · perda ${estatisticas.perdaPct.toLocaleString('pt-BR')}%`
+              : 'Medindo…'}
+          </span>
+          <span className="ml-auto flex h-[22px] items-end gap-0.5" aria-hidden>
+            {POSICOES_DO_SINAL.map((posicao) => {
+              const kbps = amostra(posicao)
+              return (
+                <span
+                  key={posicao}
+                  className={`w-[3px] rounded-[2px] ${limitacao ? 'bg-aviso' : 'bg-destaque'} ${kbps === undefined ? 'opacity-25' : 'opacity-85'} ${reduzir ? '' : 'transition-[height] duration-[400ms] ease-out'}`}
+                  style={{ height: alturaDaBarra(kbps ?? 0) }}
+                />
+              )
+            })}
+          </span>
+        </span>
+        <AnimatePresence initial={false}>
+          {limitacao && (
+            <motion.span
+              key="limitacao"
+              className="grid"
+              initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+              animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+              exit={{ ...SAIDA, gridTemplateRows: '0fr' }}
+              transition={ENTRADA}
+            >
+              <span role="status" className="min-h-0 overflow-hidden text-aviso text-xs">
+                {TEXTO_LIMITACAO[limitacao]}
+              </span>
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </button>
       <AnimatePresence initial={false}>
-        {limitacao && (
-          <motion.span
-            key="limitacao"
-            className="grid"
-            initial={{ gridTemplateRows: '0fr', opacity: 0 }}
-            animate={{ gridTemplateRows: '1fr', opacity: 1 }}
-            exit={{ ...SAIDA, gridTemplateRows: '0fr' }}
-            transition={ENTRADA}
-          >
-            <span role="status" className="min-h-0 overflow-hidden text-aviso text-xs">
-              {TEXTO_LIMITACAO[limitacao]}
-            </span>
-          </motion.span>
+        {abertas && (
+          <AbreEspaco key="estatisticas">
+            <Separador larguraTotal />
+            <div className="px-4 pt-3 pb-4">
+              <PainelEstatisticas estatisticas={estatisticas} />
+            </div>
+          </AbreEspaco>
         )}
       </AnimatePresence>
-    </button>
+    </div>
+  )
+}
+
+/** O selo da barra do app; um anel sai dele a cada pessoa que entra, como uma onda de sinal. */
+function SeloAoVivo({ chegadas }: { chegadas: number }) {
+  return (
+    <span className="relative inline-flex items-center gap-1.5 rounded-full bg-ao-vivo/12 px-2.5 py-1 font-semibold text-[11px] text-ao-vivo tracking-[0.06em]">
+      <span
+        className="size-1.5 animate-pulse rounded-full bg-ao-vivo motion-reduce:animate-none"
+        aria-hidden
+      />
+      AO VIVO
+      {chegadas > 0 && (
+        <motion.span
+          key={chegadas}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-ao-vivo"
+          initial={{ scale: 1, opacity: 0.8 }}
+          animate={{ scale: 1.9, opacity: 0 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+        />
+      )}
+    </span>
+  )
+}
+
+/** Um aviso da transmissão, na forma de linha de grupo. */
+function Aviso({ papel, children }: { papel?: 'alert'; children: ReactNode }) {
+  return (
+    <div role={papel} className="grupo w-full">
+      <div className="flex items-start gap-3 px-4 py-3 text-sm">
+        <AlertTriangle
+          size={17}
+          strokeWidth={1.75}
+          aria-hidden
+          className="mt-px shrink-0 text-aviso"
+        />
+        <p>{children}</p>
+      </div>
+    </div>
   )
 }
 
@@ -285,7 +363,6 @@ export function TelaCompartilhando({
 }) {
   const { estado, estatisticas } = controle
   const [painel, setPainel] = useState<'nenhum' | 'ajustes' | 'fonte'>('nenhum')
-  const [abertas, setAbertas] = useState(false)
   // Os controles mostram o que o host escolheu na hora; a transmissão alcança logo depois.
   const [rascunho, setRascunho] = useState<ConfigTransmissao | null>(null)
   const [avisoFonte, setAvisoFonte] = useState<string | null>(null)
@@ -386,252 +463,329 @@ export function TelaCompartilhando({
     await controle.trocarFonte()
   }
 
+  const itemDaBarra = { variante: 'discreto', tamanho: 'barra' } as const
+  const iconeDaBarra = { size: 17, strokeWidth: 1.75, 'aria-hidden': true } as const
+
   return (
-    <main className="relative mx-auto grid w-full max-w-6xl gap-6 p-6 min-[1100px]:grid-cols-[minmax(0,1fr)_24rem] min-[1100px]:items-start min-[1100px]:p-10">
-      <div className="grid content-start gap-5">
-        <MonitorDeRetorno trilha={trilhaNoAr} cartela={cartela}>
-          <span className="relative inline-flex items-center gap-1.5 rounded-full bg-fundo/80 px-2.5 py-1 font-medium text-ao-vivo text-xs tracking-wider">
-            <span
-              className="size-1.5 animate-pulse rounded-full bg-ao-vivo motion-reduce:animate-none"
-              aria-hidden
-            />
-            AO VIVO
-            {chegadas > 0 && (
-              // Alguém entrou: um anel sai do selo, como uma onda de sinal.
-              <motion.span
-                key={chegadas}
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-ao-vivo"
-                initial={{ scale: 1, opacity: 0.8 }}
-                animate={{ scale: 1.9, opacity: 0 }}
-                transition={{ duration: 0.7, ease: 'easeOut' }}
-              />
-            )}
-          </span>
-          <span className="rounded-md bg-fundo/80 px-2 py-0.5 text-texto-suave tabular-nums">
-            <span className="sr-only" data-testid="espectadores">
-              {contagem === 1 ? '1 pessoa assistindo' : `${contagem} pessoas assistindo`}
-            </span>
-            <span aria-hidden className="inline-flex items-center gap-1">
-              <Odometro valor={contagem} />
-              {contagem === 1 ? 'pessoa assistindo' : 'pessoas assistindo'}
-            </span>
-          </span>
-          <span className="ml-auto rounded-md bg-fundo/80 px-2 py-0.5 font-mono text-texto-suave text-xs tabular-nums">
-            {qualidadeNoAr}
-          </span>
-        </MonitorDeRetorno>
+    <main className="relative isolate flex min-h-dvh flex-col">
+      <Luz posicao="45% 45% at 35% 30%" />
+      <BarraDoApp>
+        <Marca />
+        <SeloAoVivo chegadas={chegadas} />
+      </BarraDoApp>
 
-        {/* Os cards abrem e fecham o próprio espaço; o -mt-5 anula o gap quando não há nenhum. */}
-        <div className="-mt-5">
-          <AnimatePresence initial={false}>
-            {pedidosAtivos.map((pedido) => (
-              <AbreEspaco key={pedido.identity}>
-                <section
-                  aria-label={`Pedido de ${pedido.nome}`}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-borda bg-superficie py-2 pr-2 pl-4 text-sm"
-                >
-                  <span>
-                    <span className="font-medium">{pedido.nome}</span> quer mostrar a tela
-                  </span>
-                  <span className="flex gap-1">
-                    <Botao variante="primario" onClick={() => void aprovar(pedido)}>
-                      Aprovar
-                    </Botao>
-                    <Botao variante="fantasma" onClick={() => void recusar(pedido)}>
-                      Recusar
-                    </Botao>
-                  </span>
-                </section>
-              </AbreEspaco>
-            ))}
-            {apresentador && (
-              <AbreEspaco key="apresentador">
-                <section
-                  aria-live="polite"
-                  className="flex items-center justify-between gap-3 rounded-lg border border-borda px-3 py-2 text-sm"
-                >
-                  <span>
-                    Agora: tela de {nomeDe(apresentador)}. A sua está pausada para quem assiste.
-                  </span>
-                  <Botao onClick={() => void controle.passarVez(null)}>Retomar minha tela</Botao>
-                </section>
-              </AbreEspaco>
-            )}
-          </AnimatePresence>
-        </div>
+      <div className="mx-auto grid w-full max-w-[1320px] gap-5 px-6 pt-2 pb-6 min-[1100px]:grid-cols-[minmax(0,1fr)_360px] min-[1100px]:items-start">
+        <div className="grid content-start justify-items-center gap-[18px]">
+          <MonitorDeRetorno trilha={trilhaNoAr} cartela={cartela}>
+            <span className="vidro-video inline-flex items-center gap-2 rounded-full px-3 py-[5px] tabular-nums">
+              {estado.espectadores.length > 0 && (
+                <span className="flex" aria-hidden>
+                  {estado.espectadores.slice(0, 3).map((espectador, i) => (
+                    <Avatar
+                      key={espectador.identity}
+                      nome={espectador.nome}
+                      indice={i}
+                      className={`size-5 text-[10px] ring-2 ring-fundo ${i > 0 ? '-ml-1.5' : ''}`}
+                    />
+                  ))}
+                </span>
+              )}
+              <span className="sr-only" data-testid="espectadores">
+                {contagem === 1 ? '1 pessoa assistindo' : `${contagem} pessoas assistindo`}
+              </span>
+              <span aria-hidden className="inline-flex items-center gap-1">
+                <Odometro valor={contagem} />
+                {contagem === 1 ? 'pessoa assistindo' : 'pessoas assistindo'}
+              </span>
+            </span>
+            <span className="vidro-video ml-auto rounded-full px-3 py-[5px] font-mono text-xs tabular-nums">
+              {qualidadeNoAr}
+            </span>
+          </MonitorDeRetorno>
 
-        <div className="grid gap-4">
-          <p className="text-sm text-texto-suave" aria-live="polite">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={estado.copiado ? 'copiado' : 'mande'}
-                className="block"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={ENTRADA}
-              >
-                {estado.copiado
-                  ? 'Link copiado. É só mandar para quem vai assistir.'
-                  : 'Mande o link para quem vai assistir.'}
-              </motion.span>
-            </AnimatePresence>
-          </p>
-          {estado.linkFixo && (
-            <Link
-              id="link-fixo"
-              rotulo="Seu link fixo"
-              url={estado.linkFixo}
-              grande
-              destacarFinal
-              aoCopiar={controle.copiarLink}
-            />
-          )}
-          <Link
-            id="link"
-            rotulo={estado.linkFixo ? 'Link só desta transmissão' : 'Link da transmissão'}
-            url={estado.link}
-            grande={!estado.linkFixo}
-            destacarFinal={false}
-            aoCopiar={controle.copiarLink}
-          />
-          <div>
-            <FaixaDeSinal
-              estatisticas={estatisticas}
-              resolvida={resolvida}
-              abertas={abertas}
-              aoAlternar={() => setAbertas(!abertas)}
-            />
+          {/* Os cards abrem e fecham o próprio espaço; a margem negativa anula o gap sem nenhum. */}
+          <div className="-mt-[18px] w-full">
             <AnimatePresence initial={false}>
-              {abertas && (
-                <AbreEspaco key="estatisticas">
-                  <PainelEstatisticas estatisticas={estatisticas} />
+              {pedidosAtivos.map((pedido) => (
+                <AbreEspaco key={pedido.identity} className="pt-[18px]">
+                  <section
+                    aria-label={`Pedido de ${pedido.nome}`}
+                    className="grupo flex items-center justify-between gap-3 py-2 pr-2 pl-4 text-sm"
+                  >
+                    <span>
+                      <span className="font-medium">{pedido.nome}</span> quer mostrar a tela
+                    </span>
+                    <span className="flex gap-1">
+                      <Botao
+                        variante="primario"
+                        tamanho="compacto"
+                        onClick={() => void aprovar(pedido)}
+                      >
+                        Aprovar
+                      </Botao>
+                      <Botao
+                        variante="fantasma"
+                        tamanho="compacto"
+                        onClick={() => void recusar(pedido)}
+                      >
+                        Recusar
+                      </Botao>
+                    </span>
+                  </section>
+                </AbreEspaco>
+              ))}
+              {apresentador && (
+                <AbreEspaco key="apresentador" className="pt-[18px]">
+                  <section
+                    aria-live="polite"
+                    className="grupo flex items-center justify-between gap-3 py-2 pr-2 pl-4 text-sm"
+                  >
+                    <span>
+                      Agora: tela de {nomeDe(apresentador)}. A sua está pausada para quem assiste.
+                    </span>
+                    <Botao tamanho="compacto" onClick={() => void controle.passarVez(null)}>
+                      Retomar minha tela
+                    </Botao>
+                  </section>
+                </AbreEspaco>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {config.audioSistema && !estado.comAudio && (
+            <Aviso>
+              Sem áudio: a captura não trouxe o som do computador. Troque para a tela inteira e
+              tente de novo.
+            </Aviso>
+          )}
+          {aviso && <Aviso papel="alert">{aviso}</Aviso>}
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: MOLA_SUAVE }}
+            className="vidro flex w-max max-w-full flex-wrap items-center justify-center gap-1 rounded-full p-1.5"
+          >
+            <Botao
+              {...itemDaBarra}
+              onClick={controle.alternarPausa}
+              aria-keyshortcuts="P"
+              aria-label={estado.pausado ? 'Retomar vídeo' : 'Pausar vídeo'}
+              title={estado.pausado ? 'Retomar vídeo' : 'Pausar vídeo'}
+            >
+              {estado.pausado ? <Play {...iconeDaBarra} /> : <Pause {...iconeDaBarra} />}
+              {estado.pausado ? 'Retomar' : 'Pausar'}
+            </Botao>
+            {estado.comAudio && (
+              <Botao
+                {...itemDaBarra}
+                onClick={controle.alternarAudio}
+                aria-keyshortcuts="M"
+                aria-label={estado.audioMudo ? 'Ligar áudio' : 'Mutar áudio'}
+                title={estado.audioMudo ? 'Ligar áudio' : 'Mutar áudio'}
+              >
+                {estado.audioMudo ? <VolumeX {...iconeDaBarra} /> : <Volume2 {...iconeDaBarra} />}
+                {estado.audioMudo ? 'Ligar' : 'Mutar'}
+              </Botao>
+            )}
+            {config.microfone.ativo && (
+              <Botao
+                {...itemDaBarra}
+                onClick={controle.alternarMicrofone}
+                aria-keyshortcuts="N"
+                title={estado.microfoneMudo ? 'Ligar microfone' : 'Mutar microfone'}
+              >
+                {estado.microfoneMudo ? <MicOff {...iconeDaBarra} /> : <Mic {...iconeDaBarra} />}
+                {estado.microfoneMudo ? 'Ligar mic' : 'Mutar mic'}
+              </Botao>
+            )}
+            <Botao
+              {...itemDaBarra}
+              onClick={() => setPainel(painel === 'fonte' ? 'nenhum' : 'fonte')}
+              aria-expanded={painel === 'fonte'}
+              aria-label="Trocar tela/janela"
+              title="Trocar tela/janela"
+            >
+              <AppWindow {...iconeDaBarra} />
+              Trocar
+            </Botao>
+            <Botao
+              {...itemDaBarra}
+              onClick={() => setPainel(painel === 'ajustes' ? 'nenhum' : 'ajustes')}
+              aria-expanded={painel === 'ajustes'}
+            >
+              <SlidersHorizontal {...iconeDaBarra} />
+              Ajustes
+            </Botao>
+            <span className="mx-1 h-[22px] w-px bg-vidro-borda" aria-hidden />
+            <Botao variante="perigo" tamanho="barra" onClick={controle.parar}>
+              <Square size={14} strokeWidth={2} aria-hidden />
+              Parar
+            </Botao>
+          </motion.div>
+
+          <div className="-mt-[18px] w-full">
+            <AnimatePresence initial={false}>
+              {painel === 'fonte' && (
+                <AbreEspaco key="fonte" className="pt-[18px]">
+                  <section
+                    aria-label="Trocar o que está sendo compartilhado"
+                    className="grid gap-[18px] rounded-[28px] bg-superficie p-[22px]"
+                  >
+                    <PainelFonte
+                      titulo="Trocar tela/janela"
+                      lista={fontes}
+                      escolhida={null}
+                      aoEscolher={(fonte) => void trocarFonte(fonte)}
+                    />
+                    <Botao
+                      variante="fantasma"
+                      className="justify-self-start"
+                      onClick={() => setPainel('nenhum')}
+                    >
+                      Cancelar
+                    </Botao>
+                  </section>
+                </AbreEspaco>
+              )}
+              {painel === 'ajustes' && (
+                <AbreEspaco key="ajustes" className="pt-[18px]">
+                  <aside
+                    aria-label="Ajustes da transmissão"
+                    className="rounded-[28px] bg-superficie p-[22px]"
+                  >
+                    <Grupo>
+                      <Secao titulo="Vídeo" icone={Monitor} aberta>
+                        <PainelVideo
+                          config={config}
+                          aoMudar={(nova) => void ajustar(nova)}
+                          codecsDoHost={codecsDoHost()}
+                          limitadoPelaFonte={resolvida.limitadoPelaFonte}
+                          uploadNecessarioKbps={uploadNecessarioKbps(resolvida)}
+                        />
+                      </Secao>
+                      <Separador />
+                      <Secao titulo="Áudio" icone={Volume2} aberta>
+                        <PainelAudio
+                          config={config}
+                          aoMudar={(nova) => void ajustar(nova)}
+                          nivelAudio={controle.nivelAudio}
+                          microfones={microfones}
+                        />
+                      </Secao>
+                    </Grupo>
+                  </aside>
                 </AbreEspaco>
               )}
             </AnimatePresence>
           </div>
         </div>
 
-        {config.audioSistema && !estado.comAudio && (
-          <p className="text-sm text-texto-suave">
-            Sem áudio: a captura não trouxe o som do computador. Troque para a tela inteira e tente
-            de novo.
-          </p>
-        )}
-        {aviso && (
-          <p
-            role="alert"
-            className="rounded-lg border border-parar/40 px-3 py-2 text-parar text-sm"
-          >
-            {aviso}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          <Botao onClick={controle.alternarPausa} aria-keyshortcuts="P">
-            {estado.pausado ? 'Retomar vídeo' : 'Pausar vídeo'}
-          </Botao>
-          {estado.comAudio && (
-            <Botao onClick={controle.alternarAudio} aria-keyshortcuts="M">
-              {estado.audioMudo ? 'Ligar áudio' : 'Mutar áudio'}
-            </Botao>
-          )}
-          {config.microfone.ativo && (
-            <Botao onClick={controle.alternarMicrofone} aria-keyshortcuts="N">
-              {estado.microfoneMudo ? 'Ligar microfone' : 'Mutar microfone'}
-            </Botao>
-          )}
-          <span className="mx-1 w-px self-stretch bg-borda" aria-hidden />
-          <Botao variante="fantasma" onClick={() => setPainel('fonte')}>
-            Trocar tela/janela
-          </Botao>
-          <Botao
-            variante="fantasma"
-            onClick={() => setPainel(painel === 'ajustes' ? 'nenhum' : 'ajustes')}
-            aria-expanded={painel === 'ajustes'}
-          >
-            Ajustes
-          </Botao>
-          <Botao variante="perigo" className="ml-auto" onClick={controle.parar}>
-            Parar
-          </Botao>
-        </div>
-
-        {painel === 'fonte' && (
-          <section aria-label="Trocar o que está sendo compartilhado" className="grid gap-3">
-            <PainelFonte
-              lista={fontes}
-              escolhida={null}
-              aoEscolher={(fonte) => void trocarFonte(fonte)}
-            />
-            <Botao variante="fantasma" onClick={() => setPainel('nenhum')}>
-              Cancelar
-            </Botao>
-          </section>
-        )}
-
-        {painel === 'ajustes' && (
-          <aside aria-label="Ajustes da transmissão">
-            <Secao titulo="Vídeo" aberta>
-              <PainelVideo
-                config={config}
-                aoMudar={(nova) => void ajustar(nova)}
-                codecsDoHost={codecsDoHost()}
-                limitadoPelaFonte={resolvida.limitadoPelaFonte}
-                uploadNecessarioKbps={uploadNecessarioKbps(resolvida)}
-              />
-            </Secao>
-            <Secao titulo="Áudio" aberta>
-              <PainelAudio
-                config={config}
-                aoMudar={(nova) => void ajustar(nova)}
-                nivelAudio={controle.nivelAudio}
-                microfones={microfones}
-              />
-            </Secao>
-          </aside>
-        )}
-      </div>
-
-      <aside aria-label="Sala" className="grid content-start gap-5">
-        <Secao titulo={`Quem está assistindo (${estado.espectadores.length})`} aberta>
-          <Alternador
-            rotulo="Trancar sessão"
-            descricao="Ninguém novo entra, nem quem você removeu; quem já está continua assistindo."
-            ligado={estado.trancada}
-            aoMudar={(trancada) => void controle.trancar(trancada)}
-          />
-          {estado.espectadores.length === 0 ? (
-            <p className="text-sm text-texto-suave">Ninguém entrou ainda. É só mandar o link.</p>
-          ) : (
-            <ul className="grid gap-1" data-testid="lista-espectadores">
-              <AnimatePresence initial={false}>
-                {estado.espectadores.map((espectador) => (
-                  <motion.li
-                    key={espectador.identity}
-                    initial={{ opacity: 0, y: -6 }}
+        <aside aria-label="Sala" className="grid content-start gap-4">
+          <div className="grupo">
+            <div className="grid gap-2.5 p-4">
+              <p className="text-texto-suave text-xs" aria-live="polite">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={estado.copiado ? 'copiado' : 'mande'}
+                    className="block"
+                    initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={SAIDA}
+                    exit={{ opacity: 0, y: -4 }}
                     transition={ENTRADA}
-                    className="flex items-center justify-between text-sm"
                   >
-                    {espectador.nome}
-                    <Botao
-                      variante="fantasma"
-                      className="px-2 py-1 text-xs"
-                      onClick={() => void controle.remover(espectador.identity)}
-                      aria-label={`Remover ${espectador.nome}`}
+                    {estado.copiado
+                      ? 'Link copiado. É só mandar para quem vai assistir.'
+                      : 'Mande o link para quem vai assistir.'}
+                  </motion.span>
+                </AnimatePresence>
+              </p>
+              <Link
+                id={estado.linkFixo ? 'link-fixo' : 'link'}
+                rotulo={estado.linkFixo ? 'Seu link fixo' : 'Link da transmissão'}
+                url={estado.linkFixo ?? estado.link}
+                variante="principal"
+                destacarFinal={Boolean(estado.linkFixo)}
+                aoCopiar={controle.copiarLink}
+              />
+            </div>
+            {estado.linkFixo && (
+              <>
+                <Separador larguraTotal />
+                <div className="py-3 pr-3 pl-4">
+                  <Link
+                    id="link"
+                    rotulo="Link só desta transmissão"
+                    url={estado.link}
+                    variante="linha"
+                    destacarFinal={false}
+                    aoCopiar={controle.copiarLink}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <FaixaDeSinal estatisticas={estatisticas} resolvida={resolvida} />
+
+          <Grupo
+            rotulo="Quem está assistindo"
+            acessorio={
+              <span className="rounded-full bg-preenchimento px-[7px] text-[11px] text-texto tabular-nums">
+                {estado.espectadores.length}
+              </span>
+            }
+          >
+            <Alternador
+              icone={Lock}
+              rotulo="Trancar sessão"
+              descricao="Ninguém novo entra, nem quem você removeu; quem já está continua assistindo."
+              ligado={estado.trancada}
+              aoMudar={(trancada) => void controle.trancar(trancada)}
+            />
+            {estado.espectadores.length === 0 ? (
+              <>
+                <Separador />
+                <LinhaDeGrupo icone={Users}>
+                  <p className="text-texto-suave">Ninguém entrou ainda. É só mandar o link.</p>
+                </LinhaDeGrupo>
+              </>
+            ) : (
+              <ul data-testid="lista-espectadores">
+                <AnimatePresence initial={false}>
+                  {estado.espectadores.map((espectador, i) => (
+                    <motion.li
+                      key={espectador.identity}
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={SAIDA}
+                      transition={ENTRADA}
                     >
-                      Remover
-                    </Botao>
-                  </motion.li>
-                ))}
-              </AnimatePresence>
-            </ul>
-          )}
-        </Secao>
-      </aside>
+                      <Separador />
+                      <div className="flex min-h-12 items-center gap-3 py-2 pr-2.5 pl-4 text-sm">
+                        <Avatar
+                          nome={espectador.nome}
+                          indice={i}
+                          className="size-[26px] text-[11px]"
+                        />
+                        <span className="min-w-0 flex-1 truncate">{espectador.nome}</span>
+                        <Botao
+                          variante="fantasma"
+                          tamanho="compacto"
+                          onClick={() => void controle.remover(espectador.identity)}
+                          aria-label={`Remover ${espectador.nome}`}
+                        >
+                          Remover
+                        </Botao>
+                      </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+            )}
+          </Grupo>
+        </aside>
+      </div>
     </main>
   )
 }

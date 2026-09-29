@@ -43,7 +43,10 @@ function schemaComPadrao(padrao: ConfigTransmissao) {
 
 // Os presets até a 0.4: quem escolheu um deles ganha os valores de hoje, em vez de ficar preso no
 // "Personalizado" com o 8 Mbps e o simulcast que derrubavam o Jogo.
-const PRESETS_ATE_0_4: Record<PresetId, Omit<(typeof PRESETS)[PresetId], 'nome' | 'simulcast'>> = {
+const PRESETS_ATE_0_4: Record<
+  PresetId,
+  Omit<(typeof PRESETS)[PresetId], 'nome' | 'nomeCurto' | 'simulcast'>
+> = {
   texto: {
     resolucao: '1080p',
     fps: 15,

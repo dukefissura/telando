@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react'
 import { motion } from 'motion/react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { animacaoBotao } from '../controles.tsx'
@@ -81,7 +82,7 @@ function PreviaAoVivo({ fonte, className }: { fonte: FonteDeCaptura; className: 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={ENTRADA}
-        className="absolute top-1.5 left-1.5 inline-flex items-center gap-1.5 rounded bg-fundo/80 px-1.5 py-0.5 font-mono text-[10px]"
+        className="vidro-video absolute top-2 left-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px]"
       >
         <span
           className="size-[5px] animate-pulse rounded-full bg-texto motion-reduce:animate-none"
@@ -93,7 +94,7 @@ function PreviaAoVivo({ fonte, className }: { fonte: FonteDeCaptura; className: 
   )
 }
 
-const classeMidia = 'aspect-video w-full rounded object-contain bg-black'
+const classeMidia = 'size-full object-contain'
 
 function CartaoFonte({
   fonte,
@@ -111,24 +112,30 @@ function CartaoFonte({
       type="button"
       onClick={aoEscolher}
       aria-pressed={escolhida}
-      className={`grid gap-1.5 rounded-lg border p-1.5 text-left ${animacaoBotao} ${
-        escolhida
-          ? 'border-texto bg-superficie-2 ring-1 ring-texto'
-          : 'border-borda hover:bg-superficie'
-      }`}
+      className={`group grid gap-2 rounded-[14px] text-left ${animacaoBotao}`}
     >
-      <span className="relative block">
+      <span
+        className={`relative block aspect-video overflow-hidden rounded-[14px] bg-superficie-2 after:pointer-events-none after:absolute after:inset-0 after:rounded-[14px] after:shadow-[inset_0_0_0_1px_var(--grupo-borda)] after:content-[''] ${
+          escolhida
+            ? 'shadow-[0_0_0_2px_var(--destaque),0_12px_28px_-12px_rgb(59_158_255/0.55)]'
+            : ''
+        }`}
+      >
         {escolhida && previa ? (
           previa
         ) : (
           <img src={fonte.miniatura} alt="" className={classeMidia} />
         )}
       </span>
-      <span className="flex min-w-0 items-center gap-1.5 text-xs">
+      <span
+        className={`flex min-w-0 items-center gap-1.5 px-1 text-[13px] ${
+          escolhida ? 'font-medium text-texto' : 'text-texto-suave group-hover:text-texto'
+        }`}
+      >
         {fonte.icone && <img src={fonte.icone} alt="" className="size-3.5 shrink-0" />}
         <span className="truncate">{fonte.nome}</span>
         {fonte.largura && fonte.altura && (
-          <span className="ml-auto shrink-0 font-mono text-texto-suave">
+          <span className="ml-auto shrink-0 font-mono font-normal text-[11px] text-texto-suave">
             {fonte.largura}×{fonte.altura}
           </span>
         )}
@@ -138,11 +145,13 @@ function CartaoFonte({
 }
 
 export function PainelFonte({
+  titulo,
   lista,
   escolhida,
   aoEscolher,
   comPrevia = false,
 }: {
+  titulo: string
   lista: FonteDeCaptura[]
   escolhida: string | null
   aoEscolher: (fonte: FonteDeCaptura) => void
@@ -156,10 +165,6 @@ export function PainelFonte({
       fonte.tipo === 'janela' && fonte.nome.toLowerCase().includes(busca.trim().toLowerCase()),
   )
 
-  if (lista.length === 0) {
-    return <p className="text-sm text-texto-suave">Procurando telas e janelas…</p>
-  }
-
   const cartao = (fonte: FonteDeCaptura) => (
     <CartaoFonte
       key={fonte.id}
@@ -171,28 +176,42 @@ export function PainelFonte({
   )
 
   return (
-    <div className="grid gap-4">
-      <div className="grid gap-2">
-        <h3 className="text-sm text-texto-suave">Telas</h3>
-        <div className="grid grid-cols-3 gap-2">{telas.map(cartao)}</div>
-      </div>
-      <div className="grid gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm text-texto-suave">Janelas</h3>
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-semibold text-[15px]">{titulo}</h2>
+        <label className="relative w-[220px] max-w-[50%]">
+          <Search
+            size={14}
+            aria-hidden
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-texto-suave"
+          />
           <input
             type="search"
             placeholder="Buscar janela"
             aria-label="Buscar janela"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-40 rounded-md border border-borda bg-superficie px-2 py-1 text-xs"
+            className="h-8 w-full rounded-full bg-preenchimento pr-3 pl-8 text-[13px] placeholder:text-texto-suave"
           />
-        </div>
-        <div className="grid grid-cols-3 gap-2">{janelas.map(cartao)}</div>
-        {janelas.length === 0 && (
-          <p className="text-xs text-texto-suave">Nenhuma janela com esse nome.</p>
-        )}
+        </label>
       </div>
-    </div>
+      {lista.length === 0 ? (
+        <p className="text-sm text-texto-suave">Procurando telas e janelas…</p>
+      ) : (
+        <>
+          <div className="grid gap-2.5">
+            <h3 className="font-medium text-texto-suave text-xs">Telas</h3>
+            <div className="grid grid-cols-3 gap-3.5">{telas.map(cartao)}</div>
+          </div>
+          <div className="grid gap-2.5">
+            <h3 className="font-medium text-texto-suave text-xs">Janelas</h3>
+            <div className="grid grid-cols-3 gap-3.5">{janelas.map(cartao)}</div>
+            {janelas.length === 0 && (
+              <p className="text-texto-suave text-xs">Nenhuma janela com esse nome.</p>
+            )}
+          </div>
+        </>
+      )}
+    </>
   )
 }

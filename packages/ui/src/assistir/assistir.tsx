@@ -1,8 +1,10 @@
 import { RoomContext } from '@livekit/components-react'
 import { apelidoAleatorio, ErroApi } from '@telando/core'
+import { UserRound } from 'lucide-react'
 import { motion } from 'motion/react'
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
-import { Botao, classeCampo } from '../controles.tsx'
+import { IconeTelando } from '../barra-do-app.tsx'
+import { Botao, classeCampoEmGrupo, Grupo, LinhaDeGrupo } from '../controles.tsx'
 import { ENTRADA } from '../movimento.ts'
 import type { Plataforma } from '../plataforma.ts'
 import { BotaoTema } from '../tema.tsx'
@@ -154,10 +156,14 @@ export function Assistir({
       <div className="absolute top-4 right-4">
         <BotaoTema />
       </div>
-      <form onSubmit={enviar} className="grid w-full max-w-sm gap-6 p-8">
+      <form
+        onSubmit={enviar}
+        className="grid w-[400px] max-w-[calc(100vw-2rem)] justify-items-center gap-7 text-center"
+      >
+        <IconeTelando className="size-[72px] opacity-90" />
         <div className="grid gap-2">
           <h1 className="font-semibold text-2xl tracking-tight">Entrar para assistir</h1>
-          <p className="text-pretty text-texto-suave" aria-live="polite">
+          <p className="text-pretty text-[15px] text-texto-suave leading-[22px]" aria-live="polite">
             {previa.fase !== 'pronta'
               ? ' '
               : previa.hostNome
@@ -165,23 +171,26 @@ export function Assistir({
                 : 'Tem uma tela sendo compartilhada neste link.'}
           </p>
         </div>
-        <div className="grid gap-1.5">
-          <label htmlFor="apelido" className="text-sm text-texto-suave">
-            Seu apelido
-          </label>
-          <input
-            id="apelido"
-            value={apelido}
-            maxLength={32}
-            onChange={(e) => setApelido(e.target.value)}
-            className={classeCampo}
-          />
+        <div className="w-full text-left">
+          <Grupo rotulo="Seu apelido">
+            <LinhaDeGrupo icone={UserRound}>
+              <input
+                id="apelido"
+                aria-label="Seu apelido"
+                value={apelido}
+                maxLength={32}
+                onChange={(e) => setApelido(e.target.value)}
+                className={classeCampoEmGrupo}
+              />
+            </LinhaDeGrupo>
+          </Grupo>
         </div>
-        <div className="grid gap-2">
+        <div className="grid w-full gap-2">
           <Botao
             type="submit"
             variante="primario"
-            className="h-10"
+            tamanho="grande"
+            className="w-full"
             disabled={sala.fase === 'entrando'}
           >
             {sala.fase === 'entrando' ? 'Entrando…' : 'Assistir'}

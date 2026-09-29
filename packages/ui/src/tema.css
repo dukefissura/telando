@@ -33,6 +33,17 @@
   --color-parar-fundo: var(--parar-fundo);
   --color-parar-fundo-forte: var(--parar-fundo-forte);
   --color-aviso: var(--aviso);
+  --color-vidro: var(--vidro);
+  --color-vidro-sobre-video: var(--vidro-sobre-video);
+  --color-vidro-borda: var(--vidro-borda);
+  --color-vidro-brilho: var(--vidro-brilho);
+  --color-grupo: var(--grupo);
+  --color-grupo-borda: var(--grupo-borda);
+  --color-grupo-linha: var(--grupo-linha);
+  --color-preenchimento: var(--preenchimento);
+  --color-preenchimento-forte: var(--preenchimento-forte);
+  --color-destaque-claro: var(--destaque-claro);
+  --color-luz: var(--luz);
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 }
@@ -52,6 +63,17 @@
   --parar-fundo: #dc2626;
   --parar-fundo-forte: #b91c1c;
   --aviso: #e5a50a;
+  --vidro: rgb(28 28 28 / 0.65);
+  --vidro-sobre-video: rgb(10 10 10 / 0.45);
+  --vidro-borda: rgb(255 255 255 / 0.1);
+  --vidro-brilho: rgb(255 255 255 / 0.1);
+  --grupo: rgb(255 255 255 / 0.04);
+  --grupo-borda: rgb(255 255 255 / 0.07);
+  --grupo-linha: rgb(255 255 255 / 0.07);
+  --preenchimento: rgb(255 255 255 / 0.06);
+  --preenchimento-forte: rgb(255 255 255 / 0.14);
+  --destaque-claro: #6bb6ff;
+  --luz: rgb(59 158 255 / 0.12);
 }
 
 :root[data-tema="claro"] {
@@ -69,6 +91,42 @@
   --parar-fundo: #dc2626;
   --parar-fundo-forte: #b91c1c;
   --aviso: #a16207;
+  --vidro: rgb(255 255 255 / 0.7);
+  --vidro-sobre-video: rgb(255 255 255 / 0.55);
+  --vidro-borda: rgb(0 0 0 / 0.08);
+  --vidro-brilho: rgb(255 255 255 / 0.8);
+  --grupo: #f6f6f6;
+  --grupo-borda: rgb(0 0 0 / 0.06);
+  --grupo-linha: rgb(0 0 0 / 0.07);
+  --preenchimento: rgb(0 0 0 / 0.05);
+  --preenchimento-forte: #ffffff;
+  --destaque-claro: #3b8cf0;
+  --luz: transparent;
+}
+
+/* Vidro só em controles que flutuam sobre conteúdo (barras, selos, aviso); nunca vidro sobre vidro. */
+@utility vidro {
+  background: var(--vidro);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--vidro-borda);
+  box-shadow:
+    inset 0 1px 0 var(--vidro-brilho),
+    0 20px 40px -16px rgb(0 0 0 / 0.7);
+}
+
+@utility vidro-video {
+  background: var(--vidro-sobre-video);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+/* Listas agrupadas e cards, no estilo dos Ajustes do sistema. */
+@utility grupo {
+  background: var(--grupo);
+  border: 1px solid var(--grupo-borda);
+  border-radius: 20px;
+  overflow: hidden;
 }
 
 body {

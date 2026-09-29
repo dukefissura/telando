@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 256 256"><title>Telando</title><defs>
+<path id="sq" d="M62 8H194C230 8 248 26 248 62V194C248 230 230 248 194 248H62C26 248 8 230 8 194V62C8 26 26 8 62 8Z"></path>
+<linearGradient id="gDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2A2A"></stop><stop offset="1" stop-color="#0A0A0A"></stop></linearGradient>
+<linearGradient id="gLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#E9E9E9"></stop></linearGradient>
+<linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC0FF"></stop><stop offset="0.5" stop-color="#3B9EFF"></stop><stop offset="1" stop-color="#0B6BDB"></stop></linearGradient>
+<linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.2"></stop><stop offset="1" stop-color="#FFFFFF" stop-opacity="0.05"></stop></linearGradient>
+<linearGradient id="gGlassL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"></stop><stop offset="1" stop-color="#FFFFFF" stop-opacity="0.35"></stop></linearGradient>
+<linearGradient id="gRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"></stop><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.12"></stop><stop offset="1" stop-color="#FFFFFF" stop-opacity="0.3"></stop></linearGradient>
+<linearGradient id="gRimL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="1"></stop><stop offset="1" stop-color="#0A0A0A" stop-opacity="0.12"></stop></linearGradient>
+<linearGradient id="gRimTile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"></stop><stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0"></stop></linearGradient>
+<linearGradient id="gSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"></stop><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"></stop></linearGradient>
+<filter id="fBlur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="10"></feGaussianBlur></filter>
+<filter id="fShadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.35"></feDropShadow></filter>
+<clipPath id="c2a"><rect x="84" y="100" width="128" height="96" rx="24"></rect></clipPath>
+</defs><use href="#sq" xlink:href="#sq" fill="url(#gDark)"></use><use href="#sq" xlink:href="#sq" fill="none" stroke="url(#gRimTile)" stroke-width="2"></use><rect x="46" y="58" width="126" height="94" rx="22" fill="url(#gBlue)"></rect><rect x="46" y="58" width="126" height="94" rx="22" fill="url(#gSheen)"></rect><g clip-path="url(#c2a)"><rect x="46" y="58" width="126" height="94" rx="22" fill="#3B9EFF" filter="url(#fBlur)"></rect></g><rect x="84" y="100" width="128" height="96" rx="24" fill="url(#gGlass)" stroke="url(#gRim)" stroke-width="2" filter="url(#fShadow)"></rect></svg>

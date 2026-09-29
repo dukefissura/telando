@@ -40,13 +40,13 @@ export function IndicadorConexao({ trilha }: { trilha: RemoteVideoTrack | undefi
       <button
         type="button"
         aria-label={`Conexão: ${descricao}`}
-        className={`rounded-md p-2 hover:bg-white/10 ${animacaoBotao} ${ruim ? 'text-aviso' : 'text-texto-suave'}`}
+        className={`grid size-10 place-items-center rounded-full hover:bg-preenchimento ${animacaoBotao} ${ruim ? 'text-aviso' : 'text-texto-suave'}`}
       >
-        <Signal size={18} strokeWidth={1.5} aria-hidden />
+        <Signal size={17} strokeWidth={1.75} aria-hidden />
       </button>
       <div
         role="tooltip"
-        className="pointer-events-none absolute right-0 bottom-full mb-2 hidden whitespace-nowrap rounded-md border border-borda bg-fundo px-2.5 py-1.5 font-mono text-xs tabular-nums group-focus-within:block group-hover:block"
+        className="pointer-events-none absolute right-0 bottom-full mb-3 hidden rounded-xl border border-grupo-borda bg-superficie whitespace-nowrap px-3 py-2 font-mono text-xs tabular-nums group-focus-within:block group-hover:block"
       >
         {ruim && <span className="block text-aviso">Conexão instável</span>}
         {descricao}
