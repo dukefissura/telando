@@ -18,11 +18,11 @@
     "e2e": "pnpm --filter @telando/e2e e2e"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.5.15",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "lefthook": "^2.1.14",
-    "turbo": "^2.11.4",
+    "lefthook": "^2.1.16",
+    "turbo": "^2.11.6",
     "typescript": "^7.0.2"
   }
 }

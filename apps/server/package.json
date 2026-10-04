@@ -10,9 +10,9 @@
     "start": "node src/main.ts"
   },
   "dependencies": {
-    "@hono/node-server": "^2.1.1",
+    "@hono/node-server": "^2.1.3",
     "@telando/core": "workspace:*",
-    "hono": "^4.13.9",
+    "hono": "^4.13.12",
     "livekit-server-sdk": "^2.19.1",
     "nanoid": "^6.0.1",
     "zod": "^4.6.5"
@@ -21,6 +21,6 @@
     "@telando/config": "workspace:*",
     "@types/node": "^22.20.4",
     "tsx": "^4.23.15",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   }
 }
