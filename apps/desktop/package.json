@@ -13,25 +13,25 @@
     "publicar": "node -e \"if(!process.env.VITE_TELANDO_SERVER?.startsWith('https://'))throw new Error('Defina VITE_TELANDO_SERVER com o endereço https do servidor de produção.')\" && electron-vite build && electron-builder --win --publish always"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.4",
     "@telando/config": "workspace:*",
     "@telando/core": "workspace:*",
     "@telando/ui": "workspace:*",
-    "@types/node": "^22.20.4",
+    "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-react": "^6.2.1",
     "electron": "44.4.5",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^26.18.0",
     "electron-store": "^11.0.2",
-    "electron-updater": "^6.8.9",
+    "electron-updater": "^6.8.11",
     "electron-vite": "^5.0.0",
-    "livekit-client": "^2.22.3",
+    "livekit-client": "^2.23.0",
     "motion": "^13.4.4",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.3.1"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.4",
+    "vite": "^8.3.6"
   },
   "author": "dukefissura <272624483+dukefissura@users.noreply.github.com>"
 }

@@ -12,23 +12,23 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
-    "@livekit/components-react": "^2.9.24",
+    "@livekit/components-react": "^2.9.25",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@telando/core": "workspace:*",
-    "lucide-react": "^1.48.0",
+    "lucide-react": "^1.69.0",
     "motion": "^13.4.4"
   },
   "devDependencies": {
     "@telando/config": "workspace:*",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "livekit-client": "^2.22.3",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "livekit-client": "^2.23.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "peerDependencies": {
-    "livekit-client": "^2.22.3",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "livekit-client": "^2.23.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }
